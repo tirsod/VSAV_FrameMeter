@@ -11,9 +11,11 @@ BIGGEST SHOUTOUT to KyleW! This definitely would not have happened or continued 
 # Frame Meter UI for VSAV_Training
 *A fork of a fork of VSAV's trainer tools.*
 
-📏 This fork includes a frame meter *(similar to SF6's)*, which uses the game-tick clocks included by vampiresavior001's v11. It does not fix bugs or add any other features to the trainer. Just the frame meter.
+💬 This fork includes a frame meter *(similar to SF6's)*, which uses the game-tick clocks included by vampiresavior001's v11. It does not fix bugs or add any other features to the trainer. Just the frame meter.
 
 🛠️ For the latest trainer, please see [the parent fork, by vampiresavior001.](https://github.com/vampiresavior001/VSAV_Training/tree/fc2-v11)
+
+📦 Downloads: [Trainer11.7.1+Meter0.2](https://github.com/tirsod/VSAV_FrameMeter/releases)
 
 ## Preview
 
