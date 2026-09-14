@@ -1,0 +1,439 @@
+# VSAV Training Mode — Release Notes
+
+日本語: [RELEASE_NOTES.ja.md](RELEASE_NOTES.ja.md)
+
+Newest first. Older releases are kept below.
+
+---
+
+## v11.7.1
+
+### The menu has been reorganised
+
+**The tabs have changed.** The 38 rows that were crammed into `Display` and
+`Etc` are now split four ways by what they are for.
+
+```
+Recording / Gauge / Player / Display / Trainer / Game / Analysis
+```
+
+- **Display** — things you leave on screen
+- **Trainer** — things you practise against and read a number off (Tick Data,
+  the dash trainers, PB stats)
+- **Game** — the game's own settings (Game Speed, BGM, the minimum push block
+  press count) and going back to character select
+- **Analysis** — raw internal timers and the logger. Not for everyday use
+
+**A row hides while its parent is off.** Turning off `Display Hitboxes` takes
+`Display Pushbox X Center` with it; turning off `Show Scrolling Input` takes the
+three rows under it. Settings that cannot do anything no longer sit there.
+
+**Going back to character select is a row now**, on the Game tab. Until now it
+only existed for people who had found Lua Hotkey 4 in the startup text.
+
+**Descriptions were being drawn off the screen.** Four lines fit in the panel
+and the `Tick Data` description had twelve. **Everything from line five was
+drawn over the legend and past the bottom edge, unreadable, with nothing to say
+it was there.** The panel is taller, six lines fit, and the eleven descriptions
+that ran over have been rewritten.
+
+**All eleven rows that had no description now have one.** The Analysis rows name
+the memory address they read and the label they draw on screen.
+
+### Fixed
+
+**The push block counter showed a different number from the game's.** It reset
+to zero on the second hit of a blocked string; **the game does not** ($170 is
+cleared when guard stun ends, nothing else). Seven of eleven granted push blocks
+disagreed, the worst reading `1` while the game counted `4`. It follows the
+game's own count now, so it is right after a savestate load too.
+
+**`PB Count: 0` was sometimes drawn green** - granted with no presses, which
+cannot happen. The count and the colour come from one place now.
+
+**`Use Character Specific Slots` wrote nowhere.** Its arguments were in the
+wrong order, so it **read "no" while the feature was on**.
+
+**`Show P2 Inputs` only worked while the HUD was on.** Nothing in the menu said
+so. It stands on its own now.
+
+**`Push Block Type (PB Recording)` displayed `: nil`**, because its default sat
+outside its own list. Pressing Left walked it further outside without limit.
+
+**`P2 Infinite Dark Force` could do nothing.** It shared an `if/elseif` with P1's,
+so **while P1's was on, P2's was ignored** - and both shipped on, which is the
+state a fresh install started in. Both ship off now and the branch is split.
+
+### Corrected descriptions
+
+**The push block window is 14 Ticks, not 12.** Confirmed in ROM (`0x023966`
+writes 14 to `$1AB`). It was wrong in eight places.
+
+**`P1 Min PB Presses` did not describe what it does.** It does not "use the
+lowest chance" - it **rewrites the press count to zero**, so the game rolls as
+if you had not pressed at all.
+
+**Two dash rows named each other's on-screen heading**, one of which does not
+exist.
+
+**`BGM On` was written in a way that invited the wrong reading.**
+
+### Renamed rows
+
+| Was | Now |
+|---|---|
+| HUD | HUD (Life / Meter) |
+| Scroll Input Viewer | Scrolling Input History |
+| Show Pushblock Counter | Show PB Counter |
+| Show Push Block Timer | Show PB Timer |
+| Show Push Block Push Back Timer | Show PB PushBack Timer |
+| Show Throw Invulnerability Timer | Show Throw Invuln Timer |
+| Show Short Hop Counter | Show Short Hop Counter (Sas) |
+| Show Damage Calc | Show Damage Calc (on P2) |
+| Minimum PB Inputs | P1 Min PB Presses |
+| Testing: PB Delayed Pushback Bug | Show Hit Strength + PB PushBack |
+| Testing: Projectile Count Limiter | Show Projectile Allocation |
+
+**No setting key changed.** An existing `training_settings.json` still loads.
+
+### Known and not fixed
+
+**`Show Pursuit Indicator` is incomplete.** Two of its three lines have never
+been drawn, and the labels on the other two disagree about which side they
+describe. What was found is written up in
+`analysis/ISSUE-PURSUIT-INDICATOR-001.md`.
+
+---
+
+## v11.6.2
+
+### Fixed
+
+**Push block sometimes never came out.** With `Guard` set to
+`Push Block (All ...)`, the guard itself still follows `P2 Random Guard %` -
+but that row was only shown for `Stand Block` and `All Guard`, so on push
+block it applied while being invisible. The shipped default is `None`, so
+anyone who had never set it got no guard, and therefore no push.
+
+Hiding the row did not remove the dependency, so **the row is now shown
+wherever the value is read.** Thinning it out by chance still works, and at the
+default the row is visible enough to notice.
+
+**The position shortcut (Lua Hotkey 2) did nothing for the two sideways
+arrangements.** Holding the lever left or right and pressing produced nothing;
+only down-left and down-right worked.
+
+The "can this player act" test was `$06 == 0x00` and nothing else. **Walking is
+`$06 = 0x04`**, and this shortcut is worked by holding a direction while
+pressing the key - so holding left or right walks the character, and the act of
+asking broke the test. Crouching stays at `0x00`, which is why the diagonals
+were fine. Walking is now accepted.
+
+Also: **holding the key down now acts once.** A Lua hotkey is called again for
+every frame the key is held, and the arrangement was being rebuilt each time.
+
+---
+
+## v11.6.1
+
+### Fixed
+
+**Choosing Bulleta never handed control over to the P2 side.** The one-stick
+flow - P1 character, then stage, then P2 character - stopped at the first step,
+**and only for her**.
+
+"Has this player chosen yet" was being read from `$3BD`, and what sits there is
+**the character id itself**. Bulleta is `0x00`, so "chose Bulleta" and "chose
+nobody" are the same byte. She is the only character numbered zero, which is
+why she was the only one it happened to.
+
+A second byte, written the moment a choice is locked in and measured on the
+select screen, is now read alongside it. Nothing that worked before changes.
+
+**Stage select had the same bug**, from the same test: with Bulleta taking over
+the P2 side, the stage cursor read P1's side instead. Fixed with it.
+
+---
+
+## v11.6
+
+### New
+
+**Action Timeline - the third row of Tick Data.** One whole action laid out on
+a clock. It is drawn in green.
+
+```
+1t PreJump >  4t Air >  10t MP >  15t Hit >  30t Landing >  45t Free
+```
+
+**Each number is the tick that entry happened on, counted from the first tick
+of the action.** Lengths are a subtraction: above, the jump touched on its
+15th tick, and the MP touched 5 ticks after it came out.
+
+- **Moves are named the way Action Steps names them.** Normals by button
+  (LP..HK), specials with the same spelling the step list uses
+- **Hit and Guard are told apart**, from the defender's `$140`
+- **Walks, crouches, jumps, landings, dashes and throws** are on it too
+- **A rapid-fire cancel reads as two entries.** Same LP twice, split where the
+  game actually started the move again
+- **It fills in as it happens** - an entry appears the moment it is certain,
+  not when the action is over
+- A row closes after 10 ticks of standing still
+
+### Fixed
+
+Found by checking the Action Timeline against traces of the real thing.
+
+- **Air attack advantage read short.** It is now measured from the landing
+- **Walking never appeared.** The walking state is `0x04`, not `0x00`
+- **Repeated jumps and repeated dashes** showed as one
+- **Dash attacks** had the dash run-up folded into their startup
+- **A dash throw** read as if an HP had come out before the throw
+- **One-frame throws** (Victor's 360 and 720) showed no move name at all
+- **The rows were being built during the character entrance**, before the
+  round had started
+
+---
+
+## v11.5.2
+
+### Changes
+
+**Tick Data (was Frame Data) has been rebuilt.** Two rows, counted the way the
+frame tables count.
+
+```
+Startup 9t  Active 2 / 2 / 2t (Anime 2 / 2 / 2t)  Recovery 38t
+Total 62t  Advantage -14t  Hitstun 22t  Hitfreeze 12t
+```
+
+- **Startup, active and recovery are read from the attack hitbox.** They used
+  to be "until it first connected", so standing further away made the startup
+  longer
+- **Multi-hit moves are listed per hit**, `2 / 2 / 2`. Two hits with no gap in
+  the box are still split
+- **Moves whose animation runs during hitfreeze are detected by measurement**
+  and shown as `(Anime 4t)`. There is no per-move table behind it
+- **Throws and projectiles are measured too**, including moves that carry no
+  damage on the body itself
+- **Knockdowns and throws are measured to the wake-up**, shown as `Wakeup`
+- **Measurement used to stop during a transformation**, which is why Demitri's
+  Bat Spin produced nothing
+
+---
+
+## v11.5.0
+
+### New
+
+**REVERSAL - Action Steps.** Build a list of steps and have the dummy perform
+normals, specials, jumps and dashes in order.
+
+The join between steps is a choice, not a wait you have to tune by hand.
+
+- `Auto (Chain)` - the first point a chain connects
+- `Auto (Cancel)` - the first point a special cancel is allowed
+- `Auto (Late Cancel)` - the last point of that cancel
+- `Auto (Rapid Fire)` - the rapid-fire cancel (offered after light attacks only)
+- `Auto (Landing)` - the moment of landing
+- `Auto (After)` - where the previous move ended
+
+A tick count can be given instead, and the list can loop.
+
+**Specials are entered as commands, not poked in as cheats**, so the odd
+behaviour the cheat route produced does not happen.
+
+**Hold** keeps a direction held across a step, so charge moves can be built.
+
+**Show Step Wait Ticks** (Display) - how many ticks each step actually waited.
+
+```
+Step.1 Act:3 / Step.2 Wait:13 Act:1 / Loop Wait:11 / Step.1 Act:3
+```
+
+**Show P2 Inputs** (Display) - hide the dummy's input icons at the right edge.
+
+### Changes
+
+**Tech Throws is now a rate**: `None` / `25%` / `50%` / `75%` / `100%`. The
+roll is made **once per throw**, not per frame - rolled every frame, a tech
+input landing on any single frame would pass, so 50% would behave as 100%. A
+saved "on" becomes `100%`.
+
+### Fixed
+
+**Opening the menu now ends any Action Steps run in progress.** The game does
+not stop while the menu is up, so the list kept running behind it: directions
+stayed held, the dummy moved on its own while you edited, and a loop kept going
+with the old list. Closing the menu does not restart it by itself - guard or
+hit the dummy once and it goes out with the edited list.
+
+---
+
+## v11.4.2
+
+### Changes
+
+**The wait between loop passes is now two settings, Before and After.**
+
+The parent row reads `Loop Interval (Frames) : (Before/After)`. Right or LP
+opens a child menu you can work **entirely with the stick** - Left lowers,
+Right raises, Up and Down change row, and `Back` at the bottom returns. MP
+still resets to zero.
+
+- **After** is counted once the previous pass has ended and the dummy can act
+  again. That is where the old Loop Interval sat, so **a saved value carries
+  over to After on its own.**
+- **Before** is counted after the distance is restored, just before the next
+  pass goes out.
+
+With only one wait there was no way to tell "pause before putting them back"
+from "pause after putting them back". Now you can have a beat after
+`Reset Distance Each Loop` warps the two into place.
+
+**Looped playback holds for 30 frames after you close the menu.**
+
+Otherwise the next pass arrives the instant you leave the menu, with no time to
+get ready. Nothing from the recording is delivered during the hold, and
+playback resumes from the same recorded frame rather than racing to catch up.
+Single playbacks are unaffected.
+
+**`Play again` cannot be taken until the dummy has finished moving.**
+
+A recording ends when the inputs stop, but the character is still committed to
+whatever the last one started. Replaying from there **restarts against a dummy
+that cannot act**, and reproduces nothing. The row is greyed out and reads
+`(still moving)` until it can be taken.
+
+**It is the only choice that waits.** `Save to this slot` and `Record again`
+answer immediately whatever the dummy is doing, so nothing holds up the next
+take.
+
+A button held during the playback no longer answers the prompt either.
+
+**Only `Lua Hotkey 1` (cancel) works while the recording wizard is up.**
+
+`Lua 3` (loop toggle) and `Lua 4` (return to character select) reach past the
+wizard and break a recording or playback in progress. Cancel is left alone.
+
+**`Play Recording` responds once per press, not while Right is held.**
+
+Right auto-repeats, so holding it started and stopped playback over and over.
+
+**Changing the character position now brings the view with it.**
+
+The camera used to chase on its own, so the move finished with the characters
+in place and the screen still catching up. The move itself is a little quicker
+too.
+
+### Fixes
+
+**The recording wizard's check playback and `Reset Distance Each Loop` now put
+the framing back where it was recorded, as well as the positions.**
+
+The two characters went back but **the scrolling did not**, and a character
+placed outside the old view could be dragged back into it. It showed up worst
+on recordings that moved a long way with the sides swapped, such as Gallon's
+kick throw.
+
+**Settings saved by v11.3.x now carry over properly.**
+
+The migration was skipped, which could **leave the chosen reversal one entry
+off** and lose the saved loop interval.
+
+**Reversals and counter-action specials now come out after a multi-hit guard.**
+
+Blocking the second hit of a chain-cancelled light attack left the input
+un-queued, and nothing came out.
+
+**Turning `Knockdown Logger` off now stops the diagnostic recording
+completely.**
+
+Part of it kept running with the setting off, writing files into
+`reversal_logs` and slowing the game down.
+
+---
+
+## v11.4.1
+
+The Recording Wizard from v11.4, with everything that turned up once it was actually used.
+
+### Changed
+
+- Renamed to **Super Jump**. v11.4 called it High Jump. The order and the indices are unchanged, so your settings are unaffected.
+- **Saving returns you to the wizard's slot list.** The result stays up for a second first, and then you can record the next slot straight away. The characters go back to the distance the take started from as the list comes back.
+- **`Back to menu` added to the slot list.** Cancelling with `Lua Hotkey 1` now reopens the menu too.
+- **The stick alone drives it.** Slot selection and the save prompt are both lists: up and down to move, LP or Right to take it. The save prompt reads Save / Record again / Play again down the screen. The buttons still work as direct shortcuts.
+- **Right also enters Play Recording and Recording Wizard.** Right is how you go into things elsewhere in the menu, so it does here as well.
+- **Reset Distance Each Loop** added. Puts both characters back to the distance the recording was made from at the start of every loop. Without it the two drift apart over the passes and the setup you were practising stops happening. Works on recordings made from v11.4.1 on — the distance is stored in the recording itself.
+- The wizard's headings are heavier, and the slot list has more room and lines up properly.
+
+### Fixed
+
+- **The script halting on a savestate load.** With `Use Savestate Upon Recording` on, a looped playback or the playback hotkey could take it down.
+- Savestates are now **only valid inside the match they were taken in**. Reselect the characters and the state is not loaded. A savestate restores the whole machine, so loading one from a different pairing swapped the entire match back.
+- **Coin no longer swaps control while a playback is running.** The playback is already driving the dummy, and both writing to it means neither comes out cleanly.
+- **`Lua Hotkey 1` and `2` are ignored until the round is under way.** Moving the characters during the entrance left the arrangement shredded, and opening the menu over it left both of them frozen partway through.
+- The wizard always hands control back to P1 when it finishes. Recording two takes in a row could leave it on the dummy.
+
+---
+
+## v11.4
+
+Everything below is the change from v11.3.1.
+
+### New
+
+**Recording Wizard**
+
+Guided dummy recording. Start it from `Recording Wizard` on the Recording tab.
+
+Pick a slot and control switches to the dummy; recording begins the moment you move. It stops on its own after two seconds of standing still, then plays the take back once so you can look at it. From there you can save it, record it again, or watch it again.
+
+Both characters return to where they stood when the take began before each playback, so you check it at the distance it was recorded from. `Lua Hotkey 1` leaves at any point, and nothing is saved when it does.
+
+**Jumps added**
+
+Forward, neutral and back versions of the jump are now dummy actions, listed after Back Dash Cancel in `Reversal/Counter Input Motion`. Down, then up — with the direction on the up.
+
+**Play Recording**
+
+Plays the current slot straight from the top of the Recording tab. Same as the playback hotkey; press it again to stop.
+
+**Character select on one stick**
+
+P1 character, then stage, then P2 character, all without reaching for the keyboard.
+
+**Loop Interval (Frames) (Before/After)**
+
+Puts a gap between loops. The wait starts once the dummy can act again, so the gap is the same length whatever the recovery was.
+
+### Improved
+
+- Slots show when they were recorded, in the menu and in the wizard, on a 24-hour clock.
+- Playback is mirrored automatically when P1 and P2 have swapped sides. Which side the take was recorded from is stored with it and compared on playback.
+- Looped playback waits for the dummy to be able to act before starting the next pass. The first input of a pass no longer lands during the previous one's recovery, where it would simply not come out.
+- A recording now ends two seconds after the move finishes, rather than two seconds after the stick goes neutral. Long moves are no longer cut off partway through.
+- The menu palette is easier to read.
+- Wake-up reversals have ordinary invulnerability. Command throws get self-direction. The menu no longer stutters as you move through it.
+
+### Fixed
+
+- **Guard cancel back dash failing.** This was listed as a known issue in v11.3.1. It is now reliable against light, medium and heavy.
+- **The wizard's recording stopping partway through.** With `Use Savestate Upon Recording` on, the savestate loaded at the end of a loop was cutting off a recording in progress.
+- Playback continuing after returning to character select.
+- `Lua Hotkey 1` and `2` are ignored until the match is running.
+
+### Notes
+
+- Your settings file migrates itself on first launch. Saved settings keep their meaning.
+- The Display and Etc tabs have new defaults. These apply to a fresh install only and leave an existing settings file alone.
+
+---
+
+## Known limitations
+
+- The Dash Interval / Dash Time / Dash Attack Cancel / Attack Dash Gap / Jump In trainers still count displayed frames.
+- Jump In Trainer has a bug: landing without hitting anything can still record a gap.
+- The Recording Wizard does not capture a savestate. The check playback restores position and facing, but not health or meter.
+- Run-ahead is not supported. It stops the fastest actions from being reliable, so it is detected and warned about on screen.

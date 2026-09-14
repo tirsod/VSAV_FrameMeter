@@ -1,0 +1,2421 @@
+<title>VSAV Training Mode — 変更点 / Changes</title>
+<style>
+  /* Light is the base palette. Neutrals carry a plum bias so they read as
+     chosen against the accent, not as inherited grey. */
+  :root {
+    --ground:  #FAF7F2;
+    --surface: #F1ECE4;
+    --sunk:    #E8E1D6;
+    --ink:     #1E1A22;
+    --muted:   #6B6472;
+    --hair:    #D7CFC4;
+    --accent:  #B8341F;
+    --gold:    #A8790F;
+    --good:    #2F6B45;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:  #17131C;
+      --surface: #221B29;
+      --sunk:    #2B2333;
+      --ink:     #EDE7F0;
+      --muted:   #9A91A5;
+      --hair:    #372E42;
+      --accent:  #E8654B;
+      --gold:    #DFAC44;
+      --good:    #6FB98A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:  #17131C;
+    --surface: #221B29;
+    --sunk:    #2B2333;
+    --ink:     #EDE7F0;
+    --muted:   #9A91A5;
+    --hair:    #372E42;
+    --accent:  #E8654B;
+    --gold:    #DFAC44;
+    --good:    #6FB98A;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic",
+                 "Meiryo", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.85;
+    margin: 0;
+    padding: 0 20px 96px;
+    font-feature-settings: "palt" 1;
+  }
+
+  .wrap { max-width: 44rem; margin: 0 auto; }
+
+  /* ---- masthead ------------------------------------------------------- */
+
+  header { padding: 72px 0 0; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 0 0 18px;
+  }
+
+  h1 {
+    font-size: clamp(1.9rem, 6vw, 2.9rem);
+    line-height: 1.25;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0 0 20px;
+  }
+
+  .standfirst {
+    font-size: 1.06rem;
+    color: var(--muted);
+    margin: 0;
+    max-width: 38rem;
+  }
+
+  /* The tick rule: the document's one motif. Short marks at an even beat,
+     with every fourth taller — three displayed frames to four ticks. */
+  .tickrule {
+    height: 22px;
+    margin: 36px 0 8px;
+    background-image:
+      linear-gradient(to right, var(--gold) 1px, transparent 1px),
+      linear-gradient(to right, var(--hair) 1px, transparent 1px);
+    background-size: 32px 22px, 8px 11px;
+    background-position: 0 0, 0 100%;
+    background-repeat: repeat-x;
+  }
+
+  /* ---- headline three ------------------------------------------------- */
+
+  .pitch {
+    display: grid;
+    gap: 1px;
+    background: var(--hair);
+    border: 1px solid var(--hair);
+    margin: 40px 0 8px;
+  }
+  @media (min-width: 640px) { .pitch { grid-template-columns: repeat(3, 1fr); } }
+
+  .pitch > div { background: var(--surface); padding: 22px 20px; }
+
+  .pitch h3 {
+    font-size: 1.02rem;
+    margin: 0 0 8px;
+    font-weight: 800;
+  }
+  .pitch p { margin: 0; font-size: 0.9rem; color: var(--muted); line-height: 1.7; }
+
+  .pitch .num {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    color: var(--gold);
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  /* ---- sections ------------------------------------------------------- */
+
+  section { margin-top: 68px; }
+
+  h2 {
+    font-size: 1.42rem;
+    font-weight: 800;
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+    text-wrap: balance;
+    margin: 0 0 6px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  h2 .kicker {
+    display: block;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 400;
+    margin-bottom: 10px;
+  }
+
+  h3 {
+    font-size: 1.06rem;
+    font-weight: 800;
+    margin: 40px 0 4px;
+  }
+
+  p { margin: 16px 0; }
+
+  strong { font-weight: 800; }
+
+  em {
+    font-style: normal;
+    color: var(--accent);
+    font-weight: 800;
+  }
+
+  ul { margin: 16px 0; padding-left: 1.3em; }
+  li { margin: 8px 0; }
+
+  code {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.86em;
+    background: var(--sunk);
+    padding: 0.12em 0.4em;
+    border-radius: 2px;
+  }
+
+  /* ---- tick timelines -------------------------------------------------- */
+
+  .timeline {
+    background: var(--surface);
+    border-left: 3px solid var(--gold);
+    padding: 18px 20px;
+    margin: 22px 0;
+    overflow-x: auto;
+  }
+  .timeline pre {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.82rem;
+    line-height: 1.75;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .timeline .hit { color: var(--accent); font-weight: 700; }
+  .timeline .cap {
+    display: block;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  /* ---- the one rule ---------------------------------------------------- */
+
+  .rule {
+    border: 2px solid var(--accent);
+    padding: 24px 24px 20px;
+    margin: 30px 0;
+    background: var(--surface);
+  }
+  .rule .cap {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 12px;
+  }
+  .rule p:first-of-type { margin-top: 0; font-size: 1.14rem; font-weight: 800; line-height: 1.6; }
+  .rule p:last-child { margin-bottom: 0; }
+
+  /* ---- tables ---------------------------------------------------------- */
+
+  .tablewrap { overflow-x: auto; margin: 22px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--hair);
+    vertical-align: top;
+  }
+  th {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 400;
+    border-bottom: 2px solid var(--ink);
+    white-space: nowrap;
+  }
+  td.n {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .ok { color: var(--good); font-weight: 700; }
+  .bad { color: var(--accent); font-weight: 700; }
+
+  /* ---- notes ----------------------------------------------------------- */
+
+  .note {
+    background: var(--sunk);
+    padding: 18px 20px;
+    margin: 22px 0;
+    font-size: 0.92rem;
+  }
+  .note p:first-child { margin-top: 0; }
+  .note p:last-child { margin-bottom: 0; }
+
+  footer {
+    margin-top: 80px;
+    padding-top: 28px;
+    border-top: 1px solid var(--hair);
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  /* ---- language switch ------------------------------------------------- */
+
+  .langbar {
+    display: flex;
+    gap: 1px;
+    background: var(--hair);
+    border: 1px solid var(--hair);
+    width: fit-content;
+    margin: 26px 0 0;
+  }
+  .langbar button {
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 700;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    letter-spacing: 0.08em;
+    padding: 7px 18px;
+    border: 0;
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .langbar button[aria-pressed="true"] { background: var(--ink); color: var(--ground); }
+  .langbar button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .pane[hidden] { display: none; }
+
+  a { color: var(--accent); }
+  a:focus-visible, :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">VSAV Training Mode / Fightcade 2</p>
+  <h1>変更点</h1>
+  <p class="standfirst">
+    このページは VSAV Training Mode (N-Bee 版) に加えた変更を記録したものです。
+    新しい版が上、古い版は下にそのまま残してあります。
+  </p>
+  <p class="standfirst" style="margin-top:14px;">
+    <strong>v11.4.2</strong> です。<strong>v11.4</strong> で<strong>録画ウィザード</strong>と<strong>スーパージャンプ</strong>を追加しました。
+    <strong>ガード後のバックダッシュ</strong>も直っています。
+    <strong>v11.3.1</strong> は修正版、<strong>v11.3</strong> で <strong>Auto ダッシュの値が全キャラ実測</strong>に、
+    <strong>v11.2</strong> で<strong>立ち位置の設定</strong>と<strong>プッシュブロックの回数表示</strong>、
+    <strong>v11</strong> で<strong>ガード後</strong>の最速行動と<strong>オートガード</strong>を直しました。いずれも
+    <em>ゲーム自身が持っているデータを読む</em>形に置き換えたものです。
+  </p>
+  <div class="langbar" role="group" aria-label="Language / 言語">
+    <button type="button" id="btn-ja" aria-pressed="true">日本語</button>
+    <button type="button" id="btn-en" aria-pressed="false">ENGLISH</button>
+  </div>
+  <div class="tickrule" role="presentation"></div>
+</header>
+
+<div class="pane" id="pane-ja" lang="ja">
+<div class="pitch">
+  <div>
+    <span class="num">01</span>
+    <h3>最速行動</h3>
+    <p>リバーサルもカウンターも、キャラが動ける最初のティックちょうどに出ます。最速で出たかどうかは画面に表示します。</p>
+  </div>
+  <div>
+    <span class="num">02</span>
+    <h3>投げ</h3>
+    <p>前投げ・後ろ投げ・下がリバーサル/カウンターのモーションから選べます。1F の方向入力なのでティック精度が要ります。</p>
+  </div>
+  <div>
+    <span class="num">03</span>
+    <h3>ダッシュ攻撃の正常化</h3>
+    <p>「ダッシュしてから攻撃」が正しい順番で出ます。これまではダッシュの入力とボタンが同時に出ていました。</p>
+  </div>
+</div>
+
+<section>
+  <h2><span class="kicker">v11.4.2</span>間隔と、画面の戻り方</h2>
+
+  <p>
+    ループ再生の待ちを前後に分け、位置を戻したときに<strong>画面のスクロールも
+    一緒に戻る</strong>ようにしました。
+  </p>
+
+  <h3>待ちを Before と After に分けました</h3>
+
+  <p>
+    親の行は <code>Loop Interval (Frames) : (Before/After)</code> です。右か LP で
+    子メニューが開き、<strong>レバーだけで操作できます</strong> — 左で減り、右で
+    増え、上下で行を移り、一番下の <code>Back</code> で戻ります。
+  </p>
+
+  <ul>
+    <li><strong>After</strong> は前の周が終わってダミーが動けるようになってから
+      数える待ちです。今までの Loop Interval と同じ位置なので、
+      <strong>保存していた値は自動で After に引き継がれます</strong>。</li>
+    <li><strong>Before</strong> は距離を戻したあと、次の周が出るまでの待ちです。</li>
+  </ul>
+
+  <p>
+    待ちが 1 か所しかないと、「距離を戻す前に間を置く」と「戻してから間を置く」を
+    区別できませんでした。<code>Reset Distance Each Loop</code> でワープしてから
+    一拍おきたい、という使い方ができます。
+  </p>
+
+  <h3>位置を戻すと画面も戻ります</h3>
+
+  <p>
+    これまでは 2 人の位置は戻っても<strong>画面のスクロール位置が戻り切らず</strong>、
+    さらに画面の外に置かれたキャラクターが引き戻されることがありました。ガロンの
+    K 投げのように 2 人が入れ替わって大きく動く録画で特に目立ちました。
+    録画ウィザードの確認再生、<code>Reset Distance Each Loop</code>、
+    キャラクターポジションの変更、どれも画面が一緒に動きます。
+  </p>
+
+  <h3>そのほか</h3>
+
+  <ul>
+    <li><strong>メニューを閉じた直後、リピート再生が 30 フレーム止まります。</strong>
+      閉じた瞬間に次の周が飛んでくると構える間がないためです。単発の再生には
+      影響しません。</li>
+    <li><strong>保存メニューの <code>Play again</code> は、ダミーが動き終わるまで
+      選べません。</strong>動けないダミーに向けて再生し直しても状況が再現されない
+      ためです。<code>Save</code> と <code>Record again</code> は即座に応答します。</li>
+    <li><strong>録画ウィザード中は <code>Lua Hotkey 1</code>(中止)だけが効きます。</strong></li>
+    <li><strong>v11.3.x で保存した設定が正しく引き継がれるようになりました。</strong>
+      選んでいたリバーサルが隣の項目にずれることがありました。</li>
+    <li><strong>複数ヒットするガードのあとでも、リバーサルとカウンターアクションの
+      必殺技が出るようになりました。</strong></li>
+    <li><strong><code>Knockdown Logger</code> をオフにしたときに、診断用の記録が
+      完全に止まるようになりました。</strong>オフでも一部が動き続けて動作が重く
+      なっていました。</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.4.1</span>ウィザードを実際に使って直した分</h2>
+
+  <p>
+    v11.4 で入れた録画ウィザードを使ってみて出てきた点をまとめて直しました。
+    <strong>ハイジャンプはスーパージャンプに改名</strong>しています
+    (並び順とインデックスは変えていないので設定への影響はありません)。
+  </p>
+
+  <h3>レバーだけで回せます</h3>
+
+  <p>
+    スロット選択も保存確認も一覧になり、<strong>上下で選んで LP か右で決定</strong>します。
+    保存確認は「保存 / 録り直し / 再生し直し」を縦に並べました。
+    メニューでは右が「奥に進む」操作なので、<code>Play Recording</code> と
+    <code>Recording Wizard</code> にも右で入れます。ボタンの直接操作もそのままです。
+  </p>
+
+  <p>
+    保存すると<strong>スロット一覧に戻ります</strong>。結果を1秒表示してから戻るので、
+    続けて別のスロットも録れます。戻るときに<em>キャラクターの距離も録画開始時に戻します</em>。
+    一覧の一番下には <code>Back to menu</code> があり、<code>Lua Hotkey 1</code> で
+    中止したときもメニューが開き直します。
+  </p>
+
+  <h3>Reset Distance Each Loop</h3>
+
+  <p>
+    ループの各周の頭で、<strong>録画したときの距離に戻します</strong>。
+    周を重ねるうちに離れていって、練習していた状況が起きなくなる問題への対処です。
+    距離は録画ファイル自身に記録されるので、v11.4.1 以降に録ったものが対象になります。
+  </p>
+
+  <h3>セーブステートまわり</h3>
+
+  <p>
+    <code>Use Savestate Upon Recording</code> が有効なとき、
+    <strong>読み込みでスクリプトが停止する</strong>ことがありました。
+    名前付きのステートを読むと、番号付きスロットしか受け付けない処理へ文字列が渡っていたためです。
+  </p>
+
+  <div class="note">
+    <p>
+      セーブステートは<strong>取った試合の中だけ</strong>で有効になりました。
+      キャラクターを選び直すと読み込まれません。
+    </p>
+    <p>
+      ステートは<em>マシン全体の状態</em>です。1P サスカッチ / 2P デミトリで録って
+      選び直して逆にすると、設定が戻るのではなく<strong>古い試合が丸ごと画面に返ってきます</strong>。
+      保存時に両者のキャラクター ID を控え、読む前に照合しています。
+      食い違えば読み込みだけを飛ばし、再生自体は続けます
+      (録画データはダミーのキャラ別に分かれているので、そちらは正しいものが読まれています)。
+    </p>
+  </div>
+
+  <h3>入場演出中の操作</h3>
+
+  <p>
+    演出の最中に位置のショートカットを使うと<strong>配置が壊れて操作不能に見える</strong>状態に
+    なっていました。スライドは毎フレーム X を書きますが、演出中はゲーム側も書いているので
+    両者が奪い合い、キャラは意図しない場所に取り残されてカメラも追随しません。
+  </p>
+
+  <p>
+    <strong>ラウンドが整うまで <code>Lua Hotkey 1</code> と <code>2</code> を受け付けません。</strong>
+    配置は<em>ラウンド開始時の2人の位置から計算する</em>ので、その値を読み直すまでは基準がありません。
+    メニューだけ開けても同じで、演出の途中で両キャラを止めたまま置き去りにするので、位置と一緒に塞いでいます。
+  </p>
+
+  <p class="note" style="margin-top:22px;">
+    再生中は Coin での操作の入れ替えも受け付けません。
+    再生がダミーを動かしているところへパッドを移すと、両方が同じ側を書いてどちらも正しく動きません。
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.4 / 01</span>録画ウィザード</h2>
+
+  <p>
+    ダミーの録画を<strong>案内付き</strong>で行えるようにしました。
+    Recording タブの <code>Recording Wizard</code> から始めます。
+    スロットを選ぶと操作がダミー側に切り替わり、
+    <strong>動かし始めたところから録画</strong>が始まります。
+    手を止めると終わり、そのまま<em>録ったものを一度再生して見せます</em>。
+  </p>
+
+  <div class="timeline">
+    <span class="cap">ウィザードの流れ</span>
+<pre>スロット選択   録画した日時が出るので、上書き先を選べます
+録画開始       最初の入力から。それまで操作は受け付けません
+自動終了       <span class="hit">技が終わってから 2 秒</span>
+確認再生       位置と向きを録ったときの状態に戻してから再生
+保存           LP 保存 / MP 録り直し / LK もう一度再生</pre>
+  </div>
+
+  <p>
+    終了条件は<strong>「技が終わってから」</strong>です。
+    レバーがニュートラルなだけでは終わりません。
+    <em>長い技の途中で録画が切れることがなくなります。</em>
+  </p>
+
+  <div class="note">
+    確認再生の前に<strong>両キャラを録画開始時の位置に戻します</strong>。
+    録ったときと同じ間合いで再生されるので、
+    <strong>保存する前に、狙った動きになっているかを確かめられます。</strong>
+    気に入らなければその場で録り直せますし、何度でも見直せます。
+    <code>Lua Hotkey 1</code> でいつでも中止できます（そのときは保存されません）。
+  </div>
+
+  <p>
+    スロットの<strong>録画日時</strong>は Recording タブの
+    <code>Enable Slot 1〜5</code> にも出ます。
+    どれが古い録画かが分かるので、上書きしてよいスロットを選べます。
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.4 / 02</span>ハイジャンプ</h2>
+
+  <p>
+    ダミーの行動に <strong>前ハイジャンプ / ハイジャンプ / 後ハイジャンプ</strong> を追加しました。
+    <code>Reversal/Counter Input Motion</code> の一覧、バックダッシュキャンセルの次に並びます。
+    下を入れてから上に入れる形で、<strong>前後は上を入れるときに乗せます</strong>。
+  </p>
+
+  <p>
+    リリス、モリガン、ガロン（クライムレーザー）のように、
+    ハイジャンプを経由する行動を練習するための追加です。
+  </p>
+
+  <div class="note">
+    一覧の途中に足したので、<strong>それ以降の項目の並びが変わります。</strong>
+    設定ファイルは<strong>初回起動時に自動で移行</strong>されるので、
+    保存済みの設定はそのままの意味で引き継がれます。
+    <em>v11.3.1 のときのように選び直す必要はありません。</em>
+  </div>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.4 / 03</span>ガード後のバックダッシュ</h2>
+
+  <p>
+    v11.3.1 で<strong>既知の不具合</strong>として挙げていたものが直りました。
+    硬直の長い技ほど失敗しやすく、弱 80% / 中 40% / 強 8% しか出ていませんでした。
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>ガードさせた技</th><th>旧</th><th>v11.4</th><th>本数</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>弱</td><td class="n bad">80%</td><td class="n ok">100%</td><td class="n">20</td></tr>
+        <tr><td>中</td><td class="n bad">40%</td><td class="n ok">100%</td><td class="n">20</td></tr>
+        <tr><td>強</td><td class="n bad">8%</td><td class="n ok">100%</td><td class="n">17</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    原因は<strong>ガードのために後ろを握っていること</strong>そのものでした。
+    タップのために一度レバーを離すと、
+    <em>「握り → 離す → タップ」がその場でダッシュの成立条件を満たしてしまい</em>、
+    まだ硬直中なのでその要求が捨てられていました。
+    一度成立すると認識器はそれ以上受け付けないので、
+    こちらが本来狙っていた 2 回目のタップは無視されます。
+  </p>
+
+  <p class="note" style="margin-top:22px;">
+    離すときに<strong>ニュートラルを明示的に入れて認識器を通常の手順で戻し</strong>、
+    そのうえで硬直の強さごとに置く位置を変えるようにしました。
+    メモリを書き換えて認識器を消す方法も試せましたが、
+    <strong>タイミングはメモリから読み、操作はあくまで入力で行う</strong>という
+    このツールの方針から外れるので採っていません。
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.4 / 04</span>再生まわり</h2>
+
+  <ul>
+    <li>
+      <strong>Play Recording</strong> を追加しました。Recording タブの一番上から、
+      現在のスロットをそのまま再生できます。再生ホットキーと同じ動作で、
+      もう一度押すと止まります。
+    </li>
+    <li>
+      <strong>1P と 2P が入れ替わっていても、左右を自動で反転して再生します。</strong>
+      録画は絶対方向のレバー入力なので、逆側に立っていると鏡像の動きになっていました。
+      録画時にどちら側だったかをファイルに記録し、再生時に見比べています。
+    </li>
+    <li>
+      <strong>ループ再生が、ダミーの動ける状態を待ってから次の周を始めます。</strong>
+      これまでは前の技の硬直中に次の周が始まっていたため、
+      <em>1 周目が出ないことがありました</em>。
+      セーブステートを使う設定では、従来どおり即座に再開します。
+    </li>
+    <li>
+      キャラクターセレクトに戻った後（<code>Lua Hotkey 4</code>）も
+      <strong>再生状態が続いてしまう問題</strong>を直しました。
+    </li>
+  </ul>
+
+  <div class="note">
+    <p>
+      <strong>あわせて直した細かいもの。</strong>
+      録画ウィザードを起動したとき、決定に使ったボタンが
+      ダミーの攻撃として出てしまう問題を直しました。
+      録画日時の表記を 24 時間制に統一しました。
+      試合が始まるまでの間、<code>Lua Hotkey 1</code> と <code>2</code> を受け付けないようにしました。
+    </p>
+    <p>
+      メニューの配色も見直しています。選択中の項目が読みやすくなりました。
+      <strong>Display タブと Etc タブの初期値</strong>も見直しましたが、
+      これは<em>新規インストール時のみ</em>適用されます。既存の設定は変わりません。
+    </p>
+  </div>
+</section>
+
+<div class="tickrule" role="presentation"></div>
+
+<section>
+  <h2><span class="kicker">v11.3.1</span>修正</h2>
+
+  <ul>
+    <li>
+      <strong>プッシュブロックがディレイ設定に引きずられていました。</strong>
+      <code>Guard Action Delay</code> が <code>Auto</code> 以外だと、その数だけ
+      空フレームが連打の前に入り、ゲームの 12 ティックの窓から押し出されて
+      <em>プッシュブロックが出ませんでした</em>。ディレイは守り方には掛かりません。
+    </li>
+    <li>
+      <strong>プッシュブロック後にバックダッシュが出ませんでした。</strong>
+      成立するとゲームは別の時計に切り替わりますが、タップの位置決めが
+      古い時計を見たままだったため、窓に一度も入りませんでした。
+    </li>
+    <li>
+      <strong>Auto の値を再実測</strong>しました。モリガン 12 / 13、ジェダ 10 / 9
+      (前・前キャンセル。後ろも同値)。
+    </li>
+    <li>
+      <strong>ダッシュの並び順</strong>を、前ダッシュが後ろダッシュより先に来るよう
+      直しました。<em>保存済みの設定が一度だけずれます</em>ので、
+      <code>Reversal/Counter Input Motion</code> を選び直してください。
+    </li>
+    <li>
+      <code>Auto</code> の説明に、<strong>ガード後の最速を基準に測った値</strong>で
+      あることと、<strong>ヒット後は足りないことがある</strong>(特にモリガンとジェダ)
+      ことを明記しました。
+    </li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.3 / 01</span>ボタンを押す瞬間のレバー</h2>
+
+  <p>
+    <code>Reversal/Counter Button Lever</code> を追加しました。
+    Motion / Delay / Button に並ぶ<strong>入力記述の4段目</strong>です。
+    <strong>押しの瞬間のレバーだけ</strong>を差し替え、モーション側には触れません。
+  </p>
+
+  <div class="note">
+    これまでダッシュは<strong>方向を握ったまま</strong>ボタンを押していたので、
+    ダッシュ攻撃しか出せませんでした。
+    <strong>バレッタのダッシュニュートラル中P は出す方法自体がありませんでした。</strong>
+    <code>Neutral</code> がそれを解きます。ザベルの<strong>バックジャンプから↓中K</strong>なら <code>Down</code>。
+  </div>
+
+  <p>
+    前後は<strong>押す瞬間に向きで解決</strong>するので、右側でも項目は増えません。
+    既定の <code>As Is</code> は従来どおりで、何も変わりません。
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.3 / 02</span>プッシュブロックがガードの種類に</h2>
+
+  <p>
+    <code>Guard</code> に <code>Push Block (All Light / All Medium / All Heavy)</code> が
+    加わりました。<strong>All Guard と同じ守り方をしたうえで押します。</strong>
+  </p>
+
+  <p>
+    これまでプッシュブロックは <code>Guard Action Type</code> にいたため
+    <strong>カウンターと排他</strong>で、「プッシュブロックしてから反撃」が組めませんでした。
+    防御の側へ移したので <code>Guard Action Type</code> が空き、
+    <em>最速プッシュブロック → ダッシュ攻撃が確定するか</em> を調べられます。
+  </p>
+
+  <div class="note">
+    プッシュブロックが成立すると、ゲームは<strong>ガード硬直とは別の時計</strong>に
+    切り替わります。そちらでも<strong>最速行動が出ます</strong>。
+    成立した時点で残りの連打は捨てるので、後続の行動がすぐ入ります。
+  </div>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.3 / 03</span>Auto ダッシュが全キャラ実測になりました</h2>
+
+  <p>
+    <code>Guard Action Delay</code> を <code>Auto</code> にすると、ダッシュからボタンまでの
+    間隔をキャラごとの値で出します。これまで<strong>キャンセル側は引き継いだ暫定値のまま</strong>で、
+    ほとんどのキャラが 10 で埋まっていました。今回<strong>モリガンとサスカッチ以外の 12 キャラ</strong>を
+    実測して置き換え、<em>暫定値はひとつも残っていません。</em>
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>キャラ</th><th>前</th><th>前C</th><th>後</th><th>後C</th>
+            <th>キャラ</th><th>前</th><th>前C</th><th>後</th><th>後C</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>バレッタ</td><td class="n">5</td><td class="n">3</td><td class="n">5</td><td class="n">3</td>
+            <td>ガロン</td><td class="n">8</td><td class="n">6</td><td class="n">3</td><td class="n">1</td></tr>
+        <tr><td>ビクトル</td><td class="n">5</td><td class="n">3</td><td class="n">5</td><td class="n">3</td>
+            <td>ザベル</td><td class="n">1</td><td class="n">1</td><td class="n">1</td><td class="n">1</td></tr>
+        <tr><td>アナカリス</td><td class="n">5</td><td class="n">3</td><td class="n">5</td><td class="n">3</td>
+            <td>フェリシア</td><td class="n">8</td><td class="n">6</td><td class="n">8</td><td class="n">6</td></tr>
+        <tr><td>ビシャモン</td><td class="n">6</td><td class="n">4</td><td class="n">3</td><td class="n">1</td>
+            <td>オルバス</td><td class="n">6</td><td class="n">4</td><td class="n">1</td><td class="n">1</td></tr>
+        <tr><td>Q-Bee</td><td class="n">6</td><td class="n">5</td><td class="n">6</td><td class="n">5</td>
+            <td>レイレイ</td><td class="n">1</td><td class="n">1</td><td class="n">5</td><td class="n">1</td></tr>
+        <tr><td>リリス</td><td class="n">5</td><td class="n">3</td><td class="n">5</td><td class="n">3</td>
+            <td>ジェダ</td><td class="n">10</td><td class="n ok">11</td><td class="n">10</td><td class="n ok">11</td></tr>
+        <tr><td>モリガン</td><td class="n">14</td><td class="n">10</td><td class="n">14</td><td class="n">12</td>
+            <td>サスカッチ</td><td class="n">2</td><td class="n">7</td><td class="n">1</td><td class="n">7</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    キャンセルは概ね素のダッシュの<strong>2 ティック下</strong>ですが、
+    <strong>ジェダだけ上</strong>(10 に対して 11)、Q-Bee は 1 つ下、
+    レイレイとザベルは 1 で並びます。
+    <em>推測で埋めていたら確実に外していた形です。</em>
+  </p>
+
+  <div class="note">
+    デミトリは行がありません。攻略 wiki のとおり<strong>両ダッシュとも中断不可</strong>で、
+    ダッシュキャンセルという行動が存在しないためです。存在しないものを測ることはできません。
+  </div>
+</section>
+
+<div class="tickrule" role="presentation"></div>
+
+<section>
+  <h2><span class="kicker">v11.2 / 01</span>立ち位置の設定</h2>
+
+  <p>
+    Player タブの一番上に <code>Position</code> を追加しました。
+    <strong>言葉ではなく図で選びます。</strong><code>1</code> が自分、<code>2</code> がダミー、
+    <code>|</code> が壁です。レバーの左右がそのままステージ上の左右に対応します。
+  </p>
+
+  <div class="timeline">
+    <span class="cap">6 通り</span>
+<pre>|12------|   自分が左端
+|21------|   相手が左端
+|---12---|   中央(開幕の位置)、自分が左
+|---21---|   中央(開幕の位置)、自分が右
+|------12|   相手が右端
+|------21|   自分が右端</pre>
+  </div>
+
+  <p>
+    端の 4 つは<strong>壁に密着</strong>します。間隔はこちらで決めず、
+    立てないほど近い位置に置いて<strong>ゲーム自身の押し合いに任せます</strong>。
+    キャラの体格差に関係なく正確な密着になります。
+  </p>
+
+  <p>
+    中央の 2 つは<strong>ラウンド開始そのものの位置と間隔</strong>です。
+    ゲームがラウンド開始時に置いた位置を毎回読み取って使うので、
+    <em>開幕に何が届くかの練習</em>にそのまま使えます。
+  </p>
+
+  <h3>レバーだけで呼び出せます</h3>
+
+  <p>
+    メニューを開かなくても、<strong>Lua Hotkey 2 とレバーの組み合わせ</strong>で切り替えられます。
+    覚える規則は一つ、<strong>「下 ＝ 特別な側が自分」</strong>。
+    端なら自分が壁側、中央なら自分が 2P 側です。
+  </p>
+
+  <div class="timeline">
+    <span class="cap">Hotkey 2 ＋</span>
+<pre>←        相手が左端        |21------|
+↓ ＋ ←   <span class="hit">自分が左端</span>        |12------|
+(なし)   中央 自分が 1P 側  |---12---|
+↓        <span class="hit">中央 自分が 2P 側</span>  |---21---|
+→        相手が右端        |------12|
+↓ ＋ →   <span class="hit">自分が右端</span>        |------21|</pre>
+  </div>
+
+  <p>
+    移動中の約 1 秒は<strong>レバーもボタンも効きません</strong>。
+    配置を選ぶために倒したレバーがそのままキャラを歩かせてしまうためで、
+    <em>Start と Coin は落としていません</em>(ポーズと操作側の切り替えは残ります)。
+  </p>
+
+  <div class="note">
+    <p>
+      <strong>直接その座標に置く方式はやめました。</strong>座標を書いても
+      <strong>画面のスクロールが付いてこない</strong>ので、キャラだけが画面端に
+      引き戻されて、狙った位置に立ちません。
+    </p>
+    <p>
+      <em>てくてく歩かせています。</em>毎フレーム少しずつ動かせば、普通に歩いた
+      のと同じ状況になり、カメラは自分で追いつきます。端から端まで約 1 秒です。
+      移動中の約 1 秒はレバーもボタンも効きません(配置を選ぶために倒したレバーが
+      そのままキャラを歩かせてしまうため)。
+    </p>
+  </div>
+
+  <div class="note">
+    <strong>ステージの端は全ステージ共通でした。</strong>
+    2 ステージを実測して左 280 / 右 1000。開幕位置は 554 / 728 で、
+    その中点 641 は壁から出る中央 640 と一致します。
+    独立した 2 つの測定が揃ったので、ステージ別の表は要りません。
+  </div>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.2 / 02</span>プッシュブロックの回数表示</h2>
+
+  <p>
+    表示していた数字が<strong>「押した回数」ではなく「何回で成立したか」</strong>でした。
+    ゲームの内部カウンタは<strong>成立した瞬間に止まります</strong>。
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>旧表示</th><th>実際に押した回数</th><th>本数</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>3</td><td class="n ok">6</td><td class="n">22</td></tr>
+        <tr><td>4</td><td class="n ok">6</td><td class="n">28</td></tr>
+        <tr><td>5</td><td class="n ok">6</td><td class="n">30</td></tr>
+        <tr><td>6</td><td class="n">6</td><td class="n">40</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    <strong>132 回中 120 回は、実際には 6 回押していました。</strong>
+    6 回押せば必ず成立するので、練習で見たいのは押した回数のほうです。
+    そちらを数えるようにしました。<em>これまで画面に 6 が出なかったのはこのためです。</em>
+  </p>
+
+  <p>
+    成立したかどうかは<strong>色</strong>で分かります。旧版は「6 以上なら緑」でしたが、
+    成立 90 回のうち 81 回(90%)は 6 未満で成立しているので、
+    <strong>成立しているのにほぼ緑になりませんでした。</strong>
+    ゲーム自身の成立フラグを見るようにしています。
+  </p>
+
+  <p class="note" style="margin-top:22px;">
+    読む時刻も直しました。旧版は表示フレームごとに読んでいましたが、
+    ガード終了処理がカウンタと受付窓を同時に消すため、
+    <strong>弱攻撃のガードでは必ず 0 になっていました。</strong>
+    今はゲームが数える命令の位置で読んでいます。
+  </p>
+</section>
+
+<div class="tickrule" role="presentation"></div>
+
+<section>
+  <h2><span class="kicker">v11 / 01</span>ガード後の最速行動</h2>
+
+  <p>
+    v10 の時点で、ガード後の最速行動は<strong>技によって出たり出なかったり</strong>していました。
+    原因を追ったところ、<em>ガード硬直の仕組みそのものを取り違えていた</em>ことが分かりました。
+  </p>
+
+  <h3>ガード硬直にカウンタは存在しません</h3>
+
+  <p>
+    硬直の残り時間を数えている変数は<strong>ありません</strong>。
+    ゲームは技ごとに決まった<strong>押し戻しスクリプト</strong>を 1 ティック 1 バイトずつ歩き、
+    バイトが尽きたところで硬直が明けます。バイトの値はそのティックの押し戻し量そのものです。
+  </p>
+
+  <div class="note">
+    <strong>硬直の長さと押し戻しの距離は、同じデータです。</strong>
+    弱 11 ティック / 中 16 / 強 20。プレイヤーのメモリを全部走査してもカウンタが見つからなかったのは、
+    最初から存在しなかったからでした。
+  </div>
+
+  <h3>時計を間違えていました</h3>
+
+  <p>
+    旧方式は別のカウンタ (<code>$158</code>) を時計に使っていました。これは
+    <strong>ヒットストップ中も減り続けます</strong>が、押し戻しスクリプトのほうは止まります。
+    つまり両者は<strong>止まりの長さちょうどぶんだけズレます</strong>。
+  </p>
+
+  <p>
+    デミトリのゼロデモンのように止まりが長い技では、スクリプトが 1 歩も進まないうちに
+    旧時計が燃え尽きてしまい、狙った時刻が<strong>硬直明けを追い越して</strong>いました。
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>強攻撃のガード 229 本</th><th>旧方式</th><th>v11</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>狙いが硬直明けの手前に来た</td>
+          <td class="n bad">118</td>
+          <td class="n ok">221</td>
+        </tr>
+        <tr>
+          <td>硬直明け以降に落ちた（＝何も出ない）</td>
+          <td class="n bad">111</td>
+          <td class="n ok">8</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    <strong>ゼロデモンのガード硬直は 20 ティックで、普通の強攻撃と同じでした。</strong>
+    硬直が短かったのではなく、こちらが見ていた時計だけが先に進んでいた、というのが答えです。
+  </p>
+
+  <p class="note" style="margin-top:22px;">
+    スクリプトはガードが成立した時点で全部読めるので、
+    <strong>硬直の残りがガード 1 ティック目で確定値として分かります。</strong>
+    強さごとの当て推量を実測値に置き換えました。
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v11 / 02</span>オートガード（All Guard / Stand Block）</h2>
+
+  <p>
+    後ろを入れたときにガードポーズを取って動けなくなるかどうかは、
+    <strong>ゲーム自身が判定を持っています</strong>。仕様はこうです。
+  </p>
+
+  <ul>
+    <li><strong>飛び道具は画面上のどこにいても効きます</strong>（距離を見ません）</li>
+    <li><strong>通常技・必殺技は技ごとに距離が決まっていて</strong>、その外では後ろを入れても歩くだけです</li>
+  </ul>
+
+  <p>
+    従来の実装が見ていたのは「相手が攻撃モーションに入った」と「一定距離以内」の 2 つだけで、
+    これは<strong>ゲームのルーチンの最後にある粗い保険だけを抜き出した形</strong>でした。
+    そのため次の 2 つが起きていました。
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>症状</th><th>原因</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>飛び道具や別オブジェクトの技を見ない</td>
+          <td>相手プレイヤーの攻撃フラグしか見ておらず、オブジェクトを走査していなかった</td>
+        </tr>
+        <tr>
+          <td>届かない技の空振りでも後ろに下がる</td>
+          <td>技ごとの判定枠データを見ておらず、届くかどうかを判断していなかった</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    v11 ではゲームの判定をそのまま移植しました。<strong>オブジェクト走査</strong>（飛び道具を距離に関係なく拾う）と、
+    <strong>技ごとの判定枠テーブル</strong>（届くかどうかを技のアニメーションから先読みする）の両方が入っています。
+    持続の長いデモンクレイドルを空振りしても下がりません。
+  </p>
+
+  <div class="note">
+    正しい距離判定が入ったことで、<strong>後ろは押しっぱなしで構わなくなりました。</strong>
+    判定が真＝ゲームがガードポーズを認める＝後ろを入れても歩かない、という関係だからです。
+    これまで一瞬だけ押していたのは、間合いの中かどうかを判断できなかったための回避策でした。
+  </div>
+</section>
+
+<div class="tickrule" role="presentation"></div>
+
+<section>
+  <h2><span class="kicker">v10</span>入力を「ティック」で置くようになりました</h2>
+
+  <p class="standfirst">
+    これまでダミーの入力は<strong>表示フレーム</strong>単位で出していました。
+    ゲームが実際に入力を読む単位は<strong>ティック</strong>で、この二つは一致しません。
+    そこがずれている限り「最速の行動」は原理的に出せませんでした。そこを作り直したのがこの版です。
+  </p>
+
+  <p>
+    <strong>DPF でリバーサルが出るようになったのはここからです。</strong>
+    以下はその作り直しの中身で、今の版の土台にあたります。
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v10 / 土台</span>ティックと表示フレームは別物です</h2>
+
+  <p>
+    ターボ3 では <strong>3 表示フレーム = 4 ティック</strong>です。
+    攻略 wiki が「ターボ3 = ノーマル × 0.75」と書いているのと同じことを、逆から言っています。
+  </p>
+
+  <p>
+    ゲームは<strong>1 ティックごとに</strong>入力を読みます。ところが Lua から見える
+    <code>joypad.set</code> は表示フレームに 1 回しか回りません。つまり従来の作りは
+    <em>ゲームが入力を読むティックの約 4 割を、そもそも見ていませんでした。</em>
+  </p>
+
+  <p>
+    これが「あと 1F 早く出したいのに出せない」の正体です。狙ったティックに入力を置く手段が無く、
+    表示フレームの刻みに丸められていたわけです。3 エントリのコマンドを 3〜5 ティックの間に
+    通そうとすると、真ん中の斜めが 1 フレームももらえずに消える ―
+    <strong>斜めの無い波動コマンドは波動コマンドではありません。</strong>
+  </p>
+
+  <div class="note">
+    <p>
+      <strong>そのため画面とメニューの表記も全部 Tick に統一しました。</strong>
+      これまで「frames」と書いてあった数値の多くは表示フレーム数で、ゲームの内部時間とは違うものでした。
+      嘘の単位が残っていると調整のたびに迷うので、実体に合わせて書き直してあります。
+      いまも表示フレーム基準のままの表示(ダッシュ間隔・ダッシュ時間などのトレーナー)は、
+      説明文に「DISPLAYED frames — not game Ticks」と明記しました。
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="kicker">中核</span>入力の書き込み方を変えました</h2>
+
+  <p>
+    ゲームが入力を読み込む直前の一点(<code>0x02211A</code>)にフックを置き、
+    <strong>そこでメモリへ直接書く</strong>ようにしました。ここは 1 ティックに 1 回必ず通るので、
+    <em>狙ったティックに、狙った入力を、確実に 1 つ置けます。</em>
+  </p>
+
+  <p>
+    これで初めて「ゲームと同じ時間軸で入力を組み立てる」ことができるようになりました。
+    以下はすべてこの上に乗っています。
+  </p>
+
+  <h3>押した瞬間と行動の関係</h3>
+
+  <p>
+    実測 373 スパンで例外なし ―
+    <strong>ティック X で押しのエッジが立つと、行動はティック X+1 に出ます。</strong>
+    「押した」と「出た」は必ず 1 ティックずれます。
+  </p>
+
+  <h3>動ける最初のティックを特定する</h3>
+
+  <p>
+    やられ・ガード・ダウンから復帰する 1 ティック前に、ゲームが必ず書き込む署名があります
+    (<code>move.l #$2020400,($4,A6)</code>)。ここを捕まえると
+    <strong>「次のティックでこのキャラは動ける」</strong>と確定できます。14 キャラ中 13 キャラで
+    250 回中 249 回。残る Q-Bee だけは別経路なので個別に処理しています。
+  </p>
+
+  <div class="rule">
+    <span class="cap">実装が従う規則</span>
+    <p>必殺技コマンドで出すもの以外は、すべて free+0。</p>
+    <p>
+      押しが free+0 に乗らなければ<strong>出ません</strong>。遅れて出るのではなく、出ません。
+      1 ティック外しただけで、ダッシュは通常技に化けます。
+      必殺技コマンド(波動・昇龍・半回転・1 回転など)だけが free−1 で、
+      それ以外(ダッシュ・ダッシュ中断・通常技・投げ・ジャンプ・DF)は全部 free+0 です。
+    </p>
+    <p>
+      <strong>プレイヤーには当たり前の話です。</strong>これまでのトレーニングモードが
+      それを守れていなかったのは、表示フレーム単位では free+0 という 1 ティックを
+      指せなかったからで、<em>今回ようやく実装が同じ土俵に乗りました。</em>
+    </p>
+  </div>
+
+  <div class="timeline">
+    <span class="cap">ダッシュが成立する条件</span>
+<pre>free-2   前         1 回目のタップ
+free-1   (中立)     押しエッジを作るための解放
+free+0   前         2 回目のタップ  <span class="hit">← 1 ティック外すと出ない</span>
+free+1   前         ダッシュ成立</pre>
+  </div>
+
+  <p>
+    <code>free+0</code> が <code>free+1</code> にずれるだけで、ダッシュは<strong>遅れて出るのではなく
+    存在しなくなり</strong>、代わりに通常技が出ます。この規則を知らずに 5 回作り直しました。
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">売り 01</span>最速行動</h2>
+
+  <p>
+    署名から数えて置くようになったので、リバーサルもカウンターも
+    <strong>キャラが動ける最初のティックちょうど</strong>に出ます。
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>条件</th><th>最速で出た</th><th>何も出ない</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>全エントリが届き、ボタンが free−1</td>
+          <td class="n ok">30</td>
+          <td class="n">0</td>
+        </tr>
+        <tr>
+          <td>それ以外</td>
+          <td class="n">0</td>
+          <td class="n bad">50</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    <strong>間の状態がありません。</strong>「だいたい合っている」は存在せず、合っているか出ないかのどちらかです。
+    だから「たまに出る」を「精度が甘い」と読んではいけない、というのが今回いちばん時間を使った学びでした。
+  </p>
+
+  <p>
+    カウンター機能もリバーサルと同じ機構に載せ替えました。発火するのは
+    <strong>ガード後と地上くらい後だけ</strong>で、起き上がりと空中やられ復帰では出ません
+    (実測 30/31、起き上がり・空中では一度も発火せず)。
+  </p>
+
+  <h3>最速で出たかどうかが画面に出ます</h3>
+
+  <p>
+    行動が出た瞬間、<strong>それが最速だったかを画面右に表示します。</strong>
+    最速なら <code>Fastest</code>、遅れたぶんは <code>+3 Tick</code> のように出ます。
+    <em>「たぶん最速だと思う」を確かめる手間が要りません。</em>
+  </p>
+
+  <div class="timeline">
+    <span class="cap">画面右の表示</span>
+<pre><span class="hit">Fastest</span>          最速で出た
+Special          何が出たか
+
+<span class="hit">+3 Tick</span>          3 ティック遅れた
+Normal           出たのは通常技だった</pre>
+  </div>
+
+  <p>
+    2 行目に<strong>実際に出た行動の種別</strong>を併記しています。
+    必殺技を狙って通常技が漏れたときに、<code>Fastest</code> だけを見て
+    「狙い通り出た」と誤読しないためです。
+    最速の基準は行動の種類で違う(必殺技は free+0、それ以外は free+1)ので、
+    その差は表示側で吸収しています。
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">売り 02</span>投げ</h2>
+
+  <p>
+    Reversal/Counter Input Motion に <strong>Forward / Back / Down</strong> を追加しました。
+    起き上がりリバーサル投げ、ガード後のカウンター投げが選べます。
+  </p>
+
+  <p>
+    投げは 1F の方向入力とボタンの同時押しなので、ティック精度が無いと「投げに化けない」が起きます。
+    今回の土台があって初めて成立する機能です。
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">売り 03</span>ダッシュ攻撃の正常化</h2>
+
+  <p>
+    これまでは<strong>ダッシュの入力とボタンが同じタイミングで出ていました。</strong>
+    「ダッシュ」と「攻撃」が分かれていないので、当然
+    <em>「ダッシュしてから攻撃」という形になりません。</em>
+    ダッシュ攻撃を設定したつもりでも、実際には別のものが出ていた状態です。
+  </p>
+
+  <p>
+    今回は<strong>ダッシュを最速で出し、そこから指定したティック数だけ待ってボタンを押す</strong>
+    という形に作り直しました。ダッシュは動ける最初のティックちょうどに出て、
+    攻撃はその後ろに置かれます。順番と間隔が、設定した通りになります。
+  </p>
+
+  <div class="timeline">
+    <span class="cap">前ダッシュ攻撃(モリガン、Auto = 14)</span>
+<pre>free+0    前              ダッシュの 2 回目のタップ
+free+1    前              <span class="hit">ダッシュ成立</span>
+  …       前              押しっぱなしで走りを維持
+free+14   前 + ボタン     <span class="hit">ダッシュ攻撃</span></pre>
+  </div>
+
+  <p>
+    間隔は <code>Guard Action Delay (Ticks)</code> で指定します。
+    <code>Auto</code> はキャラごとの実測値を入れますが、
+    <strong>いま実測で確かめてあるのはサスカッチとモリガンだけ</strong>です。
+    残りは旧版から引き継いだ暫定値なので、合わないキャラは手動値でお使いください。
+  </p>
+
+  <h3>4 方向とも出るようになりました</h3>
+
+  <p>
+    <strong>前ダッシュ・後ダッシュ・前ダッシュ中断・後ダッシュ中断</strong>が、
+    ガードさせた技の強さ(弱・中・強)を問わず安定して出ます。
+    そもそもダッシュが出なければ攻撃も載せられないので、こちらも合わせて直しています。
+  </p>
+
+  <h3>後ろダッシュが出なかった理由</h3>
+
+  <p>
+    ダミーはガードのために<strong>レバーを後ろに握りっぱなし</strong>です。
+    そこへ「後ろ」をもう一度入れても、ゲームから見れば何も変わっていないので
+    <em>押しエッジが立たず、1 回目のタップが存在しません。</em>
+  </p>
+
+  <p>
+    そこで<strong>一度レバーを離してから押し直す</strong>ようにしました。
+    離す長さ・タップを持つ長さ・置く位置の 3 つを調整できるようにしてあります。
+    前ダッシュは握っていないので、この処理は後ろ側にだけ効きます。
+  </p>
+
+  <div class="timeline">
+    <span class="cap">後ダッシュ(ガード中)</span>
+<pre>free-8 … free-5   (中立)      握っていた後ろを離す
+free-4 … free-3   後          1 回目のタップ(2 ティック保持)
+free-1            (中立)
+free+0            後          2 回目のタップ
+free+1            後          ダッシュ成立</pre>
+  </div>
+
+  <h3>ダッシュ中断</h3>
+
+  <p>
+    中断の入力そのものは平ダッシュと同一で、<strong>ダッシュが立った後に逆方向へ倒して、そのまま保持</strong>します。
+    攻略 wiki が「認識するタイミングは 1F のみだが、ダッシュした直後から入れっぱなしで問題ない」と
+    書いている通りで、握ってしまえば 1F の窓は外しようがありません。
+  </p>
+
+  <p class="note" style="margin-top:22px;">
+    デミトリだけは<strong>ダッシュ中断そのものが存在しません</strong>(wiki 基本動作「中断不可」)。
+    設定はできますが出ないのが正しい挙動です。
+  </p>
+
+  <h3>Guard Action Delay に <code>Auto</code> が入りました</h3>
+
+  <p>
+    ダッシュを選んだときだけ <code>Auto</code> が選べます。
+    <strong>キャラごとのダッシュ攻撃タイミングが自動で入る</strong>ので、数値を覚える必要がありません。
+    左右キーでいつでも手動値(0〜50 ティック)に移せます。
+  </p>
+
+  <div class="note">
+    <p>
+      <strong>これは v10 時点の話です。</strong>当時はサスカッチとモリガンだけが実測済みで、
+      他キャラは旧ビルドから引き継いだ暫定値でした。
+      <em>v11.3 で全キャラ実測に置き換わっています</em> — 上の v11.3 の節をご覧ください。
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="kicker">その他</span>あわせて直したもの</h2>
+
+  <h3>プッシュブロック</h3>
+
+  <p>
+    ゲームはブロック開始時に開く<strong>約 12 ティックの窓の中で、押した回数</strong>を数えています。
+    従来は 11 個の入力を表示フレームに 1 つずつ出していたので約 18 ティックかかり、
+    後半のタップが窓の外に落ちていました。ティック単位に変え、
+    <strong>6 回すべてが窓に入るようになりました</strong>(実測 32/32、成立 88/90)。
+  </p>
+
+  <p>
+    <code>Minimum PB Inputs</code> が<strong>両プレイヤーに効いていた不具合</strong>も直しました。
+    ダミー相手の練習のつもりで上げると、自分のプッシュブロックも同じだけ厳しくなっていました。
+    <code>Show Pushblock Counter</code> は、ダミーがプッシュブロック設定のときに
+    ダミー側の回数も表示します(6 以上で緑)。
+  </p>
+
+  <h3>フレームトラップ表示</h3>
+
+  <p>
+    <code>Frame Gap</code> は表示フレーム差だったので、3 ティックの隙も 4 ティックの隙も同じ「2」と出ていました。
+    ティックで測るようにし、表示も <code>Tick Gap</code> に変えています。
+  </p>
+
+  <h3>クラッシュ修正</h3>
+
+  <p>
+    <code>Use Random Recording Slot</code> が ON で <code>Enable Slot 1〜5</code> が全部 OFF のとき
+    ―― このオプションの初期状態そのものです ―― 録画再生を伴うガードアクションで
+    スクリプトが停止していました。
+  </p>
+
+  <h3>撤去した機能</h3>
+
+  <p>
+    <code>True Reversal</code> を削除しました。joypad で制御しきれない中で最速を狙うための機能でしたが、
+    別の時計で最速が出せるようになったので役目を終えています。
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">既知の制限</span>まだ手が入っていないところ</h2>
+
+  <ul>
+    <li><strong>ダッシュ間隔 / ダッシュ時間 / ダッシュ攻撃キャンセル / 攻撃ダッシュ間隔 / Jump In</strong> のトレーナーは表示フレームのままです。説明文にその旨を明記しています。</li>
+    <li><strong>Jump In Trainer</strong> に既知の不具合があります。当てずに着地しただけでも、前回の飛び込みとの差が記録されることがあります。</li>
+    <li><strong>録画型のカウンター</strong>(Counter Attack - Recording / PB Recording)はマクロ再生の性質上、フレーム単位のままです。</li>
+    <li><strong>オートガードの後ろ入力</strong>は表示フレーム単位ですが、これは意図的です。必要なのは押しの精度ではなく、飛んでくるものが到着したときにまだ押していることなので、ティック化は不要でした。</li>
+    <li><strong>録画ウィザードにセーブステートは付いていません。</strong>確認再生は位置と向きを戻して行いますが、体力やゲージまでは戻りません。</li>
+    <li><strong>run-ahead には未対応</strong>です。有効なままだと最速行動が安定しないため、検出して画面で警告します。<em>トレーニング中は切ってください。</em></li>
+  </ul>
+
+  <div class="note">
+    <strong>ガード後のバックダッシュ</strong>はここに載っていた項目でしたが、
+    <em>v11.4 で解決しました</em>。上の v11.4 の節をご覧ください。
+  </div>
+</section>
+
+<footer>
+  <p>
+    ROM は各自でご用意ください。インストール手順とホットキーは同梱の <code>README.md</code>、
+    アドレスや解析の詳細は同梱の <code>VSAV_MEMORY_NOTES.md</code> をご覧ください。
+    不具合の報告は Vampire Savior Discord の <code>#development</code> へ。
+  </p>
+  <p>
+    このページ:
+    <a href="https://claude.ai/code/artifact/61ee74de-356c-4223-9419-f76f4ec9c54d">claude.ai/code/artifact/61ee74de-356c-4223-9419-f76f4ec9c54d</a>
+  </p>
+</footer>
+</div>
+
+<div class="pane" id="pane-en" lang="en" hidden>
+<div class="pitch">
+  <div>
+    <span class="num">01</span>
+    <h3>Fastest actions</h3>
+    <p>Reversals and counters come out on the exact first tick the character can act. Whether it was the fastest is shown on screen.</p>
+  </div>
+  <div>
+    <span class="num">02</span>
+    <h3>Throws</h3>
+    <p>Forward, back and down are motions you can pick for a reversal or counter. A one-frame direction needs tick precision.</p>
+  </div>
+  <div>
+    <span class="num">03</span>
+    <h3>Dash attacks, properly</h3>
+    <p>"Dash, then attack" happens in that order. It used to send the dash input and the button at the same moment.</p>
+  </div>
+</div>
+
+<section>
+  <h2><span class="kicker">v11.4.2</span>The gap, and how the view comes back</h2>
+
+  <p>
+    The wait between loop passes is now two settings, and putting the pair back
+    <strong>brings the scrolling with it</strong>.
+  </p>
+
+  <h3>Before and After</h3>
+
+  <p>
+    The parent row reads <code>Loop Interval (Frames) : (Before/After)</code>.
+    Right or LP opens a child menu you can work <strong>entirely with the
+    stick</strong> - Left lowers, Right raises, Up and Down change row, and
+    <code>Back</code> at the bottom returns.
+  </p>
+
+  <ul>
+    <li><strong>After</strong> is counted once the previous pass has ended and
+      the dummy can act again. That is where the old Loop Interval sat, so
+      <strong>a saved value carries over to After on its own</strong>.</li>
+    <li><strong>Before</strong> is counted after the distance is restored, just
+      before the next pass goes out.</li>
+  </ul>
+
+  <p>
+    With only one wait there was no way to tell "pause before putting them back"
+    from "pause after putting them back". Now you can have a beat after
+    <code>Reset Distance Each Loop</code> warps the two into place.
+  </p>
+
+  <h3>The framing comes back too</h3>
+
+  <p>
+    The two characters went back but <strong>the scrolling did not</strong>, and
+    a character placed outside the old view could be dragged back into it. It
+    showed up worst on recordings that moved a long way with the sides swapped,
+    such as Gallon's kick throw. The wizard's check playback,
+    <code>Reset Distance Each Loop</code> and the character position shortcut
+    all bring the view with them now.
+  </p>
+
+  <h3>Also</h3>
+
+  <ul>
+    <li><strong>Looped playback holds for 30 frames after you close the
+      menu</strong>, so the next pass does not arrive the instant you leave it.
+      Single playbacks are unaffected.</li>
+    <li><strong><code>Play again</code> cannot be taken until the dummy has
+      finished moving</strong> - replaying against a dummy that cannot act
+      reproduces nothing. <code>Save</code> and <code>Record again</code> answer
+      immediately.</li>
+    <li><strong>Only <code>Lua Hotkey 1</code> (cancel) works while the recording
+      wizard is up.</strong></li>
+    <li><strong>Settings saved by v11.3.x now carry over properly</strong> -
+      the chosen reversal could end up one entry off.</li>
+    <li><strong>Reversals and counter-action specials now come out after a
+      multi-hit guard.</strong></li>
+    <li><strong>Turning <code>Knockdown Logger</code> off now stops the
+      diagnostic recording completely</strong> - part of it kept running with
+      the setting off and slowed the game down.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.4.1</span>What using the wizard turned up</h2>
+
+  <p>
+    Everything that came out of actually using the Recording Wizard added in v11.4.
+    <strong>High Jump is renamed Super Jump</strong> (the order and the indices are
+    unchanged, so settings are unaffected).
+  </p>
+
+  <h3>The stick alone drives it</h3>
+
+  <p>
+    Slot selection and the save prompt are both lists now:
+    <strong>up and down to move, LP or Right to take it</strong>.
+    The save prompt reads Save / Record again / Play again down the screen.
+    Right is how you go into things elsewhere in the menu, so
+    <code>Play Recording</code> and <code>Recording Wizard</code> take it as well.
+    The buttons still work as direct shortcuts.
+  </p>
+
+  <p>
+    Saving <strong>returns you to the slot list</strong>. The result stays up for a second
+    first, so the next slot can be recorded straight away, and
+    <em>the characters go back to the distance the take started from</em> as the list
+    comes back. <code>Back to menu</code> sits at the bottom of the list, and cancelling
+    with <code>Lua Hotkey 1</code> reopens the menu too.
+  </p>
+
+  <h3>Reset Distance Each Loop</h3>
+
+  <p>
+    Puts both characters back to <strong>the distance the recording was made from</strong>
+    at the start of every loop. Without it the two drift apart over the passes and the
+    setup you were practising stops happening. The distance is stored in the recording
+    itself, so this works on takes made from v11.4.1 on.
+  </p>
+
+  <h3>Savestates</h3>
+
+  <p>
+    With <code>Use Savestate Upon Recording</code> on, a load could
+    <strong>halt the script</strong>. Loading a named state handed a string to something
+    that only takes a numbered slot.
+  </p>
+
+  <div class="note">
+    <p>
+      Savestates are now <strong>only valid inside the match they were taken in</strong>.
+      Reselect the characters and the state is not loaded.
+    </p>
+    <p>
+      A state is <em>the whole machine</em>. Record with P1 Sasquatch and P2 Demitri,
+      reselect the two the other way round, and a playback did not restore a setup - it
+      <strong>dragged the old match back onto the screen entire</strong>.
+      Both characters' ids are noted alongside the state and checked before every load.
+      A mismatch skips the load only and the playback still runs, because the recordings
+      are already kept per dummy character.
+    </p>
+  </div>
+
+  <h3>During the entrance</h3>
+
+  <p>
+    Using the position shortcut while the characters were making their entrance
+    <strong>shredded the arrangement and read as dead controls</strong>.
+    A slide writes X every frame and so does the game during the entrance; the two fight,
+    the pair is left somewhere neither intended and the camera never follows.
+  </p>
+
+  <p>
+    <strong><code>Lua Hotkey 1</code> and <code>2</code> are ignored until the round is
+    under way.</strong> Every arrangement is <em>computed from where the two stood at the
+    round start</em>, so until that has been read back there is no basis to work from.
+    Allowing just the menu is no better - it leaves both characters disabled partway
+    through the intro - so the two are held back together.
+  </p>
+
+  <p class="note" style="margin-top:22px;">
+    Coin no longer swaps control while a playback is running either. Moving the pad to the
+    dummy while the playback is driving it means both are writing the same side and
+    neither comes out cleanly.
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.4 / 01</span>Recording Wizard</h2>
+
+  <p>
+    Guided dummy recording. Start it from <code>Recording Wizard</code> on the Recording tab.
+    Pick a slot and control switches to the dummy;
+    <strong>recording begins the moment you move</strong>.
+    Stop moving and it ends, then <em>plays the take back once so you can look at it</em>.
+  </p>
+
+  <div class="timeline">
+    <span class="cap">The wizard, step by step</span>
+<pre>Pick a slot     each shows when it was recorded, so you can see what
+                you are about to overwrite
+Recording       from your first input. Nothing is read before that
+Auto-stop       <span class="hit">two seconds after the move finishes</span>
+Check playback   position and facing go back to the take's start first
+Save            LP save / MP record again / LK play again</pre>
+  </div>
+
+  <p>
+    It ends <strong>after the move finishes</strong>, not merely when the stick is neutral.
+    <em>A long move is no longer cut off partway through.</em>
+  </p>
+
+  <div class="note">
+    Before the check playback <strong>both characters return to where they stood
+    when the take began</strong>. It plays at the distance it was recorded from, so
+    <strong>you can tell whether it is the movement you meant before saving it.</strong>
+    Record it again on the spot if it is not, and watch it as many times as you like.
+    <code>Lua Hotkey 1</code> leaves at any point, and nothing is saved when it does.
+  </div>
+
+  <p>
+    Slots show <strong>when they were recorded</strong> on the Recording tab's
+    <code>Enable Slot 1-5</code> rows as well, so you can see which one is old enough
+    to write over.
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.4 / 02</span>Super Jump</h2>
+
+  <p>
+    <strong>Super Jump Forward / Super Jump / Super Jump Back</strong> are now dummy actions.
+    They sit in <code>Reversal/Counter Input Motion</code>, after Back Dash Cancel.
+    Down, then up - with <strong>the direction on the up</strong>.
+  </p>
+
+  <p>
+    Added for the actions that go through a super jump, on Lilith, Morrigan and
+    Gallon (Crime Laser).
+  </p>
+
+  <div class="note">
+    They were inserted into the middle of the list, so <strong>everything after them
+    shifts.</strong> The settings file <strong>migrates itself on first launch</strong>,
+    and a saved setting keeps its meaning.
+    <em>There is nothing to re-pick, unlike v11.3.1.</em>
+  </div>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.4 / 03</span>Guard cancel back dash</h2>
+
+  <p>
+    The <strong>known issue</strong> listed in v11.3.1 is fixed. The longer the blockstun,
+    the more often it failed - 80% on light, 40% on medium, 8% on heavy.
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Attack blocked</th><th>Was</th><th>v11.4</th><th>Attempts</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Light</td><td class="n bad">80%</td><td class="n ok">100%</td><td class="n">20</td></tr>
+        <tr><td>Medium</td><td class="n bad">40%</td><td class="n ok">100%</td><td class="n">20</td></tr>
+        <tr><td>Heavy</td><td class="n bad">8%</td><td class="n ok">100%</td><td class="n">17</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    The cause was <strong>holding back to block</strong> in the first place.
+    Releasing the stick to make the tap meant
+    <em>"hold, release, tap" satisfied the dash on the spot</em> -
+    still inside blockstun, so the request was thrown away.
+    Once the recogniser has matched it accepts no more, and the second tap that was
+    actually aimed at the right tick was ignored.
+  </p>
+
+  <p class="note" style="margin-top:22px;">
+    The release now <strong>puts an explicit neutral in to walk the recogniser back the
+    ordinary way</strong>, and where the taps are placed varies by the strength of the
+    blockstun. Writing to memory to clear the recogniser would have worked too, but
+    <strong>timing is read from memory while the input is performed as input</strong> in
+    this tool, and that is not the way to keep it.
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.4 / 04</span>Playback</h2>
+
+  <ul>
+    <li>
+      <strong>Play Recording</strong> plays the current slot straight from the top of the
+      Recording tab. Same as the playback hotkey; press it again to stop.
+    </li>
+    <li>
+      <strong>Playback is mirrored when P1 and P2 have swapped sides.</strong>
+      A recording is absolute stick directions, so from the other side it used to come out
+      as its mirror image. Which side the take was recorded from is stored with it and
+      compared on playback.
+    </li>
+    <li>
+      <strong>Looped playback waits for the dummy to be able to act</strong> before the
+      next pass. The first input used to land during the previous pass's recovery, where
+      <em>it simply would not come out</em>.
+      With a savestate in play it restarts as before.
+    </li>
+    <li>
+      Playback continuing after a return to character select
+      (<code>Lua Hotkey 4</code>) is fixed.
+    </li>
+  </ul>
+
+  <div class="note">
+    <p>
+      <strong>Smaller things.</strong>
+      The button that confirms a slot in the wizard no longer reaches the game as an attack.
+      Recording times are shown on a 24-hour clock.
+      <code>Lua Hotkey 1</code> and <code>2</code> are ignored until the round is under way.
+    </p>
+    <p>
+      The menu palette has been reworked; the selected row is easier to read.
+      <strong>The Display and Etc tabs have new defaults</strong>, which apply to
+      <em>a fresh install only</em> and leave an existing settings file alone.
+    </p>
+  </div>
+</section>
+
+<div class="tickrule" role="presentation"></div>
+
+<section>
+  <h2><span class="kicker">v11.3.1</span>Fixes</h2>
+
+  <ul>
+    <li>
+      <strong>Push block was being dragged around by the delay setting.</strong>
+      With <code>Guard Action Delay</code> on anything but <code>Auto</code>, that many
+      empty frames went in ahead of the taps, pushing them out of the game's 12-tick
+      window - so <em>no push block came out</em>. A delay does not apply to how you defend.
+    </li>
+    <li>
+      <strong>No back dash after a push block.</strong>
+      A successful push block switches the game to a different clock, but the taps were
+      still being placed against the old one and never landed inside the window.
+    </li>
+    <li>
+      <strong>Auto values re-measured.</strong> Morrigan 12 / 13, Jedah 10 / 9
+      (forward and forward cancel; back is the same).
+    </li>
+    <li>
+      <strong>Dash ordering</strong> fixed so forward comes before back.
+      <em>A saved setting shifts by one, once</em>, so re-pick
+      <code>Reversal/Counter Input Motion</code>.
+    </li>
+    <li>
+      The <code>Auto</code> description now says the values were
+      <strong>measured for the fastest action after a block</strong>, and that
+      <strong>after a hit they are sometimes not enough</strong> (Morrigan and Jedah
+      especially).
+    </li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.3 / 01</span>The stick at the moment of the press</h2>
+
+  <p>
+    <code>Reversal/Counter Button Lever</code> is new: a
+    <strong>fourth stage of the input description</strong> alongside Motion, Delay and
+    Button. It replaces <strong>only the stick at the instant of the press</strong> and
+    leaves the motion alone.
+  </p>
+
+  <div class="note">
+    A dash used to press the button <strong>while still holding the direction</strong>,
+    so a dash attack was all you could get.
+    <strong>Bulleta's dash neutral MP had no way to be performed at all.</strong>
+    <code>Neutral</code> unlocks it. Zabel's <strong>back jump into down MK</strong> wants
+    <code>Down</code>.
+  </div>
+
+  <p>
+    Forward and back are <strong>resolved against the facing at the moment of the press</strong>,
+    so the list does not grow for the right-hand side.
+    The default <code>As Is</code> behaves exactly as before.
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.3 / 02</span>Push block as a way of blocking</h2>
+
+  <p>
+    <code>Guard</code> now offers
+    <code>Push Block (All Light / All Medium / All Heavy)</code>.
+    <strong>It defends the way All Guard does, and pushes on top of that.</strong>
+  </p>
+
+  <p>
+    Push block used to live under <code>Guard Action Type</code>, which made it
+    <strong>exclusive with counters</strong> - there was no way to ask for "push block,
+    then hit back". Moving it to the defensive side frees
+    <code>Guard Action Type</code>, so you can find out
+    <em>whether a fastest push block into a dash attack is guaranteed</em>.
+  </p>
+
+  <div class="note">
+    A successful push block switches the game to
+    <strong>a different clock from blockstun</strong>, and
+    <strong>the fastest action comes out on that one too</strong>.
+    The remaining taps are dropped the moment it succeeds, so what follows goes in
+    straight away.
+  </div>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.3 / 03</span>Auto dash values measured for every character</h2>
+
+  <p>
+    With <code>Guard Action Delay</code> on <code>Auto</code>, the gap from the dash to the
+    button uses a per-character value. The <strong>cancel side had been inherited
+    guesswork</strong>, with most characters sitting on 10. The
+    <strong>twelve characters other than Morrigan and Sasquatch</strong> have now been
+    measured and replaced, and <em>no placeholder is left.</em>
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Character</th><th>F</th><th>FC</th><th>B</th><th>BC</th>
+            <th>Character</th><th>F</th><th>FC</th><th>B</th><th>BC</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Bulleta</td><td class="n">5</td><td class="n">3</td><td class="n">5</td><td class="n">3</td>
+            <td>Gallon</td><td class="n">8</td><td class="n">6</td><td class="n">3</td><td class="n">1</td></tr>
+        <tr><td>Victor</td><td class="n">5</td><td class="n">3</td><td class="n">5</td><td class="n">3</td>
+            <td>Zabel</td><td class="n">1</td><td class="n">1</td><td class="n">1</td><td class="n">1</td></tr>
+        <tr><td>Anakaris</td><td class="n">5</td><td class="n">3</td><td class="n">5</td><td class="n">3</td>
+            <td>Felicia</td><td class="n">8</td><td class="n">6</td><td class="n">8</td><td class="n">6</td></tr>
+        <tr><td>Bishamon</td><td class="n">6</td><td class="n">4</td><td class="n">3</td><td class="n">1</td>
+            <td>Aulbath</td><td class="n">6</td><td class="n">4</td><td class="n">1</td><td class="n">1</td></tr>
+        <tr><td>Q-Bee</td><td class="n">6</td><td class="n">5</td><td class="n">6</td><td class="n">5</td>
+            <td>Lei-Lei</td><td class="n">1</td><td class="n">1</td><td class="n">5</td><td class="n">1</td></tr>
+        <tr><td>Lilith</td><td class="n">5</td><td class="n">3</td><td class="n">5</td><td class="n">3</td>
+            <td>Jedah</td><td class="n">10</td><td class="n ok">11</td><td class="n">10</td><td class="n ok">11</td></tr>
+        <tr><td>Morrigan</td><td class="n">14</td><td class="n">10</td><td class="n">14</td><td class="n">12</td>
+            <td>Sasquatch</td><td class="n">2</td><td class="n">7</td><td class="n">1</td><td class="n">7</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    A cancel is generally <strong>two ticks below</strong> the plain dash, but
+    <strong>Jedah is above</strong> it (11 against 10), Q-Bee is one below, and
+    Lei-Lei and Zabel both sit at 1.
+    <em>Filling these in by guesswork would have got them wrong.</em>
+  </p>
+
+  <div class="note">
+    Demitri has no row. Per the wiki <strong>neither of his dashes can be cancelled</strong>,
+    so there is no such action to measure.
+  </div>
+</section>
+
+<div class="tickrule" role="presentation"></div>
+
+<section>
+  <h2><span class="kicker">v11.2 / 01</span>Where the two stand</h2>
+
+  <p>
+    <code>Position</code> is at the top of the Player tab.
+    <strong>You pick from a diagram rather than from words.</strong>
+    <code>1</code> is you, <code>2</code> is the dummy, <code>|</code> is a wall.
+    Left and right on the stick are left and right on the stage.
+  </p>
+
+  <div class="timeline">
+    <span class="cap">six arrangements</span>
+<pre>|12------|   you in the left corner
+|21------|   them in the left corner
+|---12---|   centre (the round start), you on the left
+|---21---|   centre (the round start), you on the right
+|------12|   them in the right corner
+|------21|   you in the right corner</pre>
+  </div>
+
+  <p>
+    The four corner arrangements put the pair <strong>flush against the wall</strong>.
+    The gap is not decided here: they are placed closer than any pair can stand and
+    <strong>the game's own push-apart sets the real distance</strong>.
+    That is exact whatever the two characters' sizes.
+  </p>
+
+  <p>
+    The two centre arrangements are <strong>the round start's own positions and gap</strong>.
+    Where the game put them at the start of the round is read back each time, so
+    <em>practising what reaches on the opening</em> works directly.
+  </p>
+
+  <h3>The stick alone can call them up</h3>
+
+  <p>
+    <strong>Lua Hotkey 2 plus a direction</strong> switches arrangement without opening
+    the menu. There is one rule to remember:
+    <strong>"down means the special side is yours"</strong>.
+    In a corner that is the wall side; in the centre it is the 2P side.
+  </p>
+
+  <div class="timeline">
+    <span class="cap">Hotkey 2 +</span>
+<pre>left          them in the left corner    |21------|
+down + left   <span class="hit">you in the left corner</span>     |12------|
+(nothing)     centre, you on the 1P side |---12---|
+down          <span class="hit">centre, you on the 2P side</span> |---21---|
+right         them in the right corner   |------12|
+down + right  <span class="hit">you in the right corner</span>    |------21|</pre>
+  </div>
+
+  <p>
+    For the second or so that the slide runs
+    <strong>neither the stick nor the buttons reach the game</strong>.
+    The direction you leaned on to choose an arrangement would otherwise walk your
+    character. <em>Start and Coin are left alone</em> - pause and the control swap still work.
+  </p>
+
+  <div class="note">
+    <p>
+      <strong>Writing the coordinates directly was abandoned.</strong>
+      Writing a position does not bring <strong>the screen's scrolling with it</strong>,
+      so the character alone is dragged to the edge of the view and never ends up
+      where you asked.
+    </p>
+    <p>
+      <em>They are walked there instead.</em> Moved a little each frame, the situation is
+      the same as having walked, and the camera keeps up on its own.
+      End to end takes about a second.
+    </p>
+  </div>
+
+  <div class="note">
+    <strong>The stage edges are the same on every stage.</strong>
+    Two stages measured: left 280, right 1000. The round start is 554 / 728, whose
+    midpoint of 641 agrees with the 640 that falls out of the walls.
+    Two independent measurements line up, so no per-stage table is needed.
+  </div>
+</section>
+
+<section>
+  <h2><span class="kicker">v11.2 / 02</span>The push block counter</h2>
+
+  <p>
+    The number being shown was
+    <strong>"how many it took", not "how many you pressed"</strong>.
+    The game's own counter <strong>stops the instant it succeeds</strong>.
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Old display</th><th>Presses actually made</th><th>Cases</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>3</td><td class="n ok">6</td><td class="n">22</td></tr>
+        <tr><td>4</td><td class="n ok">6</td><td class="n">28</td></tr>
+        <tr><td>5</td><td class="n ok">6</td><td class="n">30</td></tr>
+        <tr><td>6</td><td class="n">6</td><td class="n">40</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    <strong>120 of 132 were six presses.</strong>
+    Six always succeeds, so what you want to see while practising is how many you pressed.
+    That is what is counted now.
+    <em>This is why a 6 never appeared on screen before.</em>
+  </p>
+
+  <p>
+    Whether it succeeded is shown by <strong>colour</strong>. The old rule was
+    "green at 6 or more", but 81 of 90 successes (90%) succeed below 6, so
+    <strong>a success was almost never green</strong>.
+    The game's own success flag is read instead.
+  </p>
+
+  <p class="note" style="margin-top:22px;">
+    When it is read was wrong too. The old version read once per displayed frame, and
+    the end-of-block handler clears the counter and the window together, so
+    <strong>blocking a light attack always read 0.</strong>
+    It is now read at the instruction where the game does the counting.
+  </p>
+</section>
+
+<div class="tickrule" role="presentation"></div>
+
+<section>
+  <h2><span class="kicker">v11 / 01</span>The fastest action after a block</h2>
+
+  <p>
+    As of v10 the fastest action after a block
+    <strong>came out against some attacks and not others</strong>.
+    Following it up showed that
+    <em>how blockstun works had been misunderstood outright</em>.
+  </p>
+
+  <h3>There is no blockstun counter</h3>
+
+  <p>
+    <strong>No variable counts the stun down.</strong>
+    The game walks a <strong>pushback script</strong> chosen per attack, one byte per tick,
+    and the stun ends when the bytes run out. Each byte's value is that tick's pushback.
+  </p>
+
+  <div class="note">
+    <strong>The length of the stun and the distance of the pushback are the same data.</strong>
+    Light 11 ticks, medium 16, heavy 20. Scanning the whole of a player's memory found no
+    counter because there was never one there.
+  </div>
+
+  <h3>The clock was wrong</h3>
+
+  <p>
+    The old method used a different counter (<code>$158</code>) as its clock. That one
+    <strong>keeps counting during hitstop</strong> while the pushback script stops -
+    so the two <strong>drift apart by exactly the length of the stop</strong>.
+  </p>
+
+  <p>
+    Against something with a long stop, like Demitri's Demon Cradle, the old clock burned
+    out before the script had taken a single step, and the moment it aimed at
+    <strong>was already past the end of the stun</strong>.
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>229 heavy attacks blocked</th><th>Old</th><th>v11</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Aim landed before the stun ended</td>
+          <td class="n bad">118</td>
+          <td class="n ok">221</td>
+        </tr>
+        <tr>
+          <td>Landed at or after the end (nothing comes out)</td>
+          <td class="n bad">111</td>
+          <td class="n ok">8</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    <strong>Demon Cradle's blockstun is 20 ticks, the same as any other heavy.</strong>
+    The stun was not short; only the clock we were reading had run ahead.
+  </p>
+
+  <p class="note" style="margin-top:22px;">
+    The script can be read in full the moment the block registers, so
+    <strong>the remaining stun is known as a fixed number on the first tick of blocking.</strong>
+    Guesswork per strength was replaced with the measured value.
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v11 / 02</span>Auto guard (All Guard / Stand Block)</h2>
+
+  <p>
+    Whether holding back takes a blocking pose and locks the character in place is
+    <strong>a decision the game itself makes</strong>. The rules are these.
+  </p>
+
+  <ul>
+    <li><strong>Projectiles count from anywhere on screen</strong> (distance is not consulted)</li>
+    <li><strong>Normals and specials have a distance per move</strong>, and outside it holding back only walks</li>
+  </ul>
+
+  <p>
+    The old implementation looked at two things - "the opponent entered an attack
+    animation" and "within a fixed distance" - which was
+    <strong>only the coarse fallback at the end of the game's own routine</strong>.
+    Two things followed from that.
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Symptom</th><th>Cause</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Projectiles and other objects' attacks not seen</td>
+          <td>Only the opposing player's attack flag was read; objects were never swept</td>
+        </tr>
+        <tr>
+          <td>Backing off from a whiff that could never reach</td>
+          <td>The per-move hitbox data was not read, so reach was never judged</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    v11 ports the game's own decision across. Both the <strong>object sweep</strong>
+    (picking up projectiles whatever the distance) and the
+    <strong>per-move hitbox table</strong> (reading ahead from the attack's animation to
+    see whether it reaches) are in. A whiffed Demon Cradle, long as it is, no longer
+    makes the dummy back off.
+  </p>
+
+  <div class="note">
+    With the distance judged properly, <strong>back can simply be held.</strong>
+    The judgement being true means the game grants the blocking pose, which means holding
+    back does not walk. Tapping it briefly was a workaround for not being able to tell
+    whether the attack was in range.
+  </div>
+</section>
+
+<div class="tickrule" role="presentation"></div>
+
+<section>
+  <h2><span class="kicker">v10</span>Placing input on ticks</h2>
+
+  <p class="standfirst">
+    Until this version the dummy's input was issued in <strong>displayed frames</strong>.
+    The unit the game actually reads input on is the <strong>tick</strong>, and the two do
+    not line up. While that was out of step, "the fastest action" could not be produced even
+    in principle. This is the version that rebuilt it.
+  </p>
+
+  <p>
+    <strong>This is where DPF reversals started coming out.</strong>
+    What follows is what that rebuild consists of, and it is the foundation the current
+    version stands on.
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v10 / foundation</span>Ticks and displayed frames are different things</h2>
+
+  <p>
+    On turbo 3, <strong>3 displayed frames = 4 ticks</strong>.
+    It is the same statement the wiki makes as "turbo 3 = normal x 0.75", from the other side.
+  </p>
+
+  <p>
+    The game reads input <strong>every tick</strong>. What Lua can reach,
+    <code>joypad.set</code>, comes round once per displayed frame. So the old approach
+    <em>never saw about 40% of the ticks the game reads input on.</em>
+  </p>
+
+  <p>
+    That is what "I want it one frame earlier and cannot" really was. There was no way to
+    place input on a chosen tick; it was rounded to the displayed-frame grid. Push a
+    three-entry command through three to five ticks and the diagonal in the middle gets no
+    frame at all - and
+    <strong>a fireball motion without the diagonal is not a fireball motion.</strong>
+  </p>
+
+  <div class="note">
+    <p>
+      <strong>The screen and the menu now say Tick throughout.</strong>
+      Most of the numbers that used to read "frames" were displayed frames, which are not
+      the game's own time. A false unit makes every adjustment a guess, so they were
+      rewritten to match what they are.
+      The readouts still counted in displayed frames (the dash interval and dash time
+      trainers) say so: "DISPLAYED frames - not game Ticks".
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="kicker">v10 / core</span>How input is written</h2>
+
+  <p>
+    A hook sits at the single point just before the game reads input
+    (<code>0x02211A</code>) and <strong>writes straight to memory there</strong>.
+    That point is passed exactly once per tick, so
+    <em>one chosen input can be placed on one chosen tick, reliably.</em>
+  </p>
+
+  <p>
+    Only then can input be assembled on the same timebase as the game.
+    Everything below rests on it.
+  </p>
+
+  <h3>The press and the action</h3>
+
+  <p>
+    373 measured spans, no exceptions -
+    <strong>a press edge on tick X produces the action on tick X+1.</strong>
+    "Pressed" and "came out" are always one tick apart.
+  </p>
+
+  <h3>Finding the first actionable tick</h3>
+
+  <p>
+    One tick before recovering from a hit, a block or a knockdown, the game always writes a
+    signature (<code>move.l #$2020400,($4,A6)</code>). Catching it establishes
+    <strong>"this character can act on the next tick"</strong>.
+    13 of 14 characters, 249 of 250 times. Q-Bee alone takes another route and is handled
+    separately.
+  </p>
+
+  <div class="rule">
+    <span class="cap">the rule the implementation follows</span>
+    <p>Everything except a special-move command is free+0.</p>
+    <p>
+      If the press does not land on free+0 it <strong>does not come out</strong>.
+      Not late - it does not come out. One tick off and a dash turns into a normal.
+      Only special-move commands (fireball, dragon punch, half-circle, full-circle) are
+      free-1; everything else (dashes, dash cancels, normals, throws, jumps, Dark Force)
+      is free+0.
+    </p>
+    <p>
+      <strong>To a player this is obvious.</strong> Training modes had not held to it
+      because a displayed frame cannot point at the single tick that is free+0.
+      <em>The implementation has only now caught up with the player.</em>
+    </p>
+  </div>
+
+  <div class="timeline">
+    <span class="cap">what a dash needs</span>
+<pre>free-2   forward     first tap
+free-1   (neutral)   released so there is an edge to make
+free+0   forward     second tap  <span class="hit">one tick off and nothing comes out</span>
+free+1   forward     dash</pre>
+  </div>
+
+  <p>
+    Move <code>free+0</code> to <code>free+1</code> and the dash
+    <strong>does not arrive late, it ceases to exist</strong> - a normal comes out instead.
+    Not knowing this rule cost five rebuilds.
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v10 / 01</span>Fastest actions</h2>
+
+  <p>
+    Counted from the signature, reversals and counters come out
+    <strong>on the exact first tick the character can act</strong>.
+  </p>
+
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr><th>Condition</th><th>Came out fastest</th><th>Nothing came out</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Every entry arrived, button on free-1</td>
+          <td class="n ok">30</td>
+          <td class="n">0</td>
+        </tr>
+        <tr>
+          <td>Anything else</td>
+          <td class="n">0</td>
+          <td class="n bad">50</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    <strong>There is no state in between.</strong> "Roughly right" does not exist: it is
+    either right or nothing. Which is why "it comes out sometimes" must not be read as
+    "the precision is a little loose" - the longest lesson of this work.
+  </p>
+
+  <p>
+    Counters were moved onto the same machinery as reversals. They fire
+    <strong>after a block and after a grounded knockdown only</strong>, never on wake-up or
+    an air recovery (30/31 measured; never once on wake-up or in the air).
+  </p>
+
+  <h3>Whether it was the fastest is on screen</h3>
+
+  <p>
+    The moment an action comes out,
+    <strong>whether it was the fastest is shown on the right of the screen.</strong>
+    <code>Fastest</code> if it was, or how late it was as <code>+3 Tick</code>.
+    <em>No need to check whether you think it was the fastest.</em>
+  </p>
+
+  <div class="timeline">
+    <span class="cap">right of the screen</span>
+<pre><span class="hit">Fastest</span>          came out fastest
+Special          what came out
+
+<span class="hit">+3 Tick</span>          three ticks late
+Normal           what came out was a normal</pre>
+  </div>
+
+  <p>
+    The second line names <strong>the kind of action that actually came out</strong>,
+    so that a normal leaking out where a special was aimed for is not read as
+    "it worked" from the <code>Fastest</code> alone.
+    What counts as fastest differs by kind (a special is free+0, everything else free+1),
+    and the display absorbs that difference.
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v10 / 02</span>Throws</h2>
+
+  <p>
+    <strong>Forward / Back / Down</strong> were added to Reversal/Counter Input Motion.
+    Wake-up reversal throws and post-block counter throws can be asked for.
+  </p>
+
+  <p>
+    A throw is a one-frame direction and a button together, so without tick precision you
+    get "it did not turn into a throw". It only works on the foundation above.
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v10 / 03</span>Dash attacks, properly</h2>
+
+  <p>
+    <strong>The dash input and the button used to go out at the same moment.</strong>
+    "Dash" and "attack" were not separated, so of course
+    <em>it never took the shape of "dash, then attack"</em>.
+    Setting a dash attack got you something else entirely.
+  </p>
+
+  <p>
+    It was rebuilt as
+    <strong>put the dash out at the fastest, then wait the given number of ticks and press</strong>.
+    The dash comes out on the exact first actionable tick and the attack is placed behind it.
+    The order and the gap are what you set.
+  </p>
+
+  <div class="timeline">
+    <span class="cap">forward dash attack (Morrigan, Auto = 14)</span>
+<pre>free+0    forward           the dash's second tap
+free+1    forward           <span class="hit">dash</span>
+  ...     forward           held, to keep running
+free+14   forward + button  <span class="hit">dash attack</span></pre>
+  </div>
+
+  <p>
+    The gap is set with <code>Guard Action Delay (Ticks)</code>.
+    <code>Auto</code> fills in the per-character measured value.
+    (At v10 only Sasquatch and Morrigan were measured;
+    <em>v11.3 replaced every character with a measured value</em> - see the v11.3 section above.)
+  </p>
+
+  <h3>All four directions come out</h3>
+
+  <p>
+    <strong>Forward dash, back dash, forward dash cancel and back dash cancel</strong>
+    come out reliably whatever the strength of the attack blocked. An attack cannot be put
+    on a dash that never happened, so this had to be fixed alongside.
+  </p>
+
+  <h3>Why the back dash did not come out</h3>
+
+  <p>
+    The dummy <strong>holds back to block</strong>. Feeding it "back" again changes nothing
+    from the game's point of view, so
+    <em>no press edge forms and the first tap does not exist.</em>
+  </p>
+
+  <p>
+    The stick is now <strong>released and pressed again</strong>. How long it is released,
+    how long the tap is held and where it sits are all adjustable.
+    A forward dash is not being held, so this applies to the back side only.
+  </p>
+
+  <div class="timeline">
+    <span class="cap">back dash while blocking</span>
+<pre>free-8 ... free-5   (neutral)   release the held back
+free-4 ... free-3   back        first tap (held two ticks)
+free-1              (neutral)
+free+0              back        second tap
+free+1              back        dash</pre>
+  </div>
+
+  <h3>Dash cancels</h3>
+
+  <p>
+    The input is identical to a plain dash;
+    <strong>after the dash is out, the opposite direction goes in and is held</strong>.
+    The wiki puts it as "the window is only 1F but holding it from immediately after the
+    dash is fine" - hold it and the one-frame window cannot be missed.
+  </p>
+
+  <p class="note" style="margin-top:22px;">
+    Demitri alone <strong>has no dash cancel</strong> (wiki: cannot be cancelled).
+    It can be set, and not coming out is the correct behaviour.
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">v10 / other</span>Fixed alongside</h2>
+
+  <h3>Push block</h3>
+
+  <p>
+    The game counts <strong>how many presses land inside a window of about 12 ticks</strong>
+    opened when the block starts. The old version issued 11 inputs one per displayed frame,
+    which took about 18 ticks, and the later taps fell outside the window. On ticks,
+    <strong>all six land inside it</strong> (32/32 measured, 88/90 successful).
+  </p>
+
+  <p>
+    <code>Minimum PB Inputs</code>
+    <strong>applying to both players</strong> is fixed as well. Raising it to practise
+    against the dummy made your own push block just as strict.
+    <code>Show Pushblock Counter</code> also shows the dummy's count when the dummy is set
+    to push block (green at 6 or more).
+  </p>
+
+  <h3>Frame trap readout</h3>
+
+  <p>
+    <code>Frame Gap</code> was a displayed-frame difference, so a 3-tick gap and a 4-tick
+    gap both read "2". It is measured in ticks and shown as <code>Tick Gap</code>.
+  </p>
+
+  <h3>Crash</h3>
+
+  <p>
+    With <code>Use Random Recording Slot</code> on and <code>Enable Slot 1-5</code> all off
+    - which is this option's own initial state - a guard action involving playback stopped
+    the script.
+  </p>
+
+  <h3>Removed</h3>
+
+  <p>
+    <code>True Reversal</code> is gone. It existed to chase the fastest action while joypad
+    could not be controlled finely enough, and a different clock does that now.
+  </p>
+</section>
+
+<section>
+  <h2><span class="kicker">Known limitations</span>Not touched yet</h2>
+
+  <ul>
+    <li>The <strong>Dash Interval / Dash Time / Dash Attack Cancel / Attack Dash Gap / Jump In</strong> trainers still count displayed frames, and say so in their descriptions.</li>
+    <li><strong>Jump In Trainer</strong> has a bug: landing without hitting anything can still record a gap against the previous jump-in.</li>
+    <li><strong>Recording-based counters</strong> (Counter Attack - Recording / PB Recording) remain frame-based, which is how macro playback works.</li>
+    <li><strong>Auto guard's back input</strong> is in displayed frames deliberately. What matters is not the precision of the press but that it is still held when the thing arrives, so ticks were not needed.</li>
+    <li><strong>The Recording Wizard does not capture a savestate.</strong> The check playback restores position and facing, but not health or meter.</li>
+    <li><strong>Run-ahead is not supported.</strong> It stops the fastest actions being reliable, so it is detected and warned about on screen. <em>Turn it off while training.</em></li>
+  </ul>
+
+  <div class="note">
+    <strong>Guard cancel back dash</strong> used to be listed here.
+    <em>v11.4 solved it</em> - see the v11.4 section above.
+  </div>
+</section>
+
+<footer>
+  <p>
+    Bring your own ROM. Installation and hotkeys are covered by the bundled
+    <code>README.md</code>; addresses and the analysis behind all this are in the bundled
+    <code>VSAV_MEMORY_NOTES.md</code>.
+    Report problems in <code>#development</code> on the Vampire Savior Discord.
+  </p>
+  <p>
+    This page:
+    <a href="https://claude.ai/code/artifact/61ee74de-356c-4223-9419-f76f4ec9c54d">claude.ai/code/artifact/61ee74de-356c-4223-9419-f76f4ec9c54d</a>
+  </p>
+</footer>
+
+</div>
+
+
+</div>
+
+<script>
+  (function () {
+    var paneJa = document.getElementById('pane-ja');
+    var paneEn = document.getElementById('pane-en');
+    var bja = document.getElementById('btn-ja');
+    var ben = document.getElementById('btn-en');
+    function show(lang) {
+      var isJa = lang === 'ja';
+      paneJa.hidden = !isJa;
+      paneEn.hidden = isJa;
+      bja.setAttribute('aria-pressed', String(isJa));
+      ben.setAttribute('aria-pressed', String(!isJa));
+      document.documentElement.lang = lang;
+    }
+    bja.addEventListener('click', function () { show('ja'); });
+    ben.addEventListener('click', function () { show('en'); });
+    if ((navigator.language || 'ja').slice(0, 2) !== 'ja') { show('en'); }
+  })();
+</script>

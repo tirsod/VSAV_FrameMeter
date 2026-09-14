@@ -1,0 +1,2 @@
+# The emulator reads these files directly. Never let git rewrite line endings.
+* -text

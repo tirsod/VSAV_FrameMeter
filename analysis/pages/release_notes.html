@@ -1,0 +1,445 @@
+<title>VSAV Training Mode — Release Notes / リリースノート</title>
+<style>
+  /* Same token set as the changes page, so the two read as one family:
+     neutrals with a plum bias, gold for structure, red for emphasis. */
+  :root {
+    --ground:  #FAF7F2;
+    --surface: #F1ECE4;
+    --sunk:    #E8E1D6;
+    --ink:     #1E1A22;
+    --muted:   #6B6472;
+    --hair:    #D7CFC4;
+    --accent:  #B8341F;
+    --gold:    #A8790F;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:  #17131C;
+      --surface: #221B29;
+      --sunk:    #2B2333;
+      --ink:     #EDE7F0;
+      --muted:   #9A91A5;
+      --hair:    #372E42;
+      --accent:  #E8654B;
+      --gold:    #DFAC44;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:  #17131C;
+    --surface: #221B29;
+    --sunk:    #2B2333;
+    --ink:     #EDE7F0;
+    --muted:   #9A91A5;
+    --hair:    #372E42;
+    --accent:  #E8654B;
+    --gold:    #DFAC44;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic",
+                 "Meiryo", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.8;
+    margin: 0;
+    padding: 0 20px 96px;
+    font-feature-settings: "palt" 1;
+  }
+
+  .wrap { max-width: 42rem; margin: 0 auto; }
+
+  header { padding: 56px 0 0; }
+
+  .eyebrow {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 0 0 16px;
+  }
+
+  h1 {
+    font-size: clamp(1.7rem, 5vw, 2.3rem);
+    line-height: 1.3;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0 0 10px;
+  }
+
+  .sub { font-size: 1rem; color: var(--muted); margin: 0; }
+
+  /* The tick rule, carried over from the changes page: short marks at an even
+     beat with every fourth taller - three displayed frames to four ticks. */
+  .tickrule {
+    height: 20px;
+    margin: 30px 0 0;
+    background-image:
+      linear-gradient(to right, var(--gold) 1px, transparent 1px),
+      linear-gradient(to right, var(--hair) 1px, transparent 1px);
+    background-size: 32px 20px, 8px 10px;
+    background-position: 0 0, 0 100%;
+    background-repeat: repeat-x;
+  }
+
+  /* ---- language switch ------------------------------------------------- */
+
+  .langbar {
+    display: flex;
+    gap: 1px;
+    background: var(--hair);
+    border: 1px solid var(--hair);
+    width: fit-content;
+    margin: 28px 0 0;
+  }
+  .langbar button {
+    font: inherit;
+    font-size: 0.84rem;
+    font-weight: 700;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    letter-spacing: 0.08em;
+    padding: 7px 18px;
+    border: 0;
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .langbar button[aria-pressed="true"] { background: var(--ink); color: var(--ground); }
+  .langbar button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  [lang]:not([lang=""]) > h2:first-child { margin-top: 44px; }
+  .pane[hidden] { display: none; }
+
+  /* ---- sections -------------------------------------------------------- */
+
+  h2 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    line-height: 1.4;
+    text-wrap: balance;
+    margin: 52px 0 4px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--ink);
+  }
+  h2 .kicker {
+    display: block;
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 400;
+    margin-bottom: 9px;
+  }
+
+  h3 { font-size: 1.02rem; font-weight: 800; margin: 30px 0 2px; }
+
+  p { margin: 13px 0; }
+  strong { font-weight: 800; }
+  ul { margin: 13px 0; padding-left: 1.25em; }
+  li { margin: 7px 0; }
+
+  code {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 0.85em;
+    background: var(--sunk);
+    padding: 0.1em 0.38em;
+    border-radius: 2px;
+  }
+
+  .version {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+    color: var(--accent);
+  }
+  .scope { color: var(--muted); font-size: 0.93rem; margin: 0 0 8px; }
+
+  .note {
+    background: var(--sunk);
+    padding: 16px 18px;
+    margin: 20px 0;
+    font-size: 0.93rem;
+  }
+  .note p:first-child { margin-top: 0; }
+  .note p:last-child { margin-bottom: 0; }
+
+  footer {
+    margin-top: 68px;
+    padding-top: 24px;
+    border-top: 1px solid var(--hair);
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  a { color: var(--accent); }
+  a:focus-visible, :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">VSAV Training Mode / Fightcade 2</p>
+  <h1>Release Notes<br>リリースノート</h1>
+  <p class="sub">Same content in both languages — 内容は両言語で同じです。</p>
+  <div class="langbar" role="group" aria-label="Language / 言語">
+    <button type="button" id="btn-ja" aria-pressed="true">日本語</button>
+    <button type="button" id="btn-en" aria-pressed="false">ENGLISH</button>
+  </div>
+  <div class="tickrule" role="presentation"></div>
+</header>
+
+<!-- ============================ 日本語 ============================ -->
+<div class="pane" id="pane-ja" lang="ja">
+
+  <p class="version">v11.4.1</p>
+  <p class="scope">v11.4 で入れた録画ウィザードを、実際に使ってみて見つかった点をまとめて直した版です。</p>
+
+  <h2><span class="kicker">Changed</span>変更</h2>
+  <ul>
+    <li><strong>スーパージャンプ</strong>に改名しました。v11.4 では High Jump という名前でした。並び順とインデックスは変わらないので、設定への影響はありません。</li>
+    <li><strong>保存すると録画ウィザードのスロット一覧に戻ります。</strong>結果を1秒表示してから戻るので、続けて別のスロットも録れます。戻るときにキャラクターの距離も録画開始時に戻します。</li>
+    <li>スロット一覧に <code>Back to menu</code> を追加しました。<code>Lua Hotkey 1</code> で中止したときもメニューが開き直します。</li>
+    <li><strong>レバーだけで操作できるようになりました。</strong>スロット選択も保存確認も、上下で選んで LP か右で決定します。保存確認は「保存 / 録り直し / 再生し直し」を縦に並べました。ボタンの直接操作もそのまま使えます。</li>
+    <li><strong>Play Recording と Recording Wizard も右で入れます。</strong>メニューでは右が「奥に進む」操作なので揃えました。</li>
+    <li><strong>Reset Distance Each Loop</strong> を追加しました。ループの各周の頭で、録画したときの距離に戻します。周を重ねるうちに離れていって、練習していた状況が起きなくなる問題への対処です。v11.4.1 以降に録った録画が対象です。</li>
+    <li>録画ウィザードの見出しを太くし、スロット一覧の行間と桁を揃えました。</li>
+  </ul>
+
+  <h2><span class="kicker">Fixed</span>修正</h2>
+  <ul>
+    <li><strong>セーブステート読み込みでスクリプトが停止する問題</strong>を修正しました。<code>Use Savestate Upon Recording</code> が有効なとき、ループ再生や再生ホットキーで落ちることがありました。</li>
+    <li><strong>セーブステートは取った試合の中だけ</strong>で有効になりました。キャラクターを選び直すと読み込まれません。全体の状態が戻るものなので、別の組み合わせのものを読むと試合ごと入れ替わってしまいます。</li>
+    <li><strong>再生中は Coin での操作の入れ替えを受け付けません。</strong>再生がダミーを動かしているところへ操作を移すと、どちらも正しく動かないためです。</li>
+    <li><strong>ラウンドが始まるまで <code>Lua Hotkey 1</code> と <code>2</code> を受け付けません。</strong>入場演出の最中に位置を動かすと配置が壊れ、メニューを開くと両キャラが止まったまま演出の途中に取り残されていました。</li>
+    <li>録画ウィザードを終えると、必ず操作が 1P に戻ります。2本続けて録ったときに戻らないことがありました。</li>
+  </ul>
+
+  <div class="tickrule" role="presentation"></div>
+
+  <p class="version" style="margin-top:44px;">v11.4</p>
+  <p class="scope">v11.3.1 からの変更です。</p>
+
+  <h2><span class="kicker">New</span>新機能</h2>
+
+  <h3>録画ウィザード</h3>
+  <p>
+    ダミーの録画を案内付きで行えます。Recording タブの <code>Recording Wizard</code> から始めます。
+  </p>
+  <p>
+    スロットを選ぶと操作がダミー側に切り替わり、動かし始めたところから録画が始まります。
+    手を止めて2秒で自動終了し、そのまま録ったものを一度再生して見せます。
+    確認してから保存、気に入らなければ録り直し、もう一度再生、が選べます。
+  </p>
+  <p>
+    再生の前に両キャラを録画開始時の位置に戻すので、<strong>録ったときと同じ距離で確認できます</strong>。
+    保存するとスロット一覧に戻るので、続けて別のスロットも録れます。
+  </p>
+  <p>
+    操作はレバーとボタンのどちらでも行えます。<code>Lua Hotkey 1</code> でいつでも中止でき、
+    そのときは保存されません。
+  </p>
+
+  <h3>ジャンプの追加</h3>
+  <p>
+    ダミーの行動に前・N・後ろのジャンプを追加しました。
+    <code>Reversal/Counter Input Motion</code> の一覧、バックダッシュキャンセルの次に並びます。
+    下を入れてから上を入れる形で、前後は上を入れるときに乗せます。
+  </p>
+
+  <h3>Play Recording</h3>
+  <p>
+    Recording タブの一番上から、現在のスロットをそのまま再生できます。
+    再生ホットキーと同じ動作で、もう一度押すと止まります。
+  </p>
+
+  <h3>アケコン1本でキャラクターセレクト</h3>
+  <p>1P キャラ → ステージ → 2P キャラまで、同じスティックで完結します。</p>
+
+  <h3>Loop Interval (Frames)</h3>
+  <p>
+    ループ再生の合間に待ちを入れられます。待ちは<strong>ダミーが動ける状態になってから</strong>
+    数え始めるので、硬直の長さに左右されず一定の間隔になります。
+  </p>
+
+  <h2><span class="kicker">Improved</span>改善</h2>
+  <ul>
+    <li>スロットに<strong>録画した日時</strong>を表示します（メニューとウィザードの両方、24時間表記）。</li>
+    <li>1P と 2P が入れ替わっていても、<strong>左右を自動で反転して再生</strong>します。録画時にどちら側だったかを記録し、再生時に見比べています。</li>
+    <li>ループ再生が、ダミーが動ける状態になるのを待ってから次の周を始めます。硬直中に次の入力が来て1周目が出ない、という状態が起きなくなります。</li>
+    <li>録画の自動終了を「技が終わってから2秒」に変更しました。レバーがニュートラルなだけでは終わらないので、長い技の途中で切れることがなくなります。</li>
+    <li>メニューの配色を見やすくしました。</li>
+    <li>ダウンリバーサルの無敵が通常の挙動になりました。コマ投げにセルフディレクションが付きます。メニュー操作のカクつきを解消しました。</li>
+  </ul>
+
+  <h2><span class="kicker">Fixed</span>修正</h2>
+  <ul>
+    <li><strong>ガードキャンセルバックダッシュが失敗する問題</strong>を修正しました。v11.3.1 で既知の不具合として挙げていたものです。弱・中・強すべてで安定します。</li>
+    <li><strong>ウィザードの録画が途中で止まる問題</strong>を修正しました。<code>Use Savestate Upon Recording</code> が有効なとき、ループ再生が1周終わる瞬間に読み込まれるセーブステートが、進行中の録画を打ち切っていました。</li>
+    <li>キャラクターセレクトに戻った後も再生状態が続く問題を修正しました。</li>
+    <li>試合が始まるまで <code>Lua Hotkey 1</code> と <code>2</code> を受け付けないようにしました。</li>
+  </ul>
+
+  <h2><span class="kicker">Notes</span>注意事項</h2>
+  <div class="note">
+    <p>設定ファイルは初回起動時に自動的に移行されます。保存済みの設定は同じ内容のまま引き継がれます。</p>
+    <p>Display タブと Etc タブの初期値を見直しました。新規インストール時のみ適用され、既存の設定には影響しません。</p>
+  </div>
+
+  <h2><span class="kicker">Known limitations</span>既知の制限</h2>
+  <ul>
+    <li>ダッシュ間隔 / ダッシュ時間 / ダッシュ攻撃キャンセル / 攻撃ダッシュ間隔 / Jump In のトレーナーは表示フレーム基準のままです。</li>
+    <li>Jump In Trainer に不具合があります。当てずに着地しただけでも差が記録されることがあります。</li>
+    <li>録画ウィザードにセーブステートは付いていません。確認再生は位置と向きを戻して行いますが、体力やゲージまでは戻りません。</li>
+    <li>run-ahead には未対応です。有効なままだと最速行動が安定しないため、検出して画面で警告します。</li>
+  </ul>
+
+</div>
+
+<!-- ============================ ENGLISH ============================ -->
+<div class="pane" id="pane-en" lang="en" hidden>
+
+  <p class="version">v11.4.1</p>
+  <p class="scope">The Recording Wizard from v11.4, with everything that turned up once it was actually used.</p>
+
+  <h2><span class="kicker">Changed</span>Changed</h2>
+  <ul>
+    <li>Renamed to <strong>Super Jump</strong>. v11.4 called it High Jump. The order and the indices are unchanged, so your settings are unaffected.</li>
+    <li><strong>Saving returns you to the wizard's slot list.</strong> The result stays up for a second first, and then you can record the next slot straight away. The characters go back to the distance the take started from as the list comes back.</li>
+    <li><code>Back to menu</code> added to the slot list. Cancelling with <code>Lua Hotkey 1</code> now reopens the menu too.</li>
+    <li><strong>The stick alone drives it.</strong> Slot selection and the save prompt are both lists: up and down to move, LP or Right to take it. The save prompt reads Save / Record again / Play again down the screen. The buttons still work as direct shortcuts.</li>
+    <li><strong>Right also enters Play Recording and Recording Wizard.</strong> Right is how you go into things elsewhere in the menu, so it does here as well.</li>
+    <li><strong>Reset Distance Each Loop</strong> added. Puts both characters back to the distance the recording was made from at the start of every loop. Without it the two drift apart over the passes and the setup you were practising stops happening. Works on recordings made from v11.4.1 on.</li>
+    <li>The wizard's headings are heavier, and the slot list has more room and lines up properly.</li>
+  </ul>
+
+  <h2><span class="kicker">Fixed</span>Fixed</h2>
+  <ul>
+    <li><strong>The script halting on a savestate load.</strong> With <code>Use Savestate Upon Recording</code> on, a looped playback or the playback hotkey could take it down.</li>
+    <li><strong>Coin no longer swaps control while a playback is running.</strong> The playback is already driving the dummy, and both writing to it means neither comes out cleanly.</li>
+    <li><strong><code>Lua Hotkey 1</code> and <code>2</code> are ignored until the round is under way.</strong> Moving the characters during the entrance left the arrangement shredded, and opening the menu over it left both of them frozen partway through.</li>
+    <li>The wizard always hands control back to P1 when it finishes. Recording two takes in a row could leave it on the dummy.</li>
+  </ul>
+
+  <div class="tickrule" role="presentation"></div>
+
+  <p class="version" style="margin-top:44px;">v11.4</p>
+  <p class="scope">Everything below is the change from v11.3.1.</p>
+
+  <h2><span class="kicker">New</span>New</h2>
+
+  <h3>Recording Wizard</h3>
+  <p>
+    Guided dummy recording. Start it from <code>Recording Wizard</code> at the bottom of the
+    Recording tab.
+  </p>
+  <p>
+    Pick a slot and control switches to the dummy; recording begins the moment you move.
+    It stops on its own after two seconds of standing still, then plays the take back once
+    so you can look at it. From there you can save it, record it again, or watch it again.
+  </p>
+  <p>
+    Both characters return to where they stood when the take began before each playback, so
+    <strong>you check it at the distance it was recorded from</strong>. Saving takes you back
+    to the slot list, ready for the next one.
+  </p>
+  <p>
+    Everything is driven by the stick or the buttons, whichever you prefer.
+    <code>Lua Hotkey 1</code> leaves at any point, and nothing is saved when it does.
+  </p>
+
+  <h3>Jumps added</h3>
+  <p>
+    Forward, neutral and back versions of the jump are now dummy actions, listed after
+    Back Dash Cancel in <code>Reversal/Counter Input Motion</code>. Down, then up — with
+    the direction on the up.
+  </p>
+
+  <h3>Play Recording</h3>
+  <p>
+    Plays the current slot straight from the top of the Recording tab. Same as the playback
+    hotkey; press it again to stop.
+  </p>
+
+  <h3>Character select on one stick</h3>
+  <p>P1 character, then stage, then P2 character, all without reaching for the keyboard.</p>
+
+  <h3>Loop Interval (Frames)</h3>
+  <p>
+    Puts a gap between loops. The wait starts <strong>once the dummy can act again</strong>,
+    so the gap is the same length whatever the recovery was.
+  </p>
+
+  <h2><span class="kicker">Improved</span>Improved</h2>
+  <ul>
+    <li>Slots show <strong>when they were recorded</strong>, in the menu and in the wizard, on a 24-hour clock.</li>
+    <li>Playback is <strong>mirrored automatically</strong> when P1 and P2 have swapped sides. Which side the take was recorded from is stored with it and compared on playback.</li>
+    <li>Looped playback waits for the dummy to be able to act before starting the next pass. The first input of a pass no longer lands during the previous one's recovery, where it would simply not come out.</li>
+    <li>A recording now ends two seconds after the move finishes, rather than two seconds after the stick goes neutral. Long moves are no longer cut off partway through.</li>
+    <li>The menu palette is easier to read.</li>
+    <li>Wake-up reversals have ordinary invulnerability. Command throws get self-direction. The menu no longer stutters as you move through it.</li>
+  </ul>
+
+  <h2><span class="kicker">Fixed</span>Fixed</h2>
+  <ul>
+    <li><strong>Guard cancel back dash failing.</strong> This was listed as a known issue in v11.3.1. It is now reliable against light, medium and heavy.</li>
+    <li><strong>The wizard's recording stopping partway through.</strong> With <code>Use Savestate Upon Recording</code> on, the savestate loaded at the end of a loop was cutting off a recording in progress.</li>
+    <li>Playback continuing after returning to character select.</li>
+    <li><code>Lua Hotkey 1</code> and <code>2</code> are ignored until the match is running.</li>
+  </ul>
+
+  <h2><span class="kicker">Notes</span>Notes</h2>
+  <div class="note">
+    <p>Your settings file migrates itself on first launch. Saved settings keep their meaning.</p>
+    <p>The Display and Etc tabs have new defaults. These apply to a fresh install only and leave an existing settings file alone.</p>
+  </div>
+
+  <h2><span class="kicker">Known limitations</span>Known limitations</h2>
+  <ul>
+    <li>The Dash Interval / Dash Time / Dash Attack Cancel / Attack Dash Gap / Jump In trainers still count displayed frames.</li>
+    <li>Jump In Trainer has a bug: landing without hitting anything can still record a gap.</li>
+    <li>The Recording Wizard does not capture a savestate. The check playback restores position and facing, but not health or meter.</li>
+    <li>Run-ahead is not supported. It stops the fastest actions from being reliable, so it is detected and warned about on screen.</li>
+  </ul>
+
+</div>
+
+<footer>
+  <p>
+    ROM は各自でご用意ください。インストール手順は同梱の <code>README.md</code> をご覧ください。
+    不具合の報告は Vampire Savior Discord の <code>#development</code> へ。
+  </p>
+  <p>
+    Bring your own ROM. Installation is covered by the bundled <code>README.md</code>.
+    Report problems in <code>#development</code> on the Vampire Savior Discord.
+  </p>
+</footer>
+
+</div>
+
+<script>
+  (function () {
+    var ja = document.getElementById('pane-ja');
+    var en = document.getElementById('pane-en');
+    var bja = document.getElementById('btn-ja');
+    var ben = document.getElementById('btn-en');
+    function show(lang) {
+      var isJa = lang === 'ja';
+      ja.hidden = !isJa;
+      en.hidden = isJa;
+      bja.setAttribute('aria-pressed', String(isJa));
+      ben.setAttribute('aria-pressed', String(!isJa));
+      document.documentElement.lang = lang;
+    }
+    bja.addEventListener('click', function () { show('ja'); });
+    ben.addEventListener('click', function () { show('en'); });
+    // Open in the reader's own language when it is not Japanese.
+    if ((navigator.language || 'ja').slice(0, 2) !== 'ja') { show('en'); }
+  })();
+</script>

@@ -1,0 +1,85 @@
+# The emulator install is not the project. Ignore everything at the top level,
+# then add back only what is actually authored here: the Lua tool, the analysis
+# scripts, the engine notes, and the older script backups that predate git.
+/*
+!/.gitignore
+!/.gitattributes
+!/scripts/
+!/analysis/
+!/run_vsav_training.bat
+!/run_vsav_training.sh
+!/training_modes.json
+!/README.md
+!/CLAUDE.md
+# Shipped in every release but authored upstream, so they were never in here -
+# the zip carried them forward from the previous zip instead. That chain broke
+# the moment the Downloads folder was cleared: the files existed nowhere else
+# and a rebuild would have quietly dropped them. Tracked now.
+!/handoff_VSAV_investigation.md
+# Handoff notes are authored here and are the first thing a new session
+# reads. Whitelisted by pattern so the next one does not have to remember
+# to add itself - the last one was only tracked because someone noticed.
+!/handoff_*.md
+!/run_vsav_training_flatpak.sh
+!/vsav_training_flatpak.desktop
+# Same story, found the hard way: these two are shipped in every zip but were
+# never whitelisted, so the folder overwrite took them and git had no copy.
+# Recovered from the v11.3.3 zip.
+!/VSAV_TRAINING_v11.3.2_CHANGES.md
+!/wakeup_reversal_behavior_v11.3.2.md
+# Release notes live in the repo as well as on the page. Both languages.
+!/RELEASE_NOTES.md
+!/RELEASE_NOTES.ja.md
+# The engine notes. The header above says these are authored here and belong in
+# the repo, and they never were - 36 KB of measurements (the camera and its
+# 16 px rule, the free-1 signature, $21 holding its value for one tick, the air
+# dash at +8) existed on disk only. Every edit made to this file since it was
+# created was never committed. Third time this class of miss has been found.
+!/VSAV_MEMORY_NOTES.md
+
+# Bulk data, at any depth. These stay on disk - reversal_logs_archive is the
+# evidence base and must never be deleted (see analysis/archive_logs.py) - but
+# it is 170 MB of traces and does not belong in history. mame_roms must not be
+# committed at all.
+reversal_logs/
+reversal_logs_archive/
+mame_code/
+mame_roms/
+__pycache__/
+*.pyc
+
+# Emulator working files that land inside the tracked directories.
+*.fs
+*.sav
+
+# ツールが実行のたびに書き出す。設定そのものは履歴に残っているが、
+# 以後の差分は追わない(2026-08-14 の指示)。
+/scripts/training_settings.json
+
+# Per-user state, not source. A used copy of this leaked into a release once,
+# carrying a debugging configuration and the knockdown logger switched on.
+training_settings.json
+
+# gen_max_steps.py parks the real settings here while a load test is loaded in
+# their place. Same reason as above, and it must not be mistaken for source.
+/analysis/training_settings.backup.json
+
+# dashProbe.lua の出力。実測そのものは残す価値があるが、読み取った事実は
+# VSAV_MEMORY_NOTES.md に書く。ログ自体は走らせるたびに増える。
+/analysis/dash_probe.log
+/analysis/select_probe.log
+/analysis/lever_probe.log
+/position_slide.log
+# The emulator's working directory for a Lua script is scripts/, which is
+# where the trace actually lands - and it must never reach a package.
+/scripts/position_slide.log
+/analysis/position_slide_*.log
+# Frozen copies of the probe log. EVID-RUNTIME-001 cites one by SHA-256,
+# so the live log has to stay free to grow while the cited copy stays put.
+/analysis/dash_probe_*.log
+
+# Release archives. The whitelist above already ignores them, but they kept
+# turning up in the project folder next to the sources they were built from.
+# Builds live outside the repo now (../../dist); this line is here so the
+# intent is stated and not just an accident of the whitelist.
+VSAV_Training_*.zip
