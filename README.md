@@ -1,4 +1,3 @@
-# VSAV Training Mode - Fightcade 2 
 
 ## About
 A training mode for VSAV. **You must supply your own ROM!** 
@@ -8,6 +7,18 @@ Shoutouts to: Dammit and Jed for their wizardry, Grouflon (Stole their 3s traini
 BIGGEST SHOUTOUT to KyleW! This definitely would not have happened or continued without you.
 
  `N-Bee`
+ 
+# Frame Meter UI for VSAV_Training
+*A fork of a fork of VSAV's trainer tools.*
+
+📏 This fork includes a frame meter *(similar to SF6's)*, which uses the game-tick clocks included by vampiresavior001's v11. It does not fix bugs or add any other features to the trainer. Just the frame meter.
+
+🛠️ For the latest trainer, please see [the parent fork, by vampiresavior001.](https://github.com/vampiresavior001/VSAV_Training/tree/fc2-v11)
+
+## Preview
+
+<img width="400" height="300" alt="Screenshot showcasing the frame meter" src="https://github.com/user-attachments/assets/38d53dbf-c8b8-4d79-bfcf-dd3371fd6013" />
+<img width="400" height="300" alt="Screenshot showing the trainer's options menu" src="https://github.com/user-attachments/assets/e9759ac3-8471-47fb-8f48-aff68750bd40" />
 
 ## Windows Installation 
 Follow the video guide: https://www.youtube.com/watch?v=To7DpTNSRi8
@@ -34,7 +45,7 @@ What is described in the video guide:
 3) In the `run_vsav_training.command` document you created, copy and paste the contents of the file `run_vsav_training.command`
 5) double click on the `run_vsav_training.command`
 
-## Rom Patch installion
+## Rom Patch installation
 
 1) Place the 'support' folder in your `...\Fightcade\emulator\fbneo`
 3) Launch the training mode with the .bat file
@@ -56,8 +67,12 @@ Video Guide here https://youtu.be/HwyTAnbSw_I
   4) If the .bat script does not work it may be because your path has spaces or is too long. I cannot control this, this is part of FC2 FBneo lua. See step 3 for more info above.
   5) Reach out to me on the Vampire Savior Discord's #development channel! I will usually respond on the same day.
   
-
 ## Hotkeys
+
+You can configure these in FBNEO's Input>Map game inputs... (F5)
+
+<img width="206" height="78" alt="image" src="https://github.com/user-attachments/assets/41a6f1ca-52f1-4fc6-b0c7-b76987674036" /> 
+
     Press Lua Hotkey 1 to open the training menu.
     Press Coin while hovering over a character in character select to select a stage
     Press Coin while in a match to swap controls to dummy
@@ -65,10 +80,6 @@ Video Guide here https://youtu.be/HwyTAnbSw_I
     Press Volume Up to record dummy. (found in 'map game inputs')
     Press Alt + 3 to toggle looping playback.
     Press Alt + 4 to return to character select
-
-## Features
-    In this version all features should be documented with description text within the training mode itself.
-    Just press Lua Hotkey 1 and look through the menus.
 
 ## About this fork
 
