@@ -111,7 +111,8 @@ local default_training_settings = {
   show_curse_timer = false,
   lilith_gps = 0,
   min_pb_inputs = 1,
-  skip_nedge_displays = false,
+  skip_nedge_displays = false, -- Now unused, as skip_release_displays handles it as [1 = release+idle] [2 = idle] [3 = no negative edge] 
+  skip_release_displays = 1,
   -- Both of these were read but never declared here, so a fresh install had
   -- them as nil - off, but nowhere written down. Stated at the value the
   -- tool has always shipped with.

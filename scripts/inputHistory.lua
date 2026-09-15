@@ -476,6 +476,7 @@ function is_input_history_entry_equal(_a, _b)
   -- differs by buttons[], and including it would stop a held button from
   -- accumulating its frame count.
   local _ra, _rb = _a.released, _b.released
+
   if (_ra ~= nil) ~= (_rb ~= nil) then return false end
   if _ra ~= nil then
     for i = 1, 6 do
@@ -652,9 +653,21 @@ function draw_input_history_entry(_entry, _x, _y, color, step)
 						_entry.buttons[5] == false and
 						_entry.buttons[6] == false 
 
+  -- skip_release_displays: Can be toggled with "Hide Button Release Icons".
+  -- Hackily invalidates all "released" input events, resulting in the input history showing
+  -- only the Pressed, Held, and No_buttons states.
+  -- Forcing the [no_buttons = false] state or 
+
+  if globals.options.skip_release_displays > 1 then
+		for i = 1, 6 do
+			_entry.released[i] = false
+		end
+  end
+
 	-- A release frame has no buttons held, but still needs the button area
 	-- drawn so the hollow marker is visible - otherwise the shortcuts below
 	-- would return early and the release would stay invisible.
+
 	if no_buttons and _entry.released then
 		for i = 1, 6 do
 			if _entry.released[i] then no_buttons = false break end
@@ -1075,7 +1088,7 @@ local inpHistoryModule = {
 		gui.box(input_underlay_x, input_underlay_y, emu.screenwidth(), input_underlay_y + 25 ,"#00000099", "#00000055")
 
 	history_draw_candidate = input_history[1]
-	if globals.options.skip_nedge_displays then
+	if globals.options.skip_release_displays > 2 then
 		history_draw_candidate = remove_nedge_events(input_history[1])
 	end
         draw_input_history(history_draw_candidate, emu.screenwidth() - 15 + globals.options.inp_history_scroll, input_underlay_y + 2, true)
