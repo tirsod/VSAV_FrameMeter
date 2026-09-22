@@ -1470,7 +1470,10 @@ return {
     {
       name = "Trainer",
       entries = {
-        checkbox_menu_item("Tick Data", training_settings, "mo_enable_frame_data", false, "Startup, active, recovery, advantage, total, hitstun, hitfreeze - in Ticks.\nThe first three come from the ATTACK HITBOX, the box the hitbox display draws,\nso they do not move with distance. They add up to Total and exclude the\nattacker's own hitfreeze; * means the attacker was not frozen.\nACTION TIMELINE (third row, green): one action on a clock, each entry stamped\nwith its Tick. LP..HK and Action Steps names. 1t PreJump > 4t Air > 10t MP."),
+        checkbox_menu_item("Tick Data", training_settings, "mo_enable_frame_data", false, "Startup, active, recovery, advantage, total, hitstun, hitfreeze - in Ticks.\nThe first three come from the ATTACK HITBOX, the box the hitbox display draws,\nso they do not move with distance. They add up to Total and exclude the\nattacker's own hitfreeze; * means the attacker was not frozen."),
+        child_of("mo_enable_frame_data",
+          checkbox_menu_item("  Show Action Timeline", training_settings, "display_action_timeline", false, "ACTION TIMELINE (third row, green): one action on a clock, each entry stamped\nwith its Tick. LP..HK and Action Steps names. 1t PreJump > 4t Air > 10t MP.")
+      ),
         checkbox_menu_item("Show Step Wait Ticks", training_settings, "display_step_wait_ticks", false,"Shows what each Action Step actually waited, in game Ticks.\nThe Wait row names a mode - Auto (After), Auto (Chain) - without saying how\nlong it came to. This measures it: Step.2 Wait:13 is step two connecting 13 Ticks\nafter step one. Act is the Ticks that step spends entering its own inputs.\nLoop Wait is the gap a loop restart waited, which is not step one own wait.\nMeasured only - what the row is set to is on the row."),
         checkbox_menu_item("Show PB Counter", training_settings, "display_pb_counter",1, "How many push block presses the game has counted in its window ($170), plus any\nyou make after it grants - the game stops counting there, so a lucky three\nwould otherwise read three however hard you mash.\nGreen once the push block is granted. The count carries across the hits of a\nblocked string, the same as the game's own.\nWhen the dummy is set to Push Block its count is shown beside yours as P2."),
         checkbox_menu_item("Show PB Stats", training_settings, "display_pb_stats", false,"Displays your succeeded, failed and total attempts at pushblocking.\n Turning this feature off and on will reset the data to 0"),
@@ -1520,6 +1523,14 @@ return {
     {
       name = "Analysis",
       entries = {
+        checkbox_menu_item("Frame Meter", training_settings, "display_frame_meter", false, "Displays startup and overall frame data of each player's attacks,\nincluding frame advantage and special statuses."),
+        child_of("display_frame_meter",
+          checkbox_menu_item(" Show Throw Invulnerabilty", training_settings, "fm_no_throw", "Include throw invulnerability frames in the meter.")
+        ),
+        -- Forced on makes more sense.
+        child_of("display_frame_meter",
+          checkbox_menu_item(" Show Movement Data", training_settings, "fm_movement_data", "Integrate jumps and dashes into the startup frames.")
+        ),
         checkbox_menu_item("Show Invuln Timer", training_settings, "show_invuln_timer", false,"The invulnerability timer ($147), over each character's head: a green bar and\nthe number, labelled Inv. Counts down while the character cannot be hit.\nA raw value read straight from the game, not a measurement."),
         checkbox_menu_item("Show Throw Invuln Timer", training_settings, "show_throw_invuln_timer", false,"The throw invulnerability timer ($143), over each character's head, labelled\nThrow Inv. Counts down while a throw cannot connect.\nA raw value read straight from the game, not a measurement."),
         checkbox_menu_item("Show Mash Timer", training_settings, "show_mash_timer", false,"The mash timer ($15C), over each character's head: a cyan bar and the number,\nlabelled Mash. This is what mashing buttons counts down.\nA raw value read straight from the game, not a measurement."),

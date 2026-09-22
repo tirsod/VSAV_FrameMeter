@@ -71,10 +71,12 @@ local function fd_lines(text)
 	return out
 end
 
+-- Function to draw tick timeline. timeline draw. timeline function. frame tick data timeline 
 local function draw_fd()
 	mid_width = 23
 	mid_height = 47
 	local _row = 0
+	 -- Draws the frame data (startup, active, recovery, total ticks)
 	if globals.last_fd ~= nil and globals.last_fd ~= "" then
 		for _, _line in ipairs(fd_lines(globals.last_fd)) do
 			gui.text(mid_width, mid_height + _row * 9, _line)
@@ -83,12 +85,15 @@ local function draw_fd()
 	end
 	-- Under the frame data, and drawn even when there is none: the route can
 	-- have something to say before a move has been measured.
-	if globals.last_route ~= nil and globals.last_route ~= "" then
+	-- Draws a huge blob of text
+
+	if globals.last_route ~= nil and globals.last_route ~= "" and globals.options.display_action_timeline then
 		for _, _line in ipairs(fd_lines(globals.last_route)) do
 			gui.text(mid_width, mid_height + _row * 9, _line, FD_ROUTE_COLOR)
 			_row = _row + 1
 		end
 	end
+
 end
 
 local function draw_rec()
