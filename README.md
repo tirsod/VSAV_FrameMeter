@@ -20,7 +20,8 @@ BIGGEST SHOUTOUT to KyleW! This definitely would not have happened or continued 
 ## Preview
 
 <img width="400" height="300" alt="Screenshot showcasing the frame meter" src="https://github.com/user-attachments/assets/38d53dbf-c8b8-4d79-bfcf-dd3371fd6013" />
-<img width="400" height="300" alt="Screenshot showing the trainer's options menu" src="https://github.com/user-attachments/assets/e9759ac3-8471-47fb-8f48-aff68750bd40" />
+<img width="400" height="300" alt="Screenshot showcasing WHERE to activate the frame meter." src="https://github.com/user-attachments/assets/b4eb66c9-1c20-4a01-b373-b3c85afb3fa1" />
+
 
 ## Windows Installation 
 Follow the video guide: https://www.youtube.com/watch?v=To7DpTNSRi8
