@@ -27,8 +27,28 @@ img_invul_prev = gd.createFromPng("images/framemeter/FMO_invul.png"):gdStr()
 img_nothrow_prev = gd.createFromPng("images/framemeter/FMO_nothrow.png"):gdStr()
 img_movement_prev = gd.createFromPng("images/framemeter/FMO_move.png"):gdStr()
 
+img_pushblock = gd.createFromPng("images/framemeter/FM_pushblock.png"):gdStr()
+img_pushblock_OK = gd.createFromPng("images/framemeter/FM_pushblock_OK.png"):gdStr()
+
 img_skipped = gd.createFromPng("images/framemeter/FM_skipped.png"):gdStr()
 
+img_dir_1 = gd.createFromPng("images/framemeter/btn/BT_1.png"):gdStr()
+img_dir_2 = gd.createFromPng("images/framemeter/btn/BT_2.png"):gdStr()
+img_dir_3 = gd.createFromPng("images/framemeter/btn/BT_3.png"):gdStr()
+img_dir_4 = gd.createFromPng("images/framemeter/btn/BT_4.png"):gdStr()
+img_dir_5 = gd.createFromPng("images/framemeter/btn/BT_5.png"):gdStr()
+img_dir_6 = gd.createFromPng("images/framemeter/btn/BT_6.png"):gdStr()
+img_dir_7 = gd.createFromPng("images/framemeter/btn/BT_7.png"):gdStr()
+img_dir_8 = gd.createFromPng("images/framemeter/btn/BT_8.png"):gdStr()
+img_dir_9 = gd.createFromPng("images/framemeter/btn/BT_9.png"):gdStr()
+
+img_bt = gd.createFromPng("images/framemeter/btn/BT_BG.png"):gdStr()
+img_lp = gd.createFromPng("images/framemeter/btn/BT_LP.png"):gdStr()
+img_mp = gd.createFromPng("images/framemeter/btn/BT_MP.png"):gdStr()
+img_hp = gd.createFromPng("images/framemeter/btn/BT_HP.png"):gdStr()
+img_lk = gd.createFromPng("images/framemeter/btn/BT_LK.png"):gdStr()
+img_mk = gd.createFromPng("images/framemeter/btn/BT_MK.png"):gdStr()
+img_hk = gd.createFromPng("images/framemeter/btn/BT_HK.png"):gdStr()
 
 local states = {
 	{img_noaction, img_noaction_prev},			-- 0/1/nil
@@ -42,13 +62,21 @@ local states = {
 	{img_movement, img_movement_prev}			-- 9
 }
 
+-- Intended for images that overlay on top of the frames. 
+-- Pushblock timer primarily, though pursuit and mash timers come to mind.
+local timers = {
+	img_pushblock, -- 1
+	img_pushblock_OK -- 2
+}
+
+local input_images = {
+	{img_dir_1, img_dir_2, img_dir_3, img_dir_4, img_dir_5, img_dir_6, img_dir_7, img_dir_8, img_dir_9}, -- Literally.
+	{img_lp, img_mp, img_hp, img_lk, img_mk, img_hk} -- Buttons.
+}
+
 -- Screen height for drawing the frame meter.
 -- Why does emu.getscreenheight() different values on startup & when the .lua is loaded manually?
 local _height = 220
-
--- From: framedata.lua -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- 
-local tickData = require "./scripts/tickData"
-local vsav = require "./scripts/tickDataVsav"
 
 local game, count
 local super_mode = false
@@ -77,7 +105,10 @@ local profile = {
 		
 		jump = function(addr) 	 return memory.readbyte(addr + 0x006) == 0x06 end,
 		dash = function(addr) 	 return memory.readbyte(addr + 0x006) == 0x14 end,
-		stunned = function(addr) return memory.readbyte(addr + 0x006) == 0x02 end
+		stunned = function(addr) return memory.readbyte(addr + 0x006) == 0x02 end,
+
+		pushblock = function(addr) return memory.readbyte(addr + 0x1AB) end,
+		pbsuccess = function(addr) return memory.readword(addr + 0x1B0) end
 	}
 }
 for _, game in ipairs(profile) do
@@ -99,9 +130,26 @@ local max_idle_frames = 5
 
 -- State log format: 0/nil/1 = idle, 2 = startup, 3 = active, 4 = recovery, 5 = hurt, 6 = projectile
 -- Third array is for skipped frames, 0 = not skipped, 1 = skipped
-local state_log = {{},{},{}}
-local test_state = "actionable"
 
+-- State log divided in
+-- [1] = States, player 1
+-- [2] = States, player 2
+-- [3] = Timers, player 1
+-- [4] = Timers, player 2
+-- [5] = Inputs, player 1 only
+-- [6] = Fuck if I know. We're not that far in yet.
+
+local last_inputs = {}
+local last_button_count = 0
+local last_button_string = ""
+
+local state_log = {}
+local function reset_state_log()
+	state_log = {{},{},{},{},{}}
+end
+reset_state_log()
+
+local test_state = "actionable"
 local get_attack_state = {
 	[false] = function(addr) --non-super mode
 		return game.attacking(addr)
@@ -140,7 +188,10 @@ local function refresh_meter()
 	if idle_frames > max_idle_frames and test_state == "action" then
 		idle_frames = 0
 		log_position = 0
-		state_log = {{},{},{}}
+		last_inputs.button_count = -1
+		last_button_count = -1
+		last_button_string = ""
+		reset_state_log()
 	end
 end
 
@@ -194,26 +245,87 @@ local function get_player_objects()
 		player[p].status_2	  = game.status_2(addr)
 		player[p].walking 	  = game.walking(addr)
 		player[p].dfreturn 	  = game.dfreturn(addr)
+
+		player[p].pbtimer	  = game.pushblock(addr)
+		player[p].pbsuccess   = game.pbsuccess(addr)
 	end
 	return player
 end
 
+local function get_player_inputs()
 
-local previous_player = {{}, {}} 
+	local base = 0xFF8400
+	local btn = memory.readbyte(base + 0x122)
+	local dir = memory.readbyte(base + 0x125)
+	local facing = memory.readbyte(base + 0x00B)
+
+	local bit0 = (dir % 2) >= 1
+	local bit1 = (math.floor(dir / 2) % 2) >= 1
+	local _left, _right
+	if facing == 0 then
+		_left, _right = bit1, bit0
+	else
+		_left, _right = bit0, bit1
+	end
+	local _down = (math.floor(dir / 4) % 2) >= 1
+	local _up   = (math.floor(dir / 8) % 2) >= 1
+
+	local _direction = 5
+	if _down then
+		if _left then _direction = 1
+		elseif _right then _direction = 3
+		else _direction = 2 end
+	elseif _up then
+		if _left then _direction = 7
+		elseif _right then _direction = 9
+		else _direction = 8 end
+	else
+		if _left then _direction = 4
+		elseif _right then _direction = 6
+		else _direction = 5 end
+	end
+
+	local press = false
+	local count = 0
+	local btn_str = ""
+
+	local function pressed(bit_index)
+		local v = (math.floor(btn / 2 ^ bit_index) % 2) >= 1
+		if v then
+			press = true
+			count = count + 1
+			btn_str = btn_str .. tostring(bit_index)
+		end
+		return v
+	end
+
+	local rel = false
+
+	local inputs = {
+		directional = _direction,
+		buttons = {pressed(0), pressed(1), pressed(2), pressed(4), pressed(5), pressed(6)}, -- Why is 4 skipped again?
+		pressed = press,
+		button_count = count,
+		button_string = btn_str,
+		release = string.len(btn_str) < string.len(last_button_string)
+	}
+	
+	return inputs
+end
+
+local function log_player_inputs()
+	local inputs = get_player_inputs()
+	if (inputs.button_string ~= last_button_string or inputs.directional ~= last_inputs.directional) then
+		state_log[5][log_position] = inputs
+		last_button_string = inputs.button_string
+		print(last_button_string)
+	end
+	last_inputs = inputs
+end
 
 local function get_player_state(tick)
-
     local player = get_player_objects()
-
 	for p = 1, 2 do
-		-- clear 2 frames ahead
-		-- -- This was kinda my fuck up but we can come back from this.
-		--state_log[p][log_position+1%log_length] = 0
-		--state_log[p][log_position+2%log_length] = 0
-
-		-- we're so back
-		-- (we're not)
-		-- oh yeah we are
 		if (log_position > log_drawn) then
 			state_log[p][((log_position-log_drawn)+4)%log_length] = nil
 			state_log[p][((log_position-log_drawn)+3)%log_length] = nil
@@ -243,6 +355,15 @@ local function get_player_state(tick)
 				break
 			end
 		end
+
+		state_log[p+2][log_position] = 0
+		if player[p].pbtimer > 0 then
+			state_log[p+2][log_position] = 1
+		end
+
+		local op = 2
+		if p == 2 then p = 1 end
+		if player[op].pbsuccess > 0 and player[op].pbsuccess <= 3 then state_log[p+2][log_position] = 2 end
 	end
 
 	log_position = (log_position + 1) % log_length
@@ -321,10 +442,41 @@ function draw_meter()
 			local image = states[1][1]
 			local st = state_log[player][i]
 			local state_entry = states[st]
+
 			if state_entry and state_entry[1] ~= nil then
 				image = state_entry[1]
 			end
+
 			gui.image(drawX + xx, drawY + (10*player), image)
+
+			if player == 1 then
+				local input_entry = state_log[5][i]
+				if input_entry then
+					local directional = input_entry.directional
+					local dir_image = input_images[1][directional]
+
+					local relY = 0
+					--if (input_entry.pressed) then
+						--if input_entry.release then relY = -1 end
+
+						gui.image(drawX + xx, drawY+2+relY, img_bt)
+						for bt = 1, 6 do
+							if input_entry.buttons[bt] then gui.image(drawX + xx, drawY+2+relY, input_images[2][bt]) end
+						end
+					--end
+
+					gui.image(drawX + xx, drawY+2+relY, dir_image)
+				end
+			end
+
+			local overlay = nil
+			local timer_entry = state_log[player+2][i]
+			if (timer_entry ~= nil and timer_entry > 0) then
+				if timers[timer_entry] ~= nil then
+					overlay = timers[timer_entry]
+					gui.image(drawX + xx, drawY + (10*player), overlay)
+				end
+			end
         end
     end
 
@@ -374,10 +526,6 @@ function draw_meter()
 	local adv1 = string.format("%s", advantage1)
 	local adv2 = string.format("%s", advantage2)
 
-	-- Draw measurement string
-	gui.text(drawX + (4*1), drawY+2, measure1, "#FFFFFF")
-	gui.text(drawX + (4*1), drawY+28, measure2, "#FFFFFF")
-
 	-- Draw frame advantage, colored 
 	local adv_neutral = "#FFFFFF"
 	local adv_positive = "#00BEFF"
@@ -393,12 +541,16 @@ function draw_meter()
 		c2 = adv_positive
 	end
 
+	-- Draw measurement string
+	local p1_y_offset = -6
+	gui.text(drawX + (1), drawY+p1_y_offset, measure1, "#FFFFFF")
+	gui.text(drawX + (1), drawY+29, measure2, "#FFFFFF")
 	-- Draw frame advantage string
-	gui.text(drawX + (4*1) + string.len(measure1)*4, drawY+2, adv1, c1)
-	gui.text(drawX + (4*1) + string.len(measure2)*4, drawY+28, adv2, c2)
+	gui.text(drawX + (1) + string.len(measure1)*4, drawY+p1_y_offset, adv1, c1)
+	gui.text(drawX + (1) + string.len(measure2)*4, drawY+29, adv2, c2)
 
 	-- Draw player 1/player 2 labels
-	gui.text(drawX + (4*82), drawY+2, "Player 1", "#FFFFFF")
+	gui.text(drawX + (4*82), drawY+p1_y_offset, "Player 1", "#FFFFFF")
 	gui.text(drawX + (4*82), drawY+29, "Player 2", "#FFFFFF")
 
 end
@@ -407,12 +559,12 @@ end
 local freezeNextFrame = false
 local function update(tick)
 
-	--[[local player = get_player_objects()
+	local player = get_player_objects()
 	
 	local P1 = 0xFF8400
 	local _cel = memory.readdword(P1 + 0x1C) or 0
 
-	Debug prints
+	--[[Debug prints
 	gui.text(64, 64, 
 	"player1 jump "..tostring(player[1].jump)
 	.."\nplayer1 dash "..tostring(player[1].dash)
@@ -423,9 +575,12 @@ local function update(tick)
 	.."\n player1 test "..tostring( memory.readword(P1 + 0X1B8) )
 	)]]
 
+	
+	--log_player_inputs()
 	if not freezeNextFrame then
 		refresh_meter()
 		if (idle_frames < max_idle_frames and globals.game_state.match_begun) then
+			log_player_inputs()
 			get_player_state(tick)
 		end
 	end
@@ -433,7 +588,7 @@ local function update(tick)
 	-- Don't draw any new frames to the meter if the game is frozen for dramatic effect.
 	freezeNextFrame = false
 	if game.hitfreeze(game.address[1]) or game.hitfreeze(game.address[2]) then
-		freezeNextFrame = true
+		--freezeNextFrame = true
 	end
 end
 
