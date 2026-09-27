@@ -1527,9 +1527,15 @@ return {
         child_of("display_frame_meter",
           checkbox_menu_item(" Show Throw Invulnerabilty", training_settings, "fm_no_throw", "Include throw invulnerability frames in the meter.")
         ),
-        -- Forced on makes more sense.
+        -- Default ON makes more sense
         child_of("display_frame_meter",
-          checkbox_menu_item(" Show Movement Data", training_settings, "fm_movement_data", "Integrate jumps and dashes into the startup frames.")
+          checkbox_menu_item(" Show Movement Data", training_settings, "fm_movement_data", "Include jumps and dashes into the frame meter.")
+        ),
+        child_of("display_frame_meter",
+          checkbox_menu_item(" Show Player 1 Inputs", training_settings, "fm_input_p1", "Display Player 1's inputs above their meter.")
+        ),
+        child_of("display_frame_meter",
+          checkbox_menu_item(" Log Hitstop Frames", training_settings, "fm_hitstop", "Include frames and inputs that happened\nduring hitstop. (Impact freeze frames.)")
         ),
         checkbox_menu_item("Show Invuln Timer", training_settings, "show_invuln_timer", false,"The invulnerability timer ($147), over each character's head: a green bar and\nthe number, labelled Inv. Counts down while the character cannot be hit.\nA raw value read straight from the game, not a measurement."),
         checkbox_menu_item("Show Throw Invuln Timer", training_settings, "show_throw_invuln_timer", false,"The throw invulnerability timer ($143), over each character's head, labelled\nThrow Inv. Counts down while a throw cannot connect.\nA raw value read straight from the game, not a measurement."),

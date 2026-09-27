@@ -1,7 +1,12 @@
 -- Frame meter module by tirsod - based on vampiresavior001's VSAV Trainer w/ newest tickrate display
--- CHANGES
--- 0.1: Meter display with idle, startup, active, "recovery", projectile, and hurt frames. advantage display w/ colored text.
--- 0.2 (current): throw invulnerability, invulnerable frames display. Logs data only after match has started. Tidied up state arrays
+--
+-- TO-DO: Reset startup count / show startup for each interaction,
+-- Count invincibility frames as startup,
+-- Show frame-group integer on meter
+-- Allow scrolling (after freeze, down + leftleft/rightright hold)
+-- Mark groups of 5/10
+-- Input + Freezeframe toggle 
+
 -- -- throw invulnerability frame is logged only if the respective display is enabled in "other"
 
 -- Loads the framemeter images
@@ -90,6 +95,7 @@ local profile = {
 
         status_1 = function(addr) return memory.readbyte(addr + 0x05) end,
 		hurt      = function(addr) return memory.readbyte(addr + 0x005) == 0x02 end,
+		hitstop	 = function(addr) return memory.readbyte(addr + 0x05C) end,
 		thrown    = function(addr) return memory.readbyte(addr + 0x005) == 0x06 end,
 		throwing  = function(addr) return memory.readbyte(addr + 0x005) == 0x04 end,
 
@@ -123,10 +129,12 @@ end
 
 -- Set logging variables & log length
 local log_drawn = 90
-local log_length = log_drawn * 128
+local log_length = log_drawn * 6
 local log_position = 0
 local idle_frames = 0
 local max_idle_frames = 5
+local last_inputs = {}
+local last_button_string = ""
 
 -- State log format: 0/nil/1 = idle, 2 = startup, 3 = active, 4 = recovery, 5 = hurt, 6 = projectile
 -- Third array is for skipped frames, 0 = not skipped, 1 = skipped
@@ -137,15 +145,16 @@ local max_idle_frames = 5
 -- [3] = Timers, player 1
 -- [4] = Timers, player 2
 -- [5] = Inputs, player 1 only
--- [6] = Fuck if I know. We're not that far in yet.
+-- [6] = Inputs, player 2 (Not implemented)
 
-local last_inputs = {}
-local last_button_count = 0
-local last_button_string = ""
+-- breakdown_log shows number of grouped frames counted @ specific positions 
 
 local state_log = {}
+local breakdown_log = {{},{},true}
+
 local function reset_state_log()
-	state_log = {{},{},{},{},{}}
+	state_log = {{},{},{},{},{},{}}
+	breakdown_log = {{},{},true}
 end
 reset_state_log()
 
@@ -160,40 +169,7 @@ local get_attack_state = {
 	end,
 }
 
-local function refresh_meter()
-	local player_state = {false, false}
 
-	for p = 1, 2 do
-		local addr = game.address[p]
-		player_state[p] = 
-			(get_attack_state[super_mode](addr) and (not game.walking(addr)))
-			or game.hurt(addr)
-			or game.thrown(addr)
-			or game.hitfreeze(addr, game.address[(p == 1 and 2) or 1])
-			or (game.superfreeze and game.superfreeze(addr, game.address[(p == 1 and 2) or 1]))
-			or game.invulnerable(addr)
-			or globals.options.fm_movement_data and (game.dash(addr) or game.jump(addr))
-			or game.dfreturn(addr)
-	end
-
-	if any_true(player_state) then
-		test_state = "action"
-	else
-		test_state = "idle"
-		idle_frames = idle_frames + 1
-	end
-
-	--gui.text(128, 64, test_state)
-
-	if idle_frames > max_idle_frames and test_state == "action" then
-		idle_frames = 0
-		log_position = 0
-		last_inputs.button_count = -1
-		last_button_count = -1
-		last_button_string = ""
-		reset_state_log()
-	end
-end
 
 local function bool(v) return v == true end
 
@@ -227,6 +203,7 @@ local function get_player_objects()
 		local opp_addr = (p == 1 and game.address[2]) or game.address[1]
 		player[p].attacking   = get_attack_state[super_mode](addr)
 		player[p].hurt        = game.hurt(addr)
+		player[p].hitstop     = game.hitstop(addr)
 		player[p].thrown      = game.thrown(addr)
 		player[p].throwing 	  = game.throwing(addr)
 		player[p].hitfreeze   = game.hitfreeze(addr, opp_addr)
@@ -318,33 +295,27 @@ local function log_player_inputs()
 	if (inputs.button_string ~= last_button_string or inputs.directional ~= last_inputs.directional) then
 		state_log[5][log_position] = inputs
 		last_button_string = inputs.button_string
-		print(last_button_string)
 	end
 	last_inputs = inputs
 end
 
 local function get_player_state(tick)
     local player = get_player_objects()
+
 	for p = 1, 2 do
-		if (log_position > log_drawn) then
-			state_log[p][((log_position-log_drawn)+4)%log_length] = nil
-			state_log[p][((log_position-log_drawn)+3)%log_length] = nil
-			state_log[p][((log_position-log_drawn)+2)%log_length] = nil
-		end
-
 		-- set current frame's state for each player @ log_position
-		
-		previousState = state_log[p][log_position-1%log_length]
 
-		priolist = {
+		local previousState = state_log[p][log_position-1%log_length]
+
+		local priolist = {
 			{player[p].invulnerable, 8},
 			{player[p].nothrow and globals.options.fm_no_throw, 7},
 			{player[p].attack_box, 3},
 			{player[p].hurt or player[p].knockbox, 5},
 			{player[p].dfreturn, 4},
+			{player[p].projectile, 6},
 			{player[p].attacking and (previousState == 3 or previousState == 4 or previousState == 6) and (not player[p].walking), 4},
 			{player[p].attacking and (not player[p].walking or player[p].throwing), 2},
-			{player[p].projectile, 6},
 			{player[p].movement and globals.options.fm_movement_data, 9},
 		}
 
@@ -362,146 +333,404 @@ local function get_player_state(tick)
 		end
 
 		local op = 2
-		if p == 2 then p = 1 end
+		if p == 2 then op = 1 end
 		if player[op].pbsuccess > 0 and player[op].pbsuccess <= 3 then state_log[p+2][log_position] = 2 end
 	end
-
 	log_position = (log_position + 1) % log_length
-	previous_player = player
-
 end
 
 local function measure_player(player)
+	local recovery, active, startup = 0, 0, 0
+	local idle_offset = nil
 
-	local function at(offset)
-		local index = ((log_position - offset - 1) % log_length)
-		return state_log[player][index] or 0
+	local function state(at)
+		local index = at % log_length
+		return state_log[player][index]
 	end
 
 	local function is_idle_state(state)
-		return state == 0 or state == 1 or state == 7 or state == 6
+		return state == nil or state == 0 or state == 1 or state == 7 or state == 6 -- or state == 9
 	end
 
-	local idle_offset = nil
-	for offset = 1, log_length - 1 do
-		if is_idle_state(at(offset)) and not is_idle_state(at(offset + 1)) then
-			idle_offset = offset
-			break
+	local startup_type = 2
+
+	local last_change_at = log_position
+	local last_state_seen = 0
+	local states_counted = 0
+
+	local function add_to_breakdown(s, i)
+		breakdown_log[player][last_change_at] = states_counted
+
+		if player == 2 then print("lol: "..tostring(breakdown_log[player][last_change_at])) end 
+		last_state_seen = s
+		states_counted = 1
+		last_change_at = i
+	end
+
+	local function close_breakdown()
+		if player == 2 then -- player 1 was closing the breakdown before player 2 could use it. WOW.
+			breakdown_log[3] = false
+		end
+	end
+	local function breakdown_is_open() return breakdown_log[3] end
+	for i = log_position, 0, -1 do
+		local s = state(i)
+
+		if not is_idle_state(s) and idle_offset == nil then
+			idle_offset = i
+		end
+
+		if idle_offset ~= nil then
+			if s == 4 then
+				--rec_frames = rec_frames + 1
+				recovery = recovery + 1
+			elseif s == 3 then
+				active = active + 1
+			elseif s == 2 or s == 8 then --or state == 9 then
+				if startup_type ~= s then
+					startup_type = s
+					startup = 0
+				end
+				startup = startup + 1
+			end
+
+			if is_idle_state(s) then
+				break
+			end
 		end
 	end
 
-	if idle_frames < max_idle_frames then 
-		return "--", "--", "--", nil
-	end
-	if (idle_offset == nil) then
-		idle_offset = log_position
+	for i = log_position, 0, -1 do
+		local s = state(i)
+		if (idle_frames > max_idle_frames and breakdown_is_open()) then
+			if (last_state_seen ~= s) then
+				add_to_breakdown(s, i)
+			elseif (s ~= nil and s > 1) then
+				states_counted = states_counted + 1
+			end
+		end
 	end
 
-	local recovery, active, startup = 0, 0, 0
-	local offset = idle_offset + 1
-	while true do
-		local state = at(offset)
-		if state == 4 then
-			recovery = recovery + 1
-		elseif state == 3 then
-			active = active + 1
-		elseif state == 2 or state == 9 then
-			startup = startup + 1
-		elseif is_idle_state(state) then
-			break
-		else
-			break
-		end
-		offset = offset + 1
+	if (idle_frames > max_idle_frames and breakdown_is_open()) then
+		print("breakdown every frame?")
+		add_to_breakdown(s, i)
+		close_breakdown()
 	end
+
+	-- IF INCLUSIVE FRAME COUNTING (default)
+	if recovery > 0 then
+		recovery = recovery + 1
+	end
+
 	local total = (startup + active + recovery)
+
+	if active > 0 then
+		startup = startup + 1
+	end
+
+	total = total
+	if total < 0 then total = 0 end
+
 	return tostring(startup), tostring(total), tostring(recovery), idle_offset
 end
 
-function draw_meter()
+local meter_anchor = {
+	scroll = 0,
+	scroll_hold = 0,
+	bound = -90,
+	widget_x_offset = 0,
+	shake = 0,
+	bomb = 0,
+	exploded = false,
+	extra_wide_txt = 0
+}
 
-	-- Why is the meter drawn twice? To show the looping blocks of 90 frames.
-	-- See here: https://imgur.com/a/ZXt4ffZ
+local measure_anchor = {
+	y = 4,
+	normal = 1,
+	offset = -6,
+	buttons_y = 2
+}
 
-    drawX = 8
+local function clamp(x, min, max)
+	if x < min then return min
+	elseif x > max then return max end
+	return x
+end
+
+local xsin = 0
+local colours = {
+	"#003FFF", "#1F4FFF", "#3A2CFF", "#5900FF", "#7300FF", "#A100FF",
+	"#C700FF", "#FF00C8", "#FF007F", "#FF004D", "#FF0000", "#FF4D00",
+	"#FF8A00", "#FFBB00", "#FFD000", "#D9FF00", "#9DFF00", "#5DFF00",
+	"#00FF6A", "#00FF9A", "#00FFAA", "#00D9FF", "#00A9FF", "#006EFF"
+}
+local particles = {}
+local particle_count = 0
+
+local function fightcade_txt()
+	local ttt = "ur entire identity is built upon a character from a 1995 game"
+	meter_anchor.extra_wide_txt = meter_anchor.extra_wide_txt * .9
+	for i = 1, #ttt do
+		local c = ttt:sub(i,i)
+
+		cc = clamp(math.floor(i+(xsin/4))%#colours, 1, #colours-1)
+
+		local letterx = 64+(4*i)
+		local right = ((4*#ttt))
+		local left = 64
+		local center = ((right/2)+left)
+		
+		local widen = (letterx - center) * (math.sin(xsin*.02)+.5) * (.3 + meter_anchor.extra_wide_txt)
+
+		gui.text(letterx+widen, 170 + math.sin((xsin*.07)+i) * 2, c, colours[cc])
+		-- do something with c
+	end
+	local sine_period = (math.pi * 2) / 0.02
+	xsin = (xsin + 1) % sine_period
+end
+
+local function clear_particles()
+	particles = {}
+	particle_count = 0
+end
+local function make_particle(x, y, img)
+	local new_particle = {
+		posX = x,
+		posY = y,
+		speedY = math.random(-10, -5),
+		speedX = math.random(-2, 2),
+		image = img
+	}
+	particle_count = particle_count + 1
+	particles[particle_count] = new_particle
+	return new_particle
+end
+
+local function run_particles()
+	for _, part in ipairs(particles) do
+		gui.image(part.posX, part.posY, part.image)
+		part.posX = part.posX + part.speedX
+		part.posY = part.posY + part.speedY
+
+		part.speedY = part.speedY + 0.08
+		part.speedX = part.speedX * 0.995
+		if (part.posY > 224 and part.speedY > 0) then
+			part.posY = 224
+			part.speedY = part.speedY * -.8
+		end
+		if (part.posX < 0 or part.posX > emu.screenwidth()-4) then
+			part.posX = clamp(part.posX, 0, emu.screenwidth()-4)
+			part.speedX = part.speedX * -.9
+		end
+	end
+end
+
+local function refresh_meter()
+	local player_state = {false, false}
+
+	for p = 1, 2 do
+		local addr = game.address[p]
+		player_state[p] = 
+			(get_attack_state[super_mode](addr) and (not game.walking(addr)))
+			or game.hurt(addr)
+			or game.thrown(addr)
+			or game.hitfreeze(addr, game.address[(p == 1 and 2) or 1])
+			or (game.superfreeze and game.superfreeze(addr, game.address[(p == 1 and 2) or 1]))
+			or game.invulnerable(addr)
+			or globals.options.fm_movement_data and (game.dash(addr) or game.jump(addr))
+			or game.dfreturn(addr)
+	end
+
+	if any_true(player_state) then
+		test_state = "action"
+		if idle_frames > 0 and idle_frames < max_idle_frames then idle_frames = 1 end
+	else
+		test_state = "idle"
+		idle_frames = idle_frames + 1
+	end
+
+	if idle_frames >= max_idle_frames and test_state == "action" then
+		idle_frames = 0
+		log_position = 0
+		last_inputs.button_count = -1
+		last_button_string = ""
+		meter_anchor.scroll = 0
+
+		meter_anchor.exploded = false
+		clear_particles()
+		reset_state_log()
+	end
+end
+
+local function explode_meter()
+	globals.show_menu = false
+	globals.controllerModule.enable_both_players()
+	meter_anchor.exploded = true
+	meter_anchor.extra_wide_txt = 20
+	xsin = 0
+	local block_start = math.floor(log_position / log_drawn) * log_drawn
+	for player = 1, 2 do 
+		local xx = drawX
+		local max_squares = log_drawn - 1 -- boundary will start at 90-1
+		for offset = 0, max_squares do
+			local i = (block_start + offset) % log_length
+			xx = offset%log_drawn * 4
+			local log_ind = i+meter_anchor.scroll
+			local relY = 0
+			relY = (-6) + clamp((meter_anchor.bound) - (offset), 0, 6)
+			if player == 2 then relY = relY * -1 end
+			local image = states[1][1]
+			local st = state_log[player][log_ind]
+			local state_entry = states[st]
+			if state_entry and state_entry[1] ~= nil then
+				image = state_entry[1]
+			end
+			-- Draws the frame's rectangle
+			make_particle(drawX + xx, drawY + (10*player) + relY, image)
+        end
+    end
+end
+
+local function draw_meter()
+    drawX = 8 + meter_anchor.widget_x_offset + meter_anchor.shake
     drawY = _height - 64
+
+	local measure1_target = measure_anchor.normal
+	if (globals.options.fm_input_p1) then measure1_target = measure_anchor.offset end
+
+	local lerp = (measure_anchor.y - measure1_target) * .3
+	measure_anchor.y = measure_anchor.y - lerp
+	if (math.abs(lerp) < .1) then measure_anchor.y = measure1_target end
+
+	if math.abs(meter_anchor.shake) > .2 then
+		meter_anchor.shake = meter_anchor.shake * -.5
+		meter_anchor.bomb = meter_anchor.bomb + 1
+		if (meter_anchor.bomb == 60) then explode_meter() end
+	else
+		meter_anchor.shake = 0
+		meter_anchor.bomb = 0
+	end
+
+
+	gui.text(-512-meter_anchor.scroll, 48, "VSAV_FrameMeter by @tirsod.com\nSpecial thanks to Nbee, MBD, KyleW, vampiresavior001\nrar, hagure, zako, dom & enker\nfor all the hard work that made this\nlittle fun project possible!\n\nGo lab those purrsuits! :3 -6410\n(I really had to learn Lua for this, huh?)\nShoutouts to the vsav discord!")
 
 	-- -- The frame meter draws 90 frames to screen (log_drawn), but the log itself is 270 frames long (log_length = log_drawn * 3)
 	-- -- The drawing is then divided into 3 blocks of 90 frames. The current block is drawn first, fully colored,
 	-- -- The previous block is drawn afterwards, ahead of the current position but with a different set of darker images.
 
 	-- This draws the current block of 90 frames.
-
 	local block_start = math.floor(log_position / log_drawn) * log_drawn
-	for player = 1, 2 do -- Draw meter for each chara
+
+	-- Draw meter for each chara
+	for player = 1, 2 do 
 		local xx = drawX
-		for offset = 0, log_drawn - 1 do
+
+		local max_squares = log_drawn - 1 -- boundary will start at 90-1
+		if max_squares > meter_anchor.bound then max_squares = meter_anchor.bound end -- it will be limited by "bound"
+		if meter_anchor.bound < log_drawn+6 then meter_anchor.bound = meter_anchor.bound + 1 end -- "bound" will surpass 90, but the boundary won't
+
+		for offset = 0, max_squares do
 			local i = (block_start + offset) % log_length
-			xx = i%log_drawn * 4
+			xx = offset%log_drawn * 4
+
+			local log_ind = i+meter_anchor.scroll
+
+			local relY = 0
+			relY = (-6) + clamp((meter_anchor.bound) - (offset), 0, 6)
+			if player == 2 then relY = relY * -1 end
 
 			local image = states[1][1]
-			local st = state_log[player][i]
+			local st = state_log[player][log_ind]
 			local state_entry = states[st]
 
 			if state_entry and state_entry[1] ~= nil then
 				image = state_entry[1]
 			end
 
-			gui.image(drawX + xx, drawY + (10*player), image)
+			-- Draws the player inputs
+			if (globals.options.fm_input_p1) then 
+				local idy = measure_anchor.buttons_y + (measure_anchor.y - measure_anchor.offset)
+				
+				if player == 1 then 
+					local input_entry = state_log[5][log_ind]
+					if input_entry then
+						local directional = input_entry.directional
+						local dir_image = input_images[1][directional]
 
-			if player == 1 then
-				local input_entry = state_log[5][i]
-				if input_entry then
-					local directional = input_entry.directional
-					local dir_image = input_images[1][directional]
-
-					local relY = 0
-					--if (input_entry.pressed) then
-						--if input_entry.release then relY = -1 end
-
-						gui.image(drawX + xx, drawY+2+relY, img_bt)
+						gui.image(drawX + xx, drawY+idy+relY, img_bt)
 						for bt = 1, 6 do
 							if input_entry.buttons[bt] then gui.image(drawX + xx, drawY+2+relY, input_images[2][bt]) end
 						end
-					--end
 
-					gui.image(drawX + xx, drawY+2+relY, dir_image)
+						gui.image(drawX + xx, drawY+idy+relY, dir_image)
+
+					end
 				end
 			end
 
+			-- Draws the frame's rectangle
+			gui.image(drawX + xx, drawY + (10*player) + relY, image)
+
+			-- Draws the frame's overlay
 			local overlay = nil
 			local timer_entry = state_log[player+2][i]
 			if (timer_entry ~= nil and timer_entry > 0) then
 				if timers[timer_entry] ~= nil then
 					overlay = timers[timer_entry]
-					gui.image(drawX + xx, drawY + (10*player), overlay)
+					gui.image(drawX + xx, drawY + (10*player) + relY, overlay)
 				end
 			end
         end
+
+		for offset = 0, max_squares do
+			local i = (block_start + offset) % log_length
+			xx = i%log_drawn * 4
+
+			local log_ind = i+meter_anchor.scroll
+
+			local breakdown = breakdown_log[player][log_ind]
+
+			local relY = 0
+			relY = (-6) + clamp((meter_anchor.bound) - (offset), 0, 6)
+			if player == 2 then
+				relY = relY * -1
+				--print("p2")
+			end
+
+			if (breakdown ~= nil and breakdown > 5) then
+				gui.text(drawX + xx, drawY + (10*player) + relY, tostring(breakdown))
+			end
+		end
+
     end
 
 	-- This draws the previous block, "behind" the frames that are currently being logged. 
 
-	local block = math.floor(log_position / log_drawn)
-	block = (block - 1) % (log_length/log_drawn)
-	local block_start = block * log_drawn
+	if meter_anchor.scroll == 0 then
+		local block = math.floor(log_position / log_drawn)
+		block = (block - 1) % (log_length/log_drawn)
+		local block_start = block * log_drawn
 
-	for player = 1, 2 do -- Draw meter for each chara
-		local xx = drawX
-		for offset = (log_position%log_drawn), log_drawn - 1 do
-			local i = (block_start + offset) % log_length
-			xx = (i%log_drawn) * 4
+		for player = 1, 2 do -- Draw meter for each chara
+			local xx = drawX
+			for offset = ((log_position%log_drawn)-meter_anchor.scroll)+2, log_drawn - 1 do
+				local i = (block_start + offset) % log_length
+				xx = (i%log_drawn) * 4
 
-			local image = states[1][2]
-			local st = state_log[player][i]
-			local state_entry = states[st]
-			if state_entry and state_entry[2] ~= nil then
-				image = state_entry[2]
-				gui.image(drawX + xx, drawY + (10*player), image)
+				local log_ind = i+meter_anchor.scroll
+
+				local image = states[1][2]
+				local st = state_log[player][log_ind]
+				local state_entry = states[st]
+				if state_entry and state_entry[2] ~= nil then
+					image = state_entry[2]
+					gui.image(drawX + xx, drawY + (10*player), image)
+				end
 			end
-        end
-    end
-
+		end
+	end
+	
 	-- String handling for the frame display.
 
 	local startup1, total1, recovery1, zero1 = measure_player(1)
@@ -509,13 +738,15 @@ function draw_meter()
 	local advantage1, advantage2 = "--", "--"
 	local plus = 0 -- 0 = neutral, 1 = player 1 has advantage, 2 = player 2 has advantage
 
-	if zero1 ~= nil or zero2 ~= nil then
-		if zero1 == nil then zero1 = 0 end
-		if zero2 == nil then zero2 = 0 end
-		advantage1 = tostring(zero1 - zero2)
-		advantage2 = tostring(zero2 - zero1)
-		plus = 1
+	if zero1 ~= nil and zero2 ~= nil then
+		--if zero1 == nil then zero1 = 0 end
+		--if zero2 == nil then zero2 = 0 end
+		advantage1 = tostring(zero2 - zero1)
+		advantage2 = tostring(zero1 - zero2)
 		if (zero2 - zero1 > 0) then
+			plus = 1
+		end
+		if (zero2 - zero1 < 0) then
 			plus = 2
 		end
 	end
@@ -542,7 +773,8 @@ function draw_meter()
 	end
 
 	-- Draw measurement string
-	local p1_y_offset = -6
+	local p1_y_offset = measure_anchor.y
+
 	gui.text(drawX + (1), drawY+p1_y_offset, measure1, "#FFFFFF")
 	gui.text(drawX + (1), drawY+29, measure2, "#FFFFFF")
 	-- Draw frame advantage string
@@ -552,44 +784,54 @@ function draw_meter()
 	-- Draw player 1/player 2 labels
 	gui.text(drawX + (4*82), drawY+p1_y_offset, "Player 1", "#FFFFFF")
 	gui.text(drawX + (4*82), drawY+29, "Player 2", "#FFFFFF")
+end
 
+local function handle_scrolling()
+	local input = get_player_inputs()
+	if input.directional == 3 then
+		meter_anchor.scroll_hold = meter_anchor.scroll_hold + 1	
+	elseif input.directional == 1 then
+		meter_anchor.scroll_hold = meter_anchor.scroll_hold - 1	
+	else
+		meter_anchor.scroll_hold = 0
+	end
+
+	meter_anchor.scroll_hold = clamp(meter_anchor.scroll_hold, -30, 30)
+	if meter_anchor.scroll_hold > 29 then meter_anchor.scroll = meter_anchor.scroll + 1 end
+	if meter_anchor.scroll_hold <= -29 then meter_anchor.scroll = meter_anchor.scroll - 1 end
 end
 
 -- update. Called with the cpu's ticks.
 local freezeNextFrame = false
+local prevHitStop = false
+
 local function update(tick)
-
-	local player = get_player_objects()
-	
-	local P1 = 0xFF8400
-	local _cel = memory.readdword(P1 + 0x1C) or 0
-
-	--[[Debug prints
-	gui.text(64, 64, 
-	"player1 jump "..tostring(player[1].jump)
-	.."\nplayer1 dash "..tostring(player[1].dash)
-	.."\n player1 attacking "..tostring(player[1].attacking)
-	.."\n player1 stat1 "..tostring(player[1].status_1)
-	.."\n player1 stat2 "..tostring(player[1].status_2)
-	.."\n player1 walking "..tostring(player[1].walking)
-	.."\n player1 test "..tostring( memory.readword(P1 + 0X1B8) )
-	)]]
-
-	
-	--log_player_inputs()
 	if not freezeNextFrame then
 		refresh_meter()
-		if (idle_frames < max_idle_frames and globals.game_state.match_begun) then
-			log_player_inputs()
-			get_player_state(tick)
+		if (globals.game_state.match_begun) then
+			if (idle_frames < max_idle_frames) then
+				log_player_inputs()
+				get_player_state(tick)
+			else
+				handle_scrolling()
+			end
 		end
 	end
 
 	-- Don't draw any new frames to the meter if the game is frozen for dramatic effect.
 	freezeNextFrame = false
-	if game.hitfreeze(game.address[1]) or game.hitfreeze(game.address[2]) then
-		--freezeNextFrame = true
+	if (game.hitfreeze(game.address[1]) or game.hitfreeze(game.address[2])) and not globals.options.fm_hitstop then
+		freezeNextFrame = true
 	end
+
+	if prevHitStop ~= globals.options.fm_hitstop then
+		local shkvalue = 5 + meter_anchor.bomb
+		if not prevHitStop then shkvalue = -5 end
+
+		meter_anchor.shake = shkvalue
+		prevHitStop = globals.options.fm_hitstop
+	end
+	run_particles()
 end
 
 local subscription_generation = 0
@@ -631,7 +873,12 @@ local frameMeterModule = {
 	end,
     ["guiRegister"] = function()
 		if (globals.options.display_frame_meter) then
-        	draw_meter()
+			if (not meter_anchor.exploded) then
+        		draw_meter()
+			else
+				run_particles()
+				fightcade_txt()
+			end
 		end
     end
 }
