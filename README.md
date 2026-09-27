@@ -6,7 +6,7 @@
 
 🛠️ For the latest trainer, please see [the parent fork.](https://github.com/vampiresavior001/VSAV_Training/tree/fc2-v11)
 
-📦 Downloads: [Trainer11.7.1+Meter0.2](https://github.com/tirsod/VSAV_FrameMeter/releases)
+📦 Downloads: [Trainer11.7.1+Meter0.3](https://github.com/tirsod/VSAV_FrameMeter/releases)
 
 Special thanks to nbee, zako, hagure, kyle, bagel and vampiresavior001 for their help and input. 
 
