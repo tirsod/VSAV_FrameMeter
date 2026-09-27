@@ -2,15 +2,17 @@
 *A fork of a fork of VSAV's trainer tools.*
 **You must supply your own ROM!** 
 
-💬 This fork includes a frame meter *(similar to SF6's)*, which uses the game-tick clocks included by vampiresavior001's v11. It does not fix bugs or add any other features to the trainer. Just the frame meter.
+💬 This fork includes a frame meter *(similar to SF6's)*, which uses the game-tick clocks included by vampiresavior001's v11. It does not fix or add any other features from the trainer. Only adds the frame meter.
 
 🛠️ For the latest trainer, please see [the parent fork.](https://github.com/vampiresavior001/VSAV_Training/tree/fc2-v11)
 
-📦 Downloads: [Trainer11.7.1+Meter0.3](https://github.com/tirsod/VSAV_FrameMeter/releases)
+### Links:
 
-Special thanks to nbee, zako, hagure, kyle, bagel and vampiresavior001 for their help and input. 
+|| 📦 [Get scripts.zip](https://github.com/tirsod/VSAV_FrameMeter/releases/download/v0.3/scripts.zip) `Trainer11.7.1 + Meter0.3`
+ 
+|| 🗃️ [See releases](https://github.com/tirsod/VSAV_FrameMeter/releases)
 
-``tirsod``
+Special thanks to nbee, zako, hagure, kyle, bagel and vampiresavior001 for their help and input. ``-tirsod``
 
 ## Preview
 
