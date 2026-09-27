@@ -465,6 +465,7 @@ local function measure_player(player)
 	local last_change_at = log_position
 	local last_state_seen = 0
 	local states_counted = 0
+	local counting_rec = true
 
 	local function state(at)
 		local index = at % log_length
@@ -472,7 +473,7 @@ local function measure_player(player)
 	end
 
 	local function is_idle_state(state)
-		return state == nil or state == 0 or state == 1 or state == 7 or state == 6 -- or state == 9
+		return state == nil or state == 0 or state == 1 or state == 7 --or state == 6 -- or state == 9
 	end
 
 	local function add_to_breakdown(s, i)
@@ -499,11 +500,11 @@ local function measure_player(player)
 
 		if idle_offset ~= nil then
 			if s == 4 then
-				--rec_frames = rec_frames + 1
-				recovery = recovery + 1
+				if counting_rec then recovery = recovery + 1 end
 			elseif s == 3 then
 				active = active + 1
-			elseif s == 2 or s == 8 then --or state == 9 then
+				counting_rec = false
+			elseif s == 2 or s == 8 or s == 6 then --or state == 9 then
 				if startup_type ~= s then
 					startup_type = s
 					startup = 0
@@ -547,6 +548,8 @@ end
 -- Awaits for the player to idle for 5 frames before restarting variables and clearing meter.
 local function refresh_meter()
 	local player_state = {false, false}
+
+	-- TODO: Merge this with is_idle_state(s) or make a new function that returns idle states from state_log
 	for p = 1, 2 do
 		local addr = game.address[p]
 		player_state[p] = 
@@ -558,6 +561,7 @@ local function refresh_meter()
 			or game.invulnerable(addr)
 			or globals.options.fm_movement_data and (game.dash(addr) or game.jump(addr))
 			or game.dfreturn(addr)
+			or player_owns_projectile(addr)
 	end
 
 	if any_true(player_state) then
@@ -583,8 +587,8 @@ end
 
 -- Draws the meter to the screen, using the data from the logged states and inputs.
 local function draw_meter()
-    local drawX = 8 + meter_anchor.widget_x_offset + meter_anchor.shake
-    local drawY = _height - 64
+    drawX = 8 + meter_anchor.widget_x_offset + meter_anchor.shake
+    drawY = _height - 64
 
 	local measure1_target = measure_anchor.normal
 	if (globals.options.fm_input_p1) then measure1_target = measure_anchor.offset end
@@ -688,7 +692,10 @@ local function draw_meter()
 			end
 
 			if (breakdown ~= nil and breakdown > 5) then
-				gui.text(drawX + xx, drawY + (10*player) + relY, tostring(breakdown))
+				local bdXoffset = -1
+				if breakdown > 9 then bdXoffset = -5 end
+				if breakdown > 99 then bdXoffset = -9 end
+				gui.text(drawX + xx + bdXoffset, drawY + (10*player) + relY, tostring(breakdown))
 			end
 		end
 
