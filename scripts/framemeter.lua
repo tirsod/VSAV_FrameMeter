@@ -667,7 +667,7 @@ local function draw_meter()
 
 			-- Draws the frame's overlay
 			local overlay = nil
-			local timer_entry = state_log[player+2][i]
+			local timer_entry = state_log[player+2][log_ind]
 			if (timer_entry ~= nil and timer_entry > 0) then
 				if timers[timer_entry] ~= nil then
 					overlay = timers[timer_entry]
