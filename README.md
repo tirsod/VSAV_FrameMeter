@@ -1,27 +1,61 @@
-
-## About
-A training mode for VSAV. **You must supply your own ROM!** 
-
-Shoutouts to: Dammit and Jed for their wizardry, Grouflon (Stole their 3s training mode menu, and settings workflow!) and the VSAV Community. 
-
-BIGGEST SHOUTOUT to KyleW! This definitely would not have happened or continued without you.
-
- `N-Bee`
- 
-# Frame Meter UI for VSAV_Training
+ # Frame Meter UI for VSAV_Training
 *A fork of a fork of VSAV's trainer tools.*
+**You must supply your own ROM!** 
 
 💬 This fork includes a frame meter *(similar to SF6's)*, which uses the game-tick clocks included by vampiresavior001's v11. It does not fix bugs or add any other features to the trainer. Just the frame meter.
 
-🛠️ For the latest trainer, please see [the parent fork, by vampiresavior001.](https://github.com/vampiresavior001/VSAV_Training/tree/fc2-v11)
+🛠️ For the latest trainer, please see [the parent fork.](https://github.com/vampiresavior001/VSAV_Training/tree/fc2-v11)
 
 📦 Downloads: [Trainer11.7.1+Meter0.2](https://github.com/tirsod/VSAV_FrameMeter/releases)
 
+Special thanks to nbee, zako, hagure, kyle, bagel and vampiresavior001 for their help and input. 
+
+``tirsod``
+
 ## Preview
 
-<img width="400" height="300" alt="Screenshot showcasing the frame meter" src="https://github.com/user-attachments/assets/38d53dbf-c8b8-4d79-bfcf-dd3371fd6013" />
-<img width="400" height="300" alt="Screenshot showcasing WHERE to activate the frame meter." src="https://github.com/user-attachments/assets/b4eb66c9-1c20-4a01-b373-b3c85afb3fa1" />
+<img width="640" height="480" alt="random demo wolf" src="https://github.com/user-attachments/assets/e24f862e-acc6-4e57-aa48-37aa3a3ef388" />
 
+## Usage
+
+ Open the trainer menu using **Lua hotkey 1**, then navigate to the **Analysis** tab to enable the meter.
+ The following options are available.
+ 
+ - Frame Meter: Enables the meter display on screen.
+ - Show Throw Invulnerability: Enables special tiles on the meter when the player is invulnerable to being thrown. These states are not counted.
+ - Show Movement Data: Enables logging during jumps and dashes, shown as cyan tiles. These states are not counted.
+ - Show Player 1 Inputs: Enables "tombstones" display. A minimal pixel-sized input display is added above the tiles.
+ - Log Hitstop Frames: Enables logging *during* [hitstop](https://glossary.infil.net/?t=Hitstop) frames. The game logs continues to record input during hitstop to allow for pushblocks, guard cancelling and chaining. Use this in conjunction with "Show Player 1 Inputs" to practice input timing.
+
+## Legend
+
+ - <img width="8" height="16" alt="FM_inactive" src="https://github.com/user-attachments/assets/e861d457-70ce-4ea7-b5de-058649b78d5e"/> Inactive State
+ - <img width="8" height="16" alt="FM_startup" src="https://github.com/user-attachments/assets/5d7d71b5-6957-4fe4-9ecd-8e5932801a77"/> Startup (Pre-Active)
+ - <img width="8" height="16" alt="FM_active" src="https://github.com/user-attachments/assets/e6c25919-7cc7-439f-9006-0bdf2bd57482" /> Active (Hitbox Present)
+ - <img width="8" height="16" alt="FM_recovery" src="https://github.com/user-attachments/assets/622f72ff-7b96-4aa9-8e67-35cdd479e969" /> Recovery (Post-Active)
+ - <img width="8" height="16" alt="FM_hurt" src="https://github.com/user-attachments/assets/a764254c-ea63-4e04-94c8-077324277289" /> Hurt or Blocking
+ - <img width="8" height="16" alt="FM_invul" src="https://github.com/user-attachments/assets/e286f01d-7c17-4496-a21b-50bdabfd2f5a" /> Invulnerability
+ - <img width="8" height="16" alt="FM_nothrow" src="https://github.com/user-attachments/assets/9d72a9e3-2bc8-443f-a036-b769b4a4da0c" /> Throw Protection
+ - <img width="8" height="16" alt="FM_move" src="https://github.com/user-attachments/assets/27c20e2d-13f8-4114-88e0-424826000668" /> Movement State (Dash or Jump)
+ - <img width="8" height="16" alt="FM_pushblock" src="https://github.com/user-attachments/assets/e5001131-e927-44a0-828e-518983b0baea" /> Pushblock Possible
+ - <img width="8" height="16" alt="FM_pushblock_OK" src="https://github.com/user-attachments/assets/adcaae2d-94b2-4fa6-9e5c-9a2fd389f743" /> Pushblock Performed
+
+## Scrolling
+
+After 5 frames of idle states from both players, the meter will freeze logging and show advantage numbers.
+During this time, you can hold down+back or down+forward on the stick to scroll through the meter's data.
+
+<img width="640" height="480" alt="meter scroll and multipage" src="https://github.com/user-attachments/assets/af929f38-29b4-43b7-bdd8-538169f4e2c1" />
+
+## Tombstones
+
+The input display shows buttons as a 3x2 pixel grid, with an arrow for directional inputs underneath.
+They are logged when the input state *changes*, not every frame.
+Example displays:
+
+<img width="330" height="77" alt="image" src="https://github.com/user-attachments/assets/303f28c6-eaf9-4fbb-9069-488ec631125e" /> Lilith's Luminous Illusion
+
+<img width="330" height="77" alt="image" src="https://github.com/user-attachments/assets/005236d8-8484-45ba-95a3-d2b0a829dc79" /> Felicia 2MP into ES Rolling Buckler
 
 ## Windows Installation 
 Follow the video guide: https://www.youtube.com/watch?v=To7DpTNSRi8
@@ -84,30 +118,8 @@ You can configure these in FBNEO's Input>Map game inputs... (F5)
     Press Alt + 3 to toggle looping playback.
     Press Alt + 4 to return to character select
 
-## About this fork
+## More Demos
 
-A continuation of N-Bee's `fc2` branch as a **v11** series. One idea runs through
-all of it: read the timings out of the game instead of writing them down. VSAV
-runs on its own clock - three displayed frames are four game Ticks - and
-anything counted in frames was never going to line up.
-
-What it adds:
-
-- **Reversals and counter actions actually come out.** The timing is worked back
-  from the Tick the dummy can first act on, per character, instead of a fixed
-  delay.
-- **Tick Data** - startup, active, recovery and advantage, counted in game Ticks
-  and read from the attack hitbox, so the numbers do not move with distance.
-  **Action Timeline** lays a whole action out on a clock.
-- **Action Steps** - build a dummy sequence a step at a time: normals, specials,
-  jumps, dashes, throws, each with its own timing.
-- **Recording Wizard** - guided dummy recording, played back once so you can
-  check it before saving.
-- **Push block, auto guard and dash behaviour** rebuilt against measurements
-  rather than assumptions.
-- **Stage position shortcuts**, dash trainers, push block counters and stats,
-  frame trap and jump-in trainers.
-- **The menu is sorted into tabs** and every row carries a description (v11.7).
-
-Version by version: [RELEASE_NOTES.md](RELEASE_NOTES.md) - 日本語版は
-[RELEASE_NOTES.ja.md](RELEASE_NOTES.ja.md)。
+<img width="640" height="480" alt="demo for normals, projectiles and jumpins" src="https://github.com/user-attachments/assets/ae66ade5-3312-4a42-9b99-27ae590cb224" />
+<img width="640" height="480" alt="df demo" src="https://github.com/user-attachments/assets/de876193-cdbe-45de-8fc7-5f82e3d4c326" />
+<img width="640" height="480" alt="hitstop and 2player" src="https://github.com/user-attachments/assets/ce2e3ce4-876e-4636-8e95-c4197fb1bbe5" />
