@@ -6,6 +6,60 @@ Newest first. Older releases are kept below.
 
 ---
 
+## v11.7.16
+
+### New: `Show Air Guard Gaps`
+
+Turn on **`Show Air Guard Gaps`** on the `Trainer` tab and, whenever you block an
+air chain, a table shows **how much room there was to interrupt** and **where you
+pressed and what came of it**.
+
+```
+AirGap                               Gap  Press>Hit
+Jump > 6t J.LP(5t)                        PreJump(3t) > Guard 9t
+J.LP(5t) > J.LK     --|               2t
+J.LK(5t) > J.MP     ---|P             3t  In Blockstun 14t at 14t
+J.MP(6t) > J.HP     ----------|PP    10t  In Blockstun 14t at 2,12t
+J.HP(8t) > J.HK     ------|           6t
+J.HK(9t) > Land     --------------L  14t
+Landing Advantage P2 +15t
+```
+
+- **The first line is how they came in.** `Jump > 6t J.LP(5t)`: their J.LP
+  (startup 5) came out on the sixth tick of their jump. A dash reads the same way,
+  `Dash > 12t J.LK(5t)`. On the right, your own jump startup and when you blocked
+- **Each row is a move you blocked and the next one.** The bar is the gap you
+  could act in: `|` is the next hit, `L` a landing (P1 blue, P2 orange), `Gap`
+  its length
+- **Press>Hit is your answer.** `LP 2t>6t (5t) WIN`: pressed on tick 2 of the
+  gap, hit on tick 6, startup 5. `LATE 4t` is 4 ticks past the last press that
+  wins; `NO GAP` means that move cannot make it even at its fastest
+- **Presses during blockstun are thrown away.** They show on the row whose hit
+  began that stun - `In Blockstun 14t at 9,13t`, pressed on ticks 9 and 13 of a
+  14-tick stun - and the buttons also follow that row's `|`. The stun is
+  measured every time, so a move with a different hitstop shows its own length
+- **The last line is the advantage on landing.** `Landing Advantage P2 +15t`:
+  after the last contact, they could act 15 ticks before you. Blocked, hit or
+  traded, it is counted the way Tick Data counts Advantage
+- Button letters and move names are in their strength's colour (light, medium,
+  heavy). Every tick count carries its `t`
+- A move made by an Action Steps `Auto (N)` shows as `N + 2` on the first line:
+  Action Steps counts the tick the input is sent from 0, and the game takes it
+  one tick later (a dash LK on `Auto (10)` reads `Dash > 12t`)
+
+### Picking characters again clears the last match's displays
+
+Entering character select clears the input history and the icons down both
+edges, `PB Count`, `PB Stats` and `GC Command Trace`, so the next match starts
+on a clean screen without restarting.
+
+### `Knockdown Logger` records air guards too
+
+With `Knockdown Logger` on the `Analysis` tab turned on, air guards are also
+saved to `reversal_logs/airg_sNN.json`.
+
+---
+
 ## v11.7.15.2
 
 ### LateMash counts for fourteen ticks

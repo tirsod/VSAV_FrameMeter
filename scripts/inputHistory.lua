@@ -1156,6 +1156,15 @@ function handle_idle_event( was_gc_event, was_pb_event,_was_hit_spark_event)
 
 end
 local inpHistoryModule = {
+    -- A CHARACTER SELECT CLEARS THE HISTORY, as a restart would (user,
+    -- 2026-09-27). Emptied in place: other code holds these two tables.
+    ["clear"] = function()
+        for _i = 1, 2 do
+            local _t = input_history[_i]
+            for _k in pairs(_t) do _t[_k] = nil end
+        end
+        if globals ~= nil then globals.p1_tick_inputs = {} end
+    end,
     ["registerStart"] = function()
         return {
             reset_inp_history_scroll = reset_inp_history_scroll,

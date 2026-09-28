@@ -76,7 +76,7 @@
 -- FBNeo/Fightcade not fully restarted after an edit, so the OLD bytecode is
 -- still running - shows up immediately as an old version number in the next
 -- batch of logs, instead of looking like a silent logic bug.
-local SCRIPT_VERSION = "v11.7.15.2"
+local SCRIPT_VERSION = "v11.7.16"
 
 local LOG_DIR   = "reversal_logs"
 
@@ -1615,6 +1615,8 @@ return {
     p1_watch()
   end,
   ["enabled"] = is_enabled,
+  -- Stamped into airGuardLog.lua's files too, for the same reason.
+  ["script_version"] = SCRIPT_VERSION,
   ["mark_poke"]      = mark_poke,
   ["mark_hold"]      = mark_hold,
   ["get_last_check_block_frame"] = function() return last_check_block_frame end,

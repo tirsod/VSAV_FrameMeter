@@ -173,6 +173,19 @@ do
 	want("受付の列を積む前に分ける", d ~= nil and u ~= nil and d < u, true)
 end
 
+-- キャラ選択で入力履歴が消える。起動し直しの代わり (本人、2026-09-27)。
+-- 同じ表のまま空にする: ほかのコードがこの 2 つの表を握っている。
+print("-- clear: キャラ選択で入力履歴が消える")
+do
+	local keep1, keep2 = input_history[1], input_history[2]
+	keep1[1], keep1[2], keep2[1] = { frame = 1 }, { frame = 2 }, { frame = 3 }
+	want("clear がある", type(inp.clear), "function")
+	inp.clear()
+	want("P1 の履歴は空", #input_history[1], 0)
+	want("P2 の履歴も空", #input_history[2], 0)
+	want("表は同じもの (差し替えない)", input_history[1] == keep1 and input_history[2] == keep2, true)
+end
+
 if fails == 0 then
 	print("test_guard_mark_column ok")
 else

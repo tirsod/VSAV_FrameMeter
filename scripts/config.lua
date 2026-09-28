@@ -150,6 +150,8 @@ local default_training_settings = {
   -- Measured Action Step waits, on the Trainer tab. Off: it is a readout
   -- for building a list, not something to train under.
   display_step_wait_ticks = false,
+  -- Air Guard Gaps, on the Trainer tab. Off like the other trainers.
+  display_air_guard_gap = false,
   -- OFF for a release. It writes a JSON trace per recovery into
   -- scripts/reversal_logs, which is what the timing work was built on and
   -- is pure cost for anyone just training. Toggle it in the Analysis tab.

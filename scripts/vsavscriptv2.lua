@@ -3341,6 +3341,14 @@ function p2life()
 end
 
 vsavScriptModule = {
+	-- A CHARACTER SELECT CLEARS THE ICON COLUMNS, as a restart would (user,
+	-- 2026-09-27) - the same fresh tables registerLoad falls back to.
+	["clear"] = function()
+		inp  = { [1] = {}, [2] = {} }
+		idle = { [1] =  0, [2] =  0 }
+		lastframe = {}
+		if globals ~= nil then globals.p2_tick_inputs = {} end
+	end,
     ["registerAfter"] = function()
 		margin[1] = margin_p1x*effective_width
 		margin[2] = (emu.screenwidth and emu.screenwidth() or screenwidth)  - margin_p2x*effective_width

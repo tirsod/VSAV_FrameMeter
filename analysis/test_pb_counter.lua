@@ -358,6 +358,23 @@ want("P2 も数える", timers.p2_pb_latemash, 1)
 want("P2 も遅れを持つ", timers.p2_pb_latemash_late, 1)
 press(P1, 0) ; press(P2, 0)
 
+-- キャラ選択で消える。起動し直しの代わり (本人、2026-09-27)。
+print("-- clear: キャラ選択で PB Count も LateMash も消える")
+want("clear がある", type(timersModule.clear), "function")
+want("消す前は P2 に LateMash がある", timers.p2_pb_latemash, 1)
+-- P1 にも数と成立と帯を作っておく。0 のままだと、消えたかどうか分からない。
+tick(P1, 0, false, false) ; tick(P1, 0, false, true) ; tick(P1, 1, false, true) ; grant(P1)
+want("消す前は P1 に 2 回", timers.p1_pushblock_counter, 2)
+want("消す前は成立している", timers.p1_pushblock_ok, true)
+timersModule.clear()
+want("P1 の数は 0", timers.p1_pushblock_counter, 0)
+want("P2 の数は 0", timers.p2_pushblock_counter, 0)
+want("成立の印も落ちる", timers.p1_pushblock_ok, false)
+want("帯も消える", next(timers.p1_pb_marks or {}), nil)
+want("P1 の LateMash は 0", timers.p1_pb_latemash, 0)
+want("P2 の LateMash は 0", timers.p2_pb_latemash, 0)
+want("遅れも 0", timers.p2_pb_latemash_late, 0)
+
 if fails == 0 then
 	print("test_pb_counter ok")
 else

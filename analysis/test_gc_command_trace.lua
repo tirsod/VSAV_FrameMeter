@@ -219,12 +219,21 @@ do
 		body:find("globals.gc_trace = gct_shown", 1, true) ~= nil, true)
 	-- 控えを nil にする代入が、宣言の 1 つだけであること。2 つ目が
 	-- できると、そこから表示が消える経路になる。
+	-- 例外はキャラ選択の clear_trace だけ (本人、2026-09-27: キャラ選択は
+	-- 起動し直しの代わり)。試合の中で消す経路は、今までどおり無いこと。
+	local ca = src:find('["clear_trace"] = function()', 1, true)
+	local cb = src:find(NL .. "\tend,", ca or 1, true)
+	want("キャラ選択で消す clear_trace がある", ca ~= nil and cb ~= nil, true)
+	local clear_body = src:sub(ca or 1, cb or 1)
+	want("clear_trace は控えを消す", clear_body:find("gct_shown = nil", 1, true) ~= nil, true)
+	want("clear_trace は表示も消す", clear_body:find("globals.gc_trace = nil", 1, true) ~= nil, true)
+	local rest = src:sub(1, (ca or 1) - 1) .. src:sub((cb or 0) + 1)
 	local _n = 0
-	for _ in src:gmatch("gct_shown = nil") do _n = _n + 1 end
-	want("控えを消す代入は宣言だけ", _n, 1)
+	for _ in rest:gmatch("gct_shown = nil") do _n = _n + 1 end
+	want("それ以外で控えを消す代入は宣言だけ", _n, 1)
 	want("宣言は local", src:find("local gct_shown = nil", 1, true) ~= nil, true)
-	want("gc_trace に nil を書く経路が無い",
-		src:find("globals.gc_trace = nil", 1, true), nil)
+	want("それ以外に gc_trace に nil を書く経路が無い",
+		rest:find("globals.gc_trace = nil", 1, true), nil)
 	-- 控えが古い rows を指し続けられること。reset が同じ表を空にすると、
 	-- 見せているほうまで一緒に空になる。
 	local ra = src:find("local function gct_reset()", 1, true)
@@ -282,6 +291,10 @@ do
 	end
 	package.preload["./scripts/debugKnockdown"] = function()
 		return { mark_write = function() end }
+	end
+	-- 3 つ目 (2026-09-26)。Air Guard Gaps の描画用。本物を読む。
+	package.preload["./scripts/airGuardGap"] = function()
+		return dofile("airGuardGap.lua")
 	end
 	img_dir = {}
 	for i = 1, 9 do img_dir[i] = "dir" .. i end
@@ -900,6 +913,37 @@ do
 	want("絵が配布物の中にある", f ~= nil, true)
 	if f then f:close() end
 	gui.box = was_box
+end
+
+print("")
+print("[14] Air Guard Gaps も描かせる (2026-09-26)")
+-- 行の中身は test_air_guard_gap.lua が見る。ここは hud.lua が本物の行を
+-- 色つきで描けること、nil の色を渡さないことだけ。
+do
+	local ag = package.loaded["./scripts/airGuardGap"]
+	local ram = {}
+	memory = {
+		readbyte = function(a) return ram[a] or 0 end,
+		readword = function(a) return (ram[a] or 0) * 256 + (ram[a + 1] or 0) end,
+		readdword = function(a) return ram[a] or 0 end,
+	}
+	globals.options.display_air_guard_gap = true
+	ram[0xFF8838], ram[0xFF8806], ram[0xFF8905] = 1, 0x06, 1      -- P2: 空中で J.LP
+	ram[0xFF8405], ram[0xFF8454], ram[0xFF8438] = 0x02, 0xFF, 1   -- P1: 空中ガード
+	for _ = 1, 13 do ag.on_tick() end
+	ram[0xFF8405], ram[0xFF8406] = 0x00, 0x06                      -- 0x025286 のティック
+	for _ = 1, 4 do ag.on_tick() end
+	calls, bad = {}, {}
+	hud_mod.draw_air_guard_gap()
+	local seen = {}
+	for _, c in ipairs(calls) do seen[#seen + 1] = c.s end
+	want("見出しを描く", calls[1] and calls[1].s, "AirGap")
+	want("行を描く", table.concat(seen, ""):find("J.LP > ?", 1, true) ~= nil, true)
+	want("色が nil のまま渡された描画は無い", table.concat(bad, ", "), "")
+	globals.options.display_air_guard_gap = false
+	calls = {}
+	hud_mod.draw_air_guard_gap()
+	want("OFF なら描かない", #calls, 0)
 end
 
 if fails == 0 then print("") print("全て通った") else print(fails .. " 件 NG") os.exit(1) end

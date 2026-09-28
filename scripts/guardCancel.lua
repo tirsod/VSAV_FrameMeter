@@ -8137,6 +8137,13 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 end
 
 guardCancelModule = {
+	-- A CHARACTER SELECT CLEARS THE GC COMMAND TRACE, as a restart would (user,
+	-- 2026-09-27): the one being collected and the one on screen.
+	["clear_trace"] = function()
+		gct_reset()
+		gct_shown = nil
+		if globals ~= nil then globals.gc_trace = nil end
+	end,
 	["registerBefore"] = function(run_dummy_input, macroLua_funcs)
         return guardCancelCheck(run_dummy_input, macroLua_funcs)
     end

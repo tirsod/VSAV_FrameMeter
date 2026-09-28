@@ -630,6 +630,19 @@ local timerModule = {
   -- Driven by the emulator's clock in the real thing; exported so the offline
   -- test can step it by hand, which nothing else can do.
   ["latemash_tick"] = latemash_tick,
+  -- A CHARACTER SELECT CLEARS THIS, as a restart would (user, 2026-09-27).
+  -- Otherwise the last window's count, timeline and LateMash stay up into the
+  -- next match until a guard there happens to replace them.
+  ["clear"] = function()
+    for _, _t in pairs(pb) do
+      _t.count, _t.ok, _t.after, _t.simul, _t.marks, _t.raws = 0, false, 0, 0, {}, {}
+    end
+    for _, _o in pairs(om) do
+      _o.n, _o.late, _o.open_lg, _o.len, _o.was = 0, 0, nil, 0, 0
+    end
+    pb_publish()
+    om_publish()
+  end,
   ["registerBefore"] = function()
     -- SUBSCRIBED ONCE, LAZILY. This module is required before globals.truth
     -- exists, so it cannot be done at load; registerBefore runs every frame

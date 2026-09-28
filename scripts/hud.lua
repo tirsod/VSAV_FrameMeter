@@ -296,6 +296,32 @@ local function draw_pb_counter()
 	end
 end
 
+-- AIR GUARD GAPS, UNDER PB COUNT (user, 2026-09-26). The top left is free in
+-- the air: there is no push block there to fill the row above. airGuardGap.lua
+-- builds the lines as text; this only draws them, one glyph per character.
+local airGuardGapModule = require "./scripts/airGuardGap"
+local function draw_air_guard_gap()
+	if globals.options.display_air_guard_gap ~= true then return end
+	local _lines = airGuardGapModule.lines()
+	if #_lines == 0 then return end
+	local CH, ROW = 4.2, 8
+	local x, y = 21, 37
+	local _w = 0
+	for _, _l in ipairs(_lines) do
+		local _n = 0
+		for _, _c in ipairs(_l) do _n = _n + #_c[1] end
+		if _n > _w then _w = _n end
+	end
+	gui.box(x - 2, y - 1, x + _w * CH + 2, y + #_lines * ROW, "#00000099", "#00000055")
+	for _i, _l in ipairs(_lines) do
+		local _cx = x
+		for _, _c in ipairs(_l) do
+			if _c[1]:find("%S") then gui.text(_cx, y + (_i - 1) * ROW, _c[1], _c[2]) end
+			_cx = _cx + #_c[1] * CH
+		end
+	end
+end
+
 local screen_midpoint = 41983616
 
 local function base_x_calc(x_offset_left, x_offset_right, trainer_1, trainer_2, trainer_3, other_trainer_offset)
@@ -1129,6 +1155,7 @@ local hudModule = {
     -- EXPOSED FOR THE OFFLINE TEST. Nothing executes the drawing otherwise,
     -- which is how a nil colour reached gui.text and took the HUD down.
     ["draw_gc_command_trace"] = draw_gc_command_trace,
+    ["draw_air_guard_gap"] = draw_air_guard_gap,
     ["registerStart"] = function()
     end,
     ["guiRegister"] = function()
@@ -1151,6 +1178,7 @@ local hudModule = {
 		pcall(draw_position_figure)
 		draw_ag_why()
 		draw_pb_counter()
+		pcall(draw_air_guard_gap)
 		draw_gc_frequency_counter()
 		draw_gc_command_trace()
 		draw_step_wait_ticks()

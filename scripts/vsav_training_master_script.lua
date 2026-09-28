@@ -45,6 +45,10 @@ local actionSequenceEditorModule = require "./scripts/actionSequenceEditor"
 local actionSequenceRunnerModule = require "./scripts/actionSequenceRunner"
 local guardCancelModule  = require "./scripts/guardCancel"
 local debugKnockdownModule = require "./scripts/debugKnockdown"
+-- Air guards, tick by tick. Measurement only, on the same switch.
+local airGuardLogModule  = require "./scripts/airGuardLog"
+-- Air Guard Gaps (Trainer tab). hud.lua requires the same path to draw it.
+local airGuardGapModule  = require "./scripts/airGuardGap"
 local autoguardModule    = require "./scripts/autoguard"
 local gameStateModule    = require './scripts/gameState'
 local dummyStateModule   = require './scripts/dummyState'
@@ -481,6 +485,22 @@ emu.registerbefore(function()
 		if player_objects ~= nil and player_objects[2] ~= nil then
 			player_objects[2].pending_input_sequence = nil
 		end
+		-- AND WHAT THE LAST MATCH LEFT ON SCREEN GOES: a character select stands
+		-- in for restarting the tool (user, 2026-09-27). Once on the way in -
+		-- the input history, the icon columns, PB Count with its timeline and
+		-- LateMash, PB Stats, the GC Command Trace. Air Guard Gaps and Tick
+		-- Data clear themselves off the match already.
+		if not globals._select_cleared then
+			globals._select_cleared = true
+			inpHistoryModule.clear()
+			vsavScriptModule.clear()
+			timersModule.clear()
+			guardCancelModule.clear_trace()
+			globals.total_pb_attempt_counter = {}
+			globals.successful_pb_counter = {}
+		end
+	else
+		globals._select_cleared = false
 	end
 
 	-- Lua keys 1 and 2 are held off until the match is genuinely running -
@@ -675,6 +695,8 @@ emu.registerbefore(function()
 	end
 
 	debugKnockdownModule.registerBefore()
+	airGuardLogModule.registerBefore(debugKnockdownModule.script_version)
+	airGuardGapModule.registerBefore()
 
 	globals.controllerModule.process_pending_input_sequence(player_objects[1], globals._input)
 
