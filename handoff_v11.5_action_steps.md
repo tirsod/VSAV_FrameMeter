@@ -1890,3 +1890,19 @@ readme も直す、v11.7.16.1 もだす、v11.7.17 もだす。readme もいれ�
 - 配布 zip に `README.ja.md`、`docs/PLAYER_MANUAL.*.md`、`RELEASE_NOTES*.md` を追加
   (make_release_zip.py の ROOT_FILES)。README からのリンク先が zip に無いと切れるため
 - v11.7.16.1 は先に公開 (`040e381`)、続けて v11.7.17
+
+## v11.7.18 — マニュアルに画像、説明文 3 か所 (2026-09-29)
+
+- **画像 7 枚** (`docs/images/`、本人のスクリーンショットを切り抜き): 0% の警告、Action Patterns の
+  一覧、PB Counter + ボタン一覧 + PB Stats、GC Command Trace、入力バーの G / GC / SUCCESS、
+  Tick Data (ダッシュ、デモンクレイドル - 「デーモン」は誤り、本人)、Air Guard Gaps。どれも画像の
+  数字を読んで説明を添え、表示どうしの整合を確かめた (例: PB の帯 3,1,1,1,2,1 と at:5-13t と
+  MultiPush 2、GC の 3+4+6+1=14 と Success 13t、Tick Data の 4+3+20+19-1=45)。切り抜きは縮小
+  しない (LANCZOS で 900 幅にすると色が増えて 54KB が 315KB になった)。zip は
+  make_release_zip.py が `docs/images` を歩く
+- **0% の警告を実機で確認**: 凡例の行の右の理由、カーソルが別の行にあるときのオレンジ。
+- 説明文: 確率 2 行は「カーソルが別の行にあるときオレンジ」(説明が出ている間はその行が黄色で、
+  書いてある色と食い違っていた)。Guard Action Type = Reversal - Action Patterns (12) に専用の
+  説明 (汎用の 1 行が出ていた)。Reversal Action Patterns の説明の「the Action Steps list
+  below」をやめた (0xB と 0xC で出し分けていて、2 行が同時に出ることはない)。test_menu_gate が
+  全 12 値に専用の説明があることと below が無いことを見る

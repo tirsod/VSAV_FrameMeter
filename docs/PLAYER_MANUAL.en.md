@@ -6,7 +6,7 @@ A guide to practising offense, defense and execution in Vampire Savior using rep
 
 This guide uses **AG (Advancing Guard)**. **Push Block / PB** in the English UI refers to the same mechanic. Actual option names such as `Show PB Counter` are kept unchanged.
 
-For **v11.7.17 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
+For **v11.7.18 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
 
 > This manual was checked against the target version's source code and release notes. The procedures were not tested in an emulator during preparation of this document. Example drills do not guarantee success with every character or setup.
 
@@ -204,6 +204,10 @@ For consistent testing with `Stand Block`, `All Guard` or `Push Block (All …)`
 
 Selecting `Guard Action Type` reveals the settings for that type. Start with **`Random Guard Action % = 100%`** to verify behavior, then lower it to 25–75% to practise against the possibility of a response. At `0%` the action never runs: the `Random Guard Action %` row turns orange, and with the cursor on `Guard Action Type` or that row the right side of the bottom line reads `Random Guard Action % is 0%: it never runs.`
 
+![Random Guard Action % at 0% while a Guard Action Type is set](images/zero_rate_warning.png)
+
+Here the cursor is on `Guard Action Type`: the `Random Guard Action %` row below it is orange, and the reason is on the right of the bottom line. With the cursor on the orange row itself, the row shows the cursor colour instead.
+
 | Type | Purpose |
 |---|---|
 | `None` | No counter action |
@@ -393,6 +397,10 @@ Action Steps holds one action list; Action Patterns holds multiple named lists. 
 5. Press MP on the list to mark a pattern `[x]`, or set `Use in Random = Yes` in its individual screen.
 6. Set `Random Guard Action % = 100%` and create a response opportunity.
 
+![The Action Patterns list](images/action_patterns.png)
+
+`[x]` marks the patterns in use; MP ticks or unticks the one under the cursor. With several ticked, as here, one of them is picked at random each time.
+
 With one pattern checked, that pattern runs. With several checked, one is chosen at random. **Whole sequences are selected**, not individual steps mixed between patterns. With `Loop Steps`, another selection is made on the next pass.
 
 Use `Edit / Rename / Copy / Move / Delete` to manage the list. Naming opens a separate Windows dialog. Use ASCII names because of the in-game text display's limitations.
@@ -426,6 +434,10 @@ Naming and file dialogs are implemented for Windows. Equivalent operation on Lin
 Start against a fixed attack to stabilize your execution, then use random offense to distinguish execution problems from reactions.
 
 ### 8.2 Read the AG counter (PB Counter)
+
+![PB Counter line at the top, the press list on the left and PB Stats](images/pb_counter_stats.png)
+
+In this example you pressed on six Ticks of the window: the bar shows 3, 1, 1, 1, 2 and 1 buttons on Ticks 5, 6, 9, 10, 11 and 13 (`at:5-13t`). Two of those Ticks had several buttons (`MultiPush: 2`). The green count means AG activated, and the list on the left shows it activated on the 6th press (`TECH HIT`). PB Stats is the box to the right; see [8.3](#08-pb).
 
 | Display | Meaning |
 |---|---|
@@ -487,6 +499,10 @@ Start with one attack, then move on to strings that keep you blocking.
 - **Input history** shows your inputs over time. Newer inputs appear on the right of the bottom bar.
 - **GC Command Trace** shows the directions the game accepted toward a GC, the finishing button and the result. It also follows motions begun before the block. It appears without a title in a dark box, placed to the right of PB Stats so the two can be shown together.
 
+![GC Command Trace of a guard cancel that succeeded](images/gc_trace.png)
+
+In this example the game accepted → 3 Ticks after the guard, ↓ 4 Ticks later, ↘ 6 Ticks later and the button 1 Tick after that. The dots show the buttons, punches on the top row and kicks below; here all three punches. `Success 13t` is counted from the opening of the GC window (see [9.3](#09-gc)).
+
 The raw direction history and the sequence accepted by the game's command parser need not match exactly.
 
 | Display | Meaning |
@@ -505,11 +521,13 @@ Orange does not mean guaranteed failure. Successful results are gold. On a butto
 
 The input bar places `G` or `GP n` on the contact column and `GC` on the window-opening column **one Tick later**.
 
+![The input bar with G, GC and SUCCESS 13t](images/gc_input_bar.png)
+
 - `G`: blocked while holding the direction.
 - `GP n`: blocked on Tick n of guard-pose persistence.
 - The Tick on which back is released counts as persistence Tick 1.
 
-The trace's Guard row refers to contact; the Success number refers to the window opening. Adding the intervals after Guard can therefore differ from Success by one Tick.
+The trace's Guard row refers to contact; the Success number refers to the window opening. Adding the intervals after Guard can therefore differ from Success by one Tick. In the example above, the intervals from the guard add up to 3 + 4 + 6 + 1 = 14, and Success reads 13t from the window opening.
 
 After a failure, check whether you blocked, whether the necessary directions were accepted, whether the command expired and whether the button arrived in time. Do not always read the number beside `GC Expired` as the full window length from the block. Some result intervals are measured from the last input.
 
@@ -541,6 +559,10 @@ Match the measured side, game speed and units before comparing numbers.
 The original Frame Data measured displayed frames, which made its results unstable at turbo speeds. This fork’s **Tick Data** measures internal frames to avoid variation caused by turbo frames. Its **counting conventions for startup, active time, recovery and frame advantage are aligned with those used by strategy sites**. This does not guarantee a match with every published value; check move conditions and counting conventions when comparing results.
 
 Enable `Trainer > Tick Data` and select P1 or P2 under `Tick Data Side`. P2 is useful for checking a move performed by a recording or Action Steps.
+
+![Tick Data after Demitri's dash, then Demon Cradle, was blocked](images/tick_data.png)
+
+In this example Demitri dashed, then used Demon Cradle, and it was blocked. The attack box appeared on the move's 4th Tick and was out in two runs of 3 and 20 Ticks (`Active 3 / 20t`: a multi-hit move shows one number per run), followed by 19 Ticks of recovery. `Total 45t` is 4 + 3 + 20 + 19 − 1, because startup and active share the first box Tick. Demitri was 18 Ticks behind (`Advantage -18t`). The green Action Timeline puts each action on one clock: `16t Dash`, `20t Demon Cradle` and `23t Guard` are the dash, then Demon Cradle, and Jedah blocking on the move's 4th Tick.
 
 | Field | Meaning |
 |---|---|
@@ -578,6 +600,10 @@ The green `ACTION TIMELINE` in Tick Data follows one action on a shared clock. F
 **This feature visualizes where you could act after air guarding, whether your actual interrupt was well timed and who can act first after landing.** Use it against jump attacks and air-dash attacks as well as air chains.
 
 Enable `Trainer > Show Air Guard Gaps` and air-block the dummy's offense.
+
+![Air Guard Gaps after air-blocking Jedah's air chain](images/air_guard_gaps.png)
+
+In this example you air-blocked Jedah's air chain. The first row: Jedah jumped and started J.LP on jump Tick 7, with 6-Tick startup. Each following row is one hit and the next attack, with the gap between them: 2, 6, 4, 6 and 0 Ticks. On the last row the orange `L` is Jedah landing and the blue `L` is your own landing, 18 Ticks into the gap. `Landing Advantage P2 +14t`: Jedah could act 14 Ticks before you. You pressed nothing, so the right column shows only your jump: 3 Ticks of prejump, then your first guard on Tick 14 after leaving the ground.
 
 | Question | What to inspect |
 |---|---|
@@ -780,7 +806,7 @@ For reports, include version, P1/P2 characters, side arrangement, setting screen
 - Document checked: 2026-09-29.
 - Upstream comparison: [`fc2`, 92980a5](https://github.com/NBeing/VSAV_Training/tree/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6). Earliest-input limitations and existing trainers were checked in [upstream menu.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/menu.lua), and input delivery in [upstream controller.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/controller.lua).
 - The comparison covers source-level features and control methods. An emulator A/B comparison and execution of the infinite-combo definitions were not performed while preparing this manual. The infinite-combo examples reflect use cases supplied by the developer.
-- Fork version: v11.7.17; labels checked 2026-09-29. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
+- Fork version: v11.7.18; labels checked 2026-09-29. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
 - [English README](../README.md) / [English release notes](../RELEASE_NOTES.md).
 - Menus/settings: [menu.lua](../scripts/menu.lua), [config.lua](../scripts/config.lua).
 - Controls: [controller.lua](../scripts/controller.lua), [position.lua](../scripts/position.lua).

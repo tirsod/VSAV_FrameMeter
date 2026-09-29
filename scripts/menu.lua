@@ -1167,7 +1167,7 @@ local gc_input_delay_menu_item = integer_menu_item(
     )
 gc_input_delay_menu_item.is_disabled = check_for_gc_disabled
 
-local guard_action_frequency_menu_item = list_menu_item("Random Guard Action %", training_settings, "gc_freq", gc_freq,1, "How often the dummy does what Guard Action Type is set to, rolled once per\nchance. 0% never does it: while a Guard Action Type is set, this row turns\norange.")
+local guard_action_frequency_menu_item = list_menu_item("Random Guard Action %", training_settings, "gc_freq", gc_freq,1, "How often the dummy does what Guard Action Type is set to, rolled once per\nchance. 0% never does it: while a Guard Action Type is set, this row is\norange when the cursor is on another row, and the bottom line says why.")
 guard_action_frequency_menu_item.is_disabled = function() return training_settings.guard_action == 1 end
 
 function set_p1_reversal_names()
@@ -1198,7 +1198,7 @@ local p2_reversal_list_menu_item = list_menu_item("P2 Reversal List", training_s
 p2_reversal_list_menu_item.is_disabled = char_specific_reversal_is_disabled
 local p2_reversal_strength_menu_item = list_menu_item("Reversal Strength", training_settings, "p2_reversal_strength", { "Light", "Medium","Heavy","ES"}, 1, nil, "The strength of the reversal,\nPlease use normal game values (e.g. EX for EX moves)")
 p2_reversal_strength_menu_item.is_disabled = char_specific_reversal_is_disabled
-local p2_block_chance_menu_item = list_menu_item("Random Guard %", training_settings, "p2_block_chance", p2_block_chance, 1, "How often the dummy blocks. 0% never blocks.\nRead by Stand Block, All Guard and Push Block (Guard row). While one of those\nis set and this is 0%, the row turns orange: the dummy will not block at all.")
+local p2_block_chance_menu_item = list_menu_item("Random Guard %", training_settings, "p2_block_chance", p2_block_chance, 1, "How often the dummy blocks. 0% never blocks.\nRead by Stand Block, All Guard and Push Block (Guard row). While one of those\nis set and this is 0%, the dummy will not block at all: this row is orange\nwhen the cursor is on another row, and the bottom line says why.")
 -- ENABLED EXACTLY WHERE THE VALUE IS STILL READ.
 --
 -- It was hidden on anything but Stand Block (2) and All Guard (4), but
@@ -1701,6 +1701,9 @@ return {
               "A recording will be played after the opponent finishes guarding.\nThe recording played can be set in the 'Recording' tab.\nThis can be specified or random.",
               "Play recording after pushblock",
               "Runs the list of steps set in 'Reversal Action Steps', in order.\nEach step is one action and one answer to when it starts.\nThe first step's Wait replaces Guard Action Delay, so that row is off.",
+              -- 12, Reversal - Action Patterns. Without it the row fell back to
+              -- the default line below, which says nothing about patterns.
+              "Runs one of the patterns ticked in 'Reversal Action Patterns'.\nWith several ticked, one is picked at random each time.\nRandom Guard Action % decides whether it runs at all.",
 
             }, "Use this to set up various counter attacks."), action_rate_warning),
             guard_action_frequency_menu_item,

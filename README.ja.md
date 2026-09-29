@@ -8,7 +8,7 @@ See what the Warlord sees, and practice what the Warlord practices, in VSAV trai
 
 入力や攻防のタイミングを細かく可視化することで、失敗したときも改善点を見つけ、上達の指標にできます。
 
-[フォーク元のVSAV_Training（fc2）](https://github.com/NBeing/VSAV_Training/tree/fc2)を基に、ダミーの制御と練習表示を拡張したv11シリーズです。このREADMEは **v11.7.17** の機能を説明しています。
+[フォーク元のVSAV_Training（fc2）](https://github.com/NBeing/VSAV_Training/tree/fc2)を基に、ダミーの制御と練習表示を拡張したv11シリーズです。このREADMEは **v11.7.18** の機能を説明しています。
 
 **[日本語プレイヤーマニュアル](docs/PLAYER_MANUAL.ja.md)** · [日本語リリースノート](RELEASE_NOTES.ja.md) · [Release notes (English)](RELEASE_NOTES.md)
 

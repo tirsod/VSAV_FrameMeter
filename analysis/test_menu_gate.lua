@@ -344,4 +344,36 @@ do
 	want("2P 側も同じ",
 		v2:find("		if memory.readbyte(0xff89ab) > 0 then", 1, true), nil)
 end
+
+-- GUARD ACTION TYPE の値ごとに、専用の説明があること (2026-09-29)。
+--
+-- 12 番 (Reversal - Action Patterns) だけ説明が無く、既定の
+-- "Use this to set up various counter attacks." が出ていた (本人の
+-- スクリーンショット)。値を足したときに説明を忘れても、ここで分かる。
+do
+	local row = find_row("Guard Action Type")
+	want("Guard Action Type の行がある", row ~= nil, true)
+	local saved = training_settings.guard_action
+	local missing = {}
+	for i = 1, #row.list do
+		training_settings.guard_action = i
+		local d = row:description()
+		if d == nil or d == "Use this to set up various counter attacks." then
+			missing[#missing + 1] = i .. " " .. tostring(row.list[i])
+		end
+	end
+	training_settings.guard_action = saved
+	want("どの値にも専用の説明がある", table.concat(missing, ", "), "")
+	training_settings.guard_action = 0xC
+	local d12 = row:description()
+	training_settings.guard_action = saved
+	want("Action Patterns の説明はパターンの話", d12:find("Reversal Action Patterns", 1, true) ~= nil, true)
+
+	-- パターンの行の説明は、同時に出ることのない Action Steps の行を
+	-- 「下の」と呼ばない。
+	local pat = find_row("Reversal Action Patterns")
+	want("Reversal Action Patterns の行がある", pat ~= nil, true)
+	local pd = pat and pat:description() or ""
+	want("パターンの説明に below が無い", pd:find("below", 1, true), nil)
+end
 if fails == 0 then print("全て通った") else print(fails .. " failures") os.exit(1) end

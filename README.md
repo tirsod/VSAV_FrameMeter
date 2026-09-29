@@ -8,7 +8,7 @@ English | [日本語](README.ja.md)
 
 Detailed input and interaction timelines help you identify what went wrong and track your improvement.
 
-This v11 series builds on [VSAV_Training's original fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2), extending dummy control and training readouts. This README describes **v11.7.17**.
+This v11 series builds on [VSAV_Training's original fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2), extending dummy control and training readouts. This README describes **v11.7.18**.
 
 **[English player manual](docs/PLAYER_MANUAL.en.md)** · [Release notes](RELEASE_NOTES.md) · [日本語リリースノート](RELEASE_NOTES.ja.md)
 

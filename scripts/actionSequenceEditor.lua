@@ -2946,7 +2946,10 @@ function M.patterns_parent_item(which, label)
 			return "Named Action Steps lists, saved so they can be picked again."
 				.. "\nTick the ones to use: one ticked runs that one, several"
 				.. " ticked pick between them."
-				.. "\nNothing here is lost when you edit the Action Steps list below."
+				-- Not "below": this row shows only for Reversal - Action Patterns
+				-- and the Action Steps row only for Reversal - Action Steps, so the
+				-- two are never on screen together.
+				.. "\nNothing here changes when you edit Reversal Action Steps - they are separate."
 		end,
 	}
 end

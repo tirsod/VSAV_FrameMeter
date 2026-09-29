@@ -90,6 +90,9 @@ def main():
             missing.append(f)
     walk("support/ips", names)
     walk("scripts", names)
+    # The manuals' screenshots, beside the manuals that show them.
+    if os.path.isdir(os.path.join(ROOT, "docs", "images")):
+        walk("docs/images", names)
     if missing:
         print("MISSING root files (skipped):", missing)
 

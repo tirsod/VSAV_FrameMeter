@@ -6,6 +6,33 @@ English: [RELEASE_NOTES.md](RELEASE_NOTES.md)
 
 ---
 
+## v11.7.18
+
+### マニュアルに画面の画像を入れました
+
+日本語・英語のプレイヤーマニュアルに、実際の画面を 7 枚入れました。それぞれに、画像の数字の
+読み方を添えています。
+
+- 0% の警告（オレンジの行と最下行の理由）
+- Action Patterns の一覧
+- PB Counter の行、押したボタンの一覧、PB Stats
+- GC Command Trace と入力履歴の `G` / `GC` / `SUCCESS`
+- Tick Data（ダッシュ、デモンクレイドル）
+- Air Guard Gaps
+
+画像は `docs/images` にあり、配布 zip にも入っています。
+
+### 説明文を直しました
+
+- `Random Guard %` / `Random Guard Action %`: 行がオレンジになるのは、**カーソルが別の行に
+  あるとき**です。カーソルのある行は選択中の色になるので、そう書きました
+- `Guard Action Type` を `Reversal - Action Patterns` にしたときの説明を付けました（汎用の
+  1 行が出ていました）
+- `Reversal Action Patterns` の説明: 同時には表示されない Action Steps の行を「下の」と
+  呼んでいたのを直しました
+
+---
+
 ## v11.7.17
 
 ### 確率の 3 行の名前をそろえ、None を 0% にしました

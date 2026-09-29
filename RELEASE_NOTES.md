@@ -6,6 +6,34 @@ Newest first. Older releases are kept below.
 
 ---
 
+## v11.7.18
+
+### Screenshots in the manuals
+
+The Japanese and English player manuals now show seven screens from the game,
+each with a note on how to read its numbers.
+
+- The 0% warning (the orange row and the reason on the bottom line)
+- The Action Patterns list
+- The PB Counter line, the pressed-button list and PB Stats
+- GC Command Trace and the `G` / `GC` / `SUCCESS` marks on the input bar
+- Tick Data (a dash, then Demon Cradle)
+- Air Guard Gaps
+
+The images are in `docs/images` and ship in the release zip.
+
+### Descriptions corrected
+
+- `Random Guard %` / `Random Guard Action %`: the row is orange **when the
+  cursor is on another row**. The row under the cursor shows the cursor
+  colour, and the description now says so
+- `Guard Action Type` set to `Reversal - Action Patterns` has its own
+  description (it showed a generic line)
+- `Reversal Action Patterns`: no longer calls the Action Steps row "below" -
+  the two rows are never shown together
+
+---
+
 ## v11.7.17
 
 ### The three rate rows have matching names, and None reads 0%
