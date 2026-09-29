@@ -290,7 +290,7 @@ v11.5.0-beta            ログのスタンプ
 Auto (Chain) / Auto (Cancel)   チェーンと必殺技キャンセル。ROM を読むところから
 Counter / Guard トリガへの展開   見出しはトリガから引くので足すだけ
 キャラ別必殺技レジストリ          charMoves.lua の移植
-Show GC Frequency Counter      Display タブ、既定オフ。不要なら外せる
+Guard Action Frequency Check   Analysis タブ、既定オフ (2026-09-28 に移した。下記)
 ```
 
 `Auto (Chain)` の手順は空中判定を当てたときと同じ。ROM の該当ハンドラを読む →
@@ -1730,3 +1730,90 @@ Wait はそのステップの前の待ちで、Hold は次のステップが始�
 
 保存データの形は変えていない。表示だけ。テスト: `test_editor_rows.lua` [1] [7c]、
 `test_editor_ops.lua` [F]。
+
+## Show PB Stats を作り直す — 押した回の平均と成功率 (2026-09-28、実機未確認)
+
+`scripts/pbStats.lua`。本人の依頼: PB Count の行に出ているものの平均、Total は相手の攻撃に
+触れた回数、成功率は押した回から、押さないガードは「無視したガード」、押して出なかったか
+食らったら失敗、99999 まで数える、ボタン一覧をもう少し上に、GC と PB を同時に出して守備練習。
+
+```
+Count Total 186
+      Pass 92  Fail 94
+      Success 49.46%
+Avg   PB 4.30  at 3.90-10.20t
+      Multi 1.20  Late 0.30
+```
+
+実機を見て直した (本人、2026-09-28): もう少し左 (x 90 → 74)、成功率と分かるように
+`Success`、小数 2 桁、`Count` と `Avg` はラベル (AirGap の見出しと同じ灰)、背景は AirGap と
+同じ暗い箱 (`#00000099` / `#00000055`)。さらに (同日): **押していない回はやはり無視** (ガードでも
+食らいでも数えない)、`Guard Only` は消す、`MultiPush` / `LateMash` は `Multi` / `Late` に縮める。
+
+- **1 回 = 地上で `$05` が 02 に入ってから抜けるまで。**連続ガードは全体で 1 回 (本人: 1 発ごとだと
+  「1 発目 Fail、2 発目 Pass」になる。ゲームも `$170` を連続ガードの間持ち越す)。空中は数えない
+  (PB の窓が無い)
+- **押した回だけ数える。**押していない回はガードでも食らいでも無視 (本人。一度は `Guard Only` と
+  して数えたが、要らないと言われて消した)。**Fail**: 押して、その回のどこかで食らった (`$54` が
+  0xFF 以外) か PB が出なかった。**Pass**: 押して PB が出た。Total = Pass + Fail
+- 「押した」はガードなら PB Count の行の数か LateMash (窓の後だけ押したのも押した)。**食らった回は
+  窓が開かず行の値が前の回のままなので、その回のティックの `$126` のボタンの立ち上がりで見る**
+- **率** = Pass / Total。**平均**は押してガードした回だけ、値は **PB Count の行が最後に
+  出した値そのもの** (数、最後に押した窓の at: の頭と終わり、MultiPush、LateMash)。測り直さない
+- **LateMash は数え終わるのを待ってから確定する**。`timers.lua` に `p1_pb_latemash_open` を足した
+  (窓の 14 ティック後まで追う間 true)。次の接触が先に来たらそこで確定
+- **当たったティックの PB Count の行はまだ前の回の値。**窓は当たりの次のティックに開く。at: は
+  前の回の帯を読まないよう、当たったときの `p1_pb_marks` の表を覚えておき、別の表になってから
+  読む (timers.lua は窓ごとに新しい表を作る)
+- 99999 で数えるのを止める。トグル OFF とキャラ選択で 0 に戻す
+- **置き場所** (本人: GC と PB を同時に出す守備練習): PB Stats は x 74・y 50、5 行。左はボタン
+  一覧の TECH HIT (ボタン 2 つ、x 71 まで) にかからない所まで。右は 99999 でも一番長い行が
+  31 字で GC Command Trace (x 226) にかからない。ラベルの列は 6 字 (7 字のときは
+  `MultiPush 1.20  LateMash 0.30` の行で背景が 1px かかった。名前を縮めた今は余裕がある)。ボタン一覧
+  (tech-hit-inputs) は y 74 始まりから y 50 始まりへ上げた (PB Stats の 1 行目と同じ高さ)。
+  test_pb_stats が座標を読んで幅と背景を確かめる
+- `Multi` と `Late` (MultiPush と LateMash の平均) は、上の行と同じく 0 より大きいと赤、0 は灰
+- **古い Total / Pass / Fail は描かなくなっただけ。**`playerObject.lua` の
+  `globals.total_pb_attempt_counter` / `successful_pb_counter` への積み上げは残っている
+  (表示フレーム基準、P2 側の `$1B0` を成功として読む — design_pb_score.md の問題 3 と怪しい信号)
+
+## GC Command Trace: タイトルなし、黒い背景、x 210 (2026-09-28)
+
+本人: 「タイトル不要、黒背景、やや左に寄せる」。PB Stats と並べて使う前提。`GC Command Trace` の
+見出しを消して行を 1 行上げ (1 行目が y 50、PB Stats の 1 行目と同じ)、AirGap・PB Stats と同じ
+暗い箱 (`#00000099` / `#00000055`) を敷き、x を 226 → 210。PB Stats の箱は一番長い行でも x 206
+まで、トレースの箱は 208 から。test_gc_command_trace が箱の色・左端・行の位置を、test_pb_stats が
+2 つの箱の間を見る。
+
+## PB Stats: GC が出た回は数えない、ボタン一覧にも黒い背景 (2026-09-28)
+
+- **GC 成立した回は PB Stats から除外** (本人: GC成功したらPBから除外)。判定は GC Command Trace と
+  入力履歴と同じ guardCancel.lua の `gc_next_state`: ガードの受付時計 `$158` が 0 になった
+  ティックに `$06` が 0x0E / 0x10 / 0x12 (必殺技・ES・EX)。GC はガードを抜けるティックに出るので、
+  触れている回が終わるティックでも見る。硬直が明けた後の必殺技 (リバーサル) は時計が先に 0 に
+  なっているので GC ではない (数える)。test_pb_stats に両方の場面
+- **左のボタン一覧 (tech-hit-inputs) にも PB Stats と同じ暗い箱** (本人: 左側のボタン背景も同じ
+  黒目に)。行を先に集めて箱の大きさを決めてから描く。右の余白は 1px: ボタン 2 つ + TECH HIT の行が
+  x 70.6 で終わり、PB Stats の箱は 72 から
+
+## 上の 3 つを PB Count の行のすぐ下 (y 38) へ (2026-09-28)
+
+本人: 「GC スタッツ (フリクエンシー) は出す必要なくなったので、もう少し上に」。ボタン一覧・PB Stats・
+GC Command Trace は、y 36 の Frequency の行を避けて y 50 にしていた。Frequency が Analysis の
+検証表示になったので、普段は PB Count の行のすぐ下の **38**。**Guard Action Frequency Check を ON
+にしたときだけ 50** (hud.lua の `blocks_top()`)。ボタン一覧は PB Stats の高さを受け取る
+(`tech_hit_inputs(PB_STATS_Y)`)。
+
+## GC Frequency Counter を Analysis タブへ — Guard Action Frequency Check (2026-09-28)
+
+本人: 「あまり意味ない気がするので整理したい」。中身は自分の GC の練習ではなく、**ダミーの
+Guard Action Frequency が設定どおりの割合で出ているかを数えるツール自身の検証**
+(`opp` 機会、`roll+` 抽選で出すになった数、`arm` 実際に出した数、`seq` / `drop` / `wait`
+アクションステップの 2 歩目以降)。案 A (本人が選択): Analysis タブの Knockdown Logger の前へ移し、
+名前を `Guard Action Frequency Check` に、画面の字も `Guard Action freq=...` に。**設定の保存名
+`display_gc_freq_counter` は変えていない** (保存済みの ON/OFF を引き継ぐため)。Analysis なので
+リリース時は OFF (test_release_defaults が見る。11 個)。
+
+- 気づいたが未調査: 本人のスクリーンショットで設定 100% (`freq=5`) なのに `roll+/opp` が 39/55
+  (71%、赤)。抽選まで行かない機会も `opp` に数えている可能性がある
+

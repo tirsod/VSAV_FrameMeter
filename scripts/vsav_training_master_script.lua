@@ -49,6 +49,8 @@ local debugKnockdownModule = require "./scripts/debugKnockdown"
 local airGuardLogModule  = require "./scripts/airGuardLog"
 -- Air Guard Gaps (Trainer tab). hud.lua requires the same path to draw it.
 local airGuardGapModule  = require "./scripts/airGuardGap"
+-- Show PB Stats (Trainer tab). hud.lua requires the same path to draw it.
+local pbStatsModule      = require "./scripts/pbStats"
 local autoguardModule    = require "./scripts/autoguard"
 local gameStateModule    = require './scripts/gameState'
 local dummyStateModule   = require './scripts/dummyState'
@@ -498,6 +500,7 @@ emu.registerbefore(function()
 			guardCancelModule.clear_trace()
 			globals.total_pb_attempt_counter = {}
 			globals.successful_pb_counter = {}
+			pbStatsModule.clear()
 		end
 	else
 		globals._select_cleared = false
@@ -615,6 +618,8 @@ emu.registerbefore(function()
 	if globals.options.display_pb_stats == false then
 		globals.total_pb_attempt_counter = {}
 		globals.successful_pb_counter = {}
+		-- Off and on again starts from zero, as the menu says.
+		pbStatsModule.clear()
 	end
 	-- if globals.macroLua and (globals.macroLua.playing == true or globals.macroLua.recording == true) then
 	-- 	if was_gathering_graph_data == false then
@@ -697,6 +702,7 @@ emu.registerbefore(function()
 	debugKnockdownModule.registerBefore()
 	airGuardLogModule.registerBefore(debugKnockdownModule.script_version)
 	airGuardGapModule.registerBefore()
+	pbStatsModule.registerBefore()
 
 	globals.controllerModule.process_pending_input_sequence(player_objects[1], globals._input)
 

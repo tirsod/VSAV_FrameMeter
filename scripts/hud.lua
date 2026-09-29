@@ -1,4 +1,7 @@
 local tech_hit_inputs = require './tech-hit-inputs'
+-- Show PB Stats (Trainer tab). The master script requires the same path to
+-- feed it, so this is the same module.
+local pbStatsModule = require "./scripts/pbStats"
 -- Read only for the frequency counter below. require returns the module
 -- already loaded by menu.lua, so this costs nothing at run time.
 local actionSequenceRunnerModule = require './scripts/actionSequenceRunner'
@@ -444,18 +447,44 @@ local function draw_short_hop_counter()
 	end
 end
 
--- This function show stats for pushblocking
+-- SHOW PB STATS (pbStats.lua). BETWEEN THE BUTTON LIST AND THE GC COMMAND
+-- TRACE, so push block and guard cancel can be practised together (user,
+-- 2026-09-28: 置き場所). x 74, as far left as the button list allows: its
+-- TECH HIT after two buttons ends at 71. The widest line, 31 characters, ends
+-- with its box at 206 - the GC Command Trace's box starts at 208. The label
+-- column is one space narrower than AirGap's for that. y: blocks_top(),
+-- under the PB Count line. On AirGap's dark box
+-- (user, 2026-09-28: 背景は空中ガードに寄せて暗めに).
+local PB_STATS_X, PB_STATS_ROW = 74, 9
+-- THE BLOCKS UNDER THE PB COUNT LINE - the button list, PB Stats and the GC
+-- Command Trace - start right under it, at 38 (user, 2026-09-28: the GC
+-- counter is not shown any more, so they can come up). Only the Guard Action
+-- Frequency Check, a diagnostic on the Analysis tab, still draws a line at 36;
+-- with it on they keep to 50, below it.
+local function blocks_top()
+	return (globals.options.display_gc_freq_counter == true) and 50 or 38
+end
 local function draw_pb_stats()
-	if globals.options.display_pb_stats == true then
-		gui.text( 172, 54, "Total: ".. util.tablelength(globals.total_pb_attempt_counter))
-		gui.text( 172, 63, "Pass: " .. util.tablelength(globals.successful_pb_counter), "#00FF00")
-		gui.text( 210, 63, "% ", "#00FF00")
-		if util.tablelength(globals.successful_pb_counter) > 0 then
-			gui.text( 210, 63, "%" .. string.format("%02d", util.tablelength(globals.successful_pb_counter) / util.tablelength(globals.total_pb_attempt_counter) * 100), "#00FF00")
-		end
-		gui.text( 172, 73, "Fail: " .. util.tablelength(globals.total_pb_attempt_counter) - util.tablelength(globals.successful_pb_counter), "#FF0000")
-		tech_hit_inputs()
+	if globals.options.display_pb_stats ~= true then return end
+	local PB_STATS_Y = blocks_top()
+	local CH = 4.2
+	local _lines = pbStatsModule.lines()
+	local _w = 0
+	for _, _l in ipairs(_lines) do
+		local _n = 0
+		for _, _c in ipairs(_l) do _n = _n + #_c[1] end
+		if _n > _w then _w = _n end
 	end
+	gui.box(PB_STATS_X - 2, PB_STATS_Y - 1, PB_STATS_X + _w * CH + 2,
+		PB_STATS_Y + #_lines * PB_STATS_ROW, "#00000099", "#00000055")
+	for _i, _l in ipairs(_lines) do
+		local _x, _y = PB_STATS_X, PB_STATS_Y + (_i - 1) * PB_STATS_ROW
+		for _, _c in ipairs(_l) do
+			if _c[1]:find("%S") then gui.text(_x, _y, _c[1], _c[2]) end
+			_x = _x + #_c[1] * CH
+		end
+	end
+	tech_hit_inputs(PB_STATS_Y)
 end
 
 -- WHAT GUARD ACTION FREQUENCY IS ACTUALLY DOING.
@@ -624,9 +653,15 @@ local function draw_gc_command_trace()
 	if _t == nil or _t.guard == nil or #_t.rows == 0 then return end
 	-- Moved in from 250: the block sat under the P2 input column and the
 	-- Fastest readout at the top right (user, 2026-09-23).
-	local _x, _y = 226, 50
+	-- NO TITLE, ON THE DARK BOX, A LITTLE FURTHER LEFT (user, 2026-09-28): the
+	-- same box as PB Stats and AirGap, and 210 rather than 226 - PB Stats'
+	-- box ends at 206 at its widest, this one starts at 208. The rows move up
+	-- into the title's place, level with PB Stats' first line.
+	local _x, _y = 210, blocks_top()
 	local _t0 = _t.rows[1].t
-	gui.text(_x, _y, "GC Command Trace", "#FFD700")
+	local _n = #_t.rows + ((_t.done ~= nil and _t.at ~= nil) and 1 or 0)
+	gui.box(_x - 2, _y - 1, _x + GCT_NUM_R + GCT_BRACKET + 2, _y + _n * GCT_ROW_H + 1,
+		"#00000099", "#00000055")
 	-- A NUMBER IS COUNTED FROM THE INPUT BEFORE IT, AND BRACKETS MEAN IT WAS
 	-- COUNTED AGAINST THE GUARD INSTEAD (user, 2026-09-23).
 	--
@@ -654,7 +689,7 @@ local function draw_gc_command_trace()
 	local _mark = nil       -- where a cut chain starts counting again: the
 	                        -- guard, or the expiry when the guard came first.
 	for _i, _r in ipairs(_t.rows) do
-		local _ry = _y + _i * GCT_ROW_H
+		local _ry = _y + (_i - 1) * GCT_ROW_H
 		if _r.k == "guard" then
 			-- A block that landed while the guard pose was persisting - back
 			-- already let go - names the tick of it (user, 2026-09-25). "G-"
@@ -745,7 +780,7 @@ local function draw_gc_command_trace()
 			end
 		end
 		local _c = (_t.done == "Success") and GCT_OK or GCT_BAD
-		local _ry = _y + (#_t.rows + 1) * GCT_ROW_H
+		local _ry = _y + #_t.rows * GCT_ROW_H
 		gui.text(_x + 2, _ry + 2, _t.done, _c)
 		gct_num(_x, _ry + 2, (_t.at - _from) % 256, GCT_NUM_R, _c)
 	end
@@ -767,7 +802,7 @@ local function draw_gc_frequency_counter()
 	if _opp >= 8 and _want >= 0 then
 		_c = (math.abs(_got - _want) <= 5) and "#00FF00" or "#FF0000"
 	end
-	gui.text(21, 36, string.format("GC freq=%s opp=%d roll+=%d arm=%d seq=%d drop=%d wait=%d",
+	gui.text(21, 36, string.format("Guard Action freq=%s opp=%d roll+=%d arm=%d seq=%d drop=%d wait=%d",
 		tostring(globals.options.gc_freq), _opp, _true, gc_fires or 0, _seq, _drop, _wait), _c)
 end
 
@@ -1155,6 +1190,9 @@ local hudModule = {
     -- EXPOSED FOR THE OFFLINE TEST. Nothing executes the drawing otherwise,
     -- which is how a nil colour reached gui.text and took the HUD down.
     ["draw_gc_command_trace"] = draw_gc_command_trace,
+    ["draw_pb_stats"] = draw_pb_stats,
+    ["PB_STATS_X"] = PB_STATS_X,
+    ["blocks_top"] = blocks_top,
     ["draw_air_guard_gap"] = draw_air_guard_gap,
     ["registerStart"] = function()
     end,

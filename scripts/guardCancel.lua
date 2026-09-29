@@ -120,7 +120,7 @@ local seq_held_btn_until = nil
 
 -- COUNTED, BECAUSE THREE FIXES IN A ROW WERE ARGUED RATHER THAN MEASURED.
 --
--- Show GC Frequency Counter in the Trainer tab prints these. Read together
+-- Guard Action Frequency Check on the Analysis tab prints these. Read together
 -- they say which half is wrong without another round of reasoning:
 --
 --   rolls_true / opportunity  is the gate's real rate

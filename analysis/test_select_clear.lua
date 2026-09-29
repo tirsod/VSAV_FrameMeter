@@ -30,6 +30,7 @@ for _, call in ipairs({
 	"inpHistoryModule.clear()", "vsavScriptModule.clear()", "timersModule.clear()",
 	"guardCancelModule.clear_trace()",
 	"globals.total_pb_attempt_counter = {}", "globals.successful_pb_counter = {}",
+	"pbStatsModule.clear()",
 }) do
 	want("消す: " .. call, body:find(call, 1, true) ~= nil, true)
 end

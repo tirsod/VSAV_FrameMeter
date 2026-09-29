@@ -265,8 +265,12 @@ do
 		image = function(_x, _y, _img)
 			images[#images + 1] = { x = _x, y = _y, img = _img }
 		end,
-		box = function() end, line = function() end, rect = function() end,
+		box = function(_x1, _y1, _x2, _y2, _f, _o)
+			boxes[#boxes + 1] = { x1 = _x1, y1 = _y1, x2 = _x2, y2 = _y2, f = _f, o = _o }
+		end,
+		line = function() end, rect = function() end,
 	}
+	boxes = {}
 	memory = { readbyte = function() return 0 end, readword = function() return 0 end,
 	           readdword = function() return 0 end, writebyte = function() end,
 	           registerexec = function() end, registerwrite = function() end,
@@ -296,6 +300,10 @@ do
 	package.preload["./scripts/airGuardGap"] = function()
 		return dofile("airGuardGap.lua")
 	end
+	-- 4 つ目 (2026-09-28)。Show PB Stats の描画用。本物を読む。
+	package.preload["./scripts/pbStats"] = function()
+		return dofile("pbStats.lua")
+	end
 	img_dir = {}
 	for i = 1, 9 do img_dir[i] = "dir" .. i end
 	img_no_button, img_L_button, img_M_button, img_H_button = "n", "l", "m", "h"
@@ -319,6 +327,25 @@ do
 	hud_mod.draw_gc_command_trace()
 	want("色が nil のまま渡された描画は無い", table.concat(bad, ", "), "")
 	want("何か描いている", #calls > 0, true)
+	-- タイトルなし、黒い背景 (AirGap と PB Stats と同じ箱)、左へ (本人、2026-09-28)。
+	do
+		local title = false
+		for _, c in ipairs(calls) do if c.s == "GC Command Trace" then title = true end end
+		want("タイトルは描かない", title, false)
+		local b = boxes[#boxes]
+		want("背景の箱を 1 つ敷く", #boxes, 1)
+		want("箱の色は AirGap と同じ", b and (b.f .. " " .. b.o), "#00000099 #00000055")
+		want("箱の左端は 208 (PB Stats の箱は 206 まで)", b and b.x1, 208)
+		-- 行は 5 つ、最後に Success の行。1 行目は PB Count の行のすぐ下 y 38
+		-- (タイトルの分と、Frequency を出さなくなった分だけ上がった)。
+		local top = 999
+		for _, im in ipairs(images) do if im.y < top then top = im.y end end
+		want("1 行目は y 38 から", top, 38)
+		want("箱は 6 行分 (行 5 + Success)", b and (b.y2 - b.y1), 6 * 11 + 2)
+		local maxy = 0
+		for _, c in ipairs(calls) do if c.y > maxy then maxy = c.y end end
+		want("最後の Success の行も箱の中", b ~= nil and maxy + 8 <= b.y2, true)
+	end
 
 	-- 左の列 (Cmd) は「直前の入力から」。ガードは入力ではないので起点に
 	-- ならないが、動きのどこで起きたかを見るために数字は持ち、括弧で囲む
@@ -388,7 +415,22 @@ do
 	want("ラベルと数字が離れていない", (_num_l or 999) - (_lab_r or 0) <= 20, true)
 	-- ブロックの左端。画面右の P2 入力列と Fastest に重なっていた。
 	local hud_src = io.open("hud.lua"):read("*a")
-	want("左へ寄せてある", hud_src:find("local _x, _y = 226, 50", 1, true) ~= nil, true)
+	-- さらに左へ、タイトルなし、黒い背景 (本人、2026-09-28)。
+	want("左へ寄せてある", hud_src:find("local _x, _y = 210, blocks_top()", 1, true) ~= nil, true)
+	-- Frequency の検証表示 (y 36) を出したときは、その下の y 50 から。
+	do
+		-- 後の確認が使う記録は退避して戻す
+		local sc, si, sb = calls, images, boxes
+		images, calls, boxes = {}, {}, {}
+		globals.options.display_gc_freq_counter = true
+		hud_mod.draw_gc_command_trace()
+		globals.options.display_gc_freq_counter = nil
+		local top = 999
+		for _, im in ipairs(images) do if im.y < top then top = im.y end end
+		want("Frequency を出したときは y 50 から", top, 50)
+		calls, images, boxes = sc, si, sb
+	end
+	want("タイトルは描かない", hud_src:find('"GC Command Trace", "#FFD700"', 1, true), nil)
 	-- 失敗は最後に通った入力から数える。段のタイマーはそこから始まる。
 	-- 上の trace ではボタン行が 122 にあるので 131 - 122 = 9t。
 	local n2 = {}

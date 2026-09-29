@@ -6,6 +6,48 @@ Newest first. Older releases are kept below.
 
 ---
 
+## v11.7.16.1
+
+### Show PB Stats, rebuilt
+
+**`Show PB Stats`** on the `Trainer` tab now keeps the values of the `PB Count`
+line above it and averages them.
+
+```
+Count Total 20
+      Pass 14  Fail 6
+      Success 70.00%
+Avg   PB 4.22  at 5.89-11.50t
+      Multi 1.44  Late 0.33
+```
+
+- **Total** is the times the other side reached you on the ground **and you
+  pressed a button**. A touch without a press is not counted. A blocked string
+  is one touch
+- **Pass**: you pressed and it pushed. **Fail**: you pressed and it did not, or
+  you were hit meanwhile. **Success** is Pass over Total
+- **A guard cancel that came out is not counted**
+- **Avg** averages the `PB Count` line's own values - the count, the first and
+  last tick of `at`, `MultiPush` and `LateMash` - over the touches you pressed
+  in and guarded
+- Counts go up to 99999. Turning it off in the menu, or picking characters
+  again, starts it from 0
+- The list of pressed buttons moved up a little and has a background.
+  `TECH HIT` is the same green as Pass
+
+### GC Command Trace sits beside PB Stats
+
+No title, a dark background and a little further left, so it can be shown with
+PB Stats and push block and guard cancel practised together.
+
+### GC Frequency Counter moved to the Analysis tab
+
+It checks whether the dummy's `Guard Action Frequency` acts as often as set, so
+it is now **`Guard Action Frequency Check`** on the `Analysis` tab (off by
+default).
+
+---
+
 ## v11.7.16
 
 ### New: `Show Air Guard Gaps`

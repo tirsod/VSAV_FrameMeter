@@ -6,6 +6,43 @@ English: [RELEASE_NOTES.md](RELEASE_NOTES.md)
 
 ---
 
+## v11.7.16.1
+
+### Show PB Stats を作り直しました
+
+`Trainer` タブの **`Show PB Stats`** を、上の `PB Count` の行の値を積み上げて平均する形に
+しました。
+
+```
+Count Total 20
+      Pass 14  Fail 6
+      Success 70.00%
+Avg   PB 4.22  at 5.89-11.50t
+      Multi 1.44  Late 0.33
+```
+
+- **Total** は、地上で相手の攻撃に触れた回のうち、**ボタンを押した回**の数です。押していない回は
+  数えません。連続ガードは全体で 1 回です
+- **Pass** は押して PB が出た回、**Fail** は押したのに出なかったか、その間に食らった回です。
+  **Success** は Pass ÷ Total です
+- **GC が出た回は数えません**
+- **Avg** は押してガードした回の、`PB Count` の行の値（押した数、`at` の最初と最後、
+  `MultiPush`、`LateMash`）の平均です
+- 99999 回まで数えます。メニューで OFF にするか、キャラクターを選び直すと 0 に戻ります
+- 押したボタンの一覧は少し上に移して背景を付けました。`TECH HIT` は Pass と同じ緑です
+
+### GC Command Trace を PB Stats の隣に並べました
+
+見出しを消して黒い背景を付け、少し左に寄せました。PB Stats と同時に出して、PB と GC を一緒に
+練習できます。
+
+### GC Frequency Counter を Analysis タブに移しました
+
+ダミーの `Guard Action Frequency` が設定どおりの割合で出ているかを確かめる表示なので、
+`Analysis` タブの **`Guard Action Frequency Check`** にしました（既定は OFF）。
+
+---
+
 ## v11.7.16
 
 ### 空中ガードの隙間を見せる `Show Air Guard Gaps` を追加しました

@@ -222,6 +222,10 @@ local function om_publish()
     timers.p2_pb_latemash      = om[0xFF8800].n
     timers.p1_pb_latemash_late = om[0xFF8400].late
     timers.p2_pb_latemash_late = om[0xFF8800].late
+    -- Still following the last window: pbStats.lua waits on this before it
+    -- counts a touch, so the LateMash it averages is the finished one.
+    timers.p1_pb_latemash_open = om[0xFF8400].open_lg ~= nil
+    timers.p2_pb_latemash_open = om[0xFF8800].open_lg ~= nil
 end
 
 -- One tick of the stream. Exported below so the offline test can drive it:

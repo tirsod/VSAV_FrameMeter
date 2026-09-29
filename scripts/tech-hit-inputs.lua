@@ -75,24 +75,23 @@ local function is_press(mark, raw)
   return mark ~= nil and mark ~= "-" and raw ~= nil and raw > 0
 end
 
-local guiRegister = function()
+-- LEVEL WITH PB STATS (user, 2026-09-28: ステータスのボタン内容をもう少し上に).
+-- The first entry sits where PB Stats' first line is - hud.lua passes it in;
+-- it was at the screen height - 150 (74).
+local guiRegister = function(_top)
+  _top = _top or 38
   local marks = globals.timers and globals.timers.p1_pb_marks
   local raws = globals.timers and globals.timers.p1_pb_raws
   if marks == nil or raws == nil then return end
 
-  local entry_num = 0
+  -- The entries first, so the box behind them can be sized before anything
+  -- is drawn on it.
+  local entries = {}
   for pos = 1, 14 do
     local m = marks[pos]
     local r = raws[pos]
     if is_press(m, r) then
-      entry_num = entry_num + 1
-      local y = emu.screenheight() - 160 + 10 * entry_num
-      gui.text(5, y, entry_num .. ': ')
-      local icons_list = parse_mask(r)
-      for j, icon in ipairs(icons_list) do
-        local x = 5 + 10 * j
-        gui.gdoverlay(x, y - 1, icon)
-      end
+      local e = { icons = parse_mask(r) }
       -- TECH HIT: the entry that granted the push block. timers.lua
       -- publishes ok as a span-level flag; the granting entry is the last
       -- one before the count froze, which in the marks is the last press
@@ -102,10 +101,35 @@ local guiRegister = function()
         for p2 = pos, 14 do
           if marks[p2] ~= nil and marks[p2] ~= "-" then _grant_pos = p2 end
         end
-        if _grant_pos ~= nil and pos == _grant_pos then
-          gui.text((#icons_list + 1) * 10 + 7, y, 'TECH HIT')
-        end
+        e.tech = (_grant_pos ~= nil and pos == _grant_pos)
       end
+      entries[#entries + 1] = e
+    end
+  end
+  if #entries == 0 then return end
+
+  -- ON THE SAME DARK BOX AS PB STATS (user, 2026-09-28: 左側のボタン背景も同じ
+  -- 黒目に). One pixel of margin on the right, not two: an entry with two
+  -- buttons and TECH HIT ends at 70.6, and PB Stats' box starts at 72.
+  local right = 0
+  for _, e in ipairs(entries) do
+    local r = 5 + 10 * #e.icons + 8
+    if e.tech then r = (#e.icons + 1) * 10 + 7 + 8 * 4.2 end
+    if r > right then right = r end
+  end
+  gui.box(3, _top - 1, right + 1, _top + 10 * #entries - 1, "#00000099", "#00000055")
+
+  for n, e in ipairs(entries) do
+    local y = _top + 10 * (n - 1)
+    gui.text(5, y, n .. ': ')
+    for j, icon in ipairs(e.icons) do
+      gui.gdoverlay(5 + 10 * j, y - 1, icon)
+    end
+    if e.tech then
+      -- Green, as Pass and Success in PB Stats and the PB Count line once the
+      -- push block is granted: the same success, the same colour (user,
+      -- 2026-09-28).
+      gui.text((#e.icons + 1) * 10 + 7, y, 'TECH HIT', "#00FF00")
     end
   end
 end
