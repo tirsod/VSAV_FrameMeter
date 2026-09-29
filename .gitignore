@@ -10,11 +10,14 @@
 !/run_vsav_training.sh
 !/training_modes.json
 !/README.md
-# The README's Japanese twin and the player manual with its UI review, both
-# languages (2026-09-29). Without these two lines the /* above swallows them
-# silently, as it did the design notes.
+# The README's Japanese twin and the player manual, both languages
+# (2026-09-29). Without these two lines the /* above swallows them silently,
+# as it did the design notes.
 !/README.ja.md
 !/docs/
+# The UI review the manual was written alongside is a working note, not for
+# players: kept on this machine, out of the public tree (user, 2026-09-29).
+/docs/PLAYER_UX_REVIEW.*.md
 !/CLAUDE.md
 # Shipped in every release but authored upstream, so they were never in here -
 # the zip carried them forward from the previous zip instead. That chain broke
