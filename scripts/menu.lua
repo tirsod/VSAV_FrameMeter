@@ -443,6 +443,12 @@ function list_menu_item(_name, _object, _property_name, _list, _default_value, _
       _v = self.default_value
       self.object[self.property_name] = _v
     end
+    -- Orange while this row's value stops what another row selected (see
+    -- ZERO_RATE_COLOR). Not under the cursor: there the brackets and the
+    -- legend line say it.
+    if not _selected and self.warn ~= nil and self.warn() then
+      _c = ZERO_RATE_COLOR
+    end
     gui.text(_x, _y, _prefix..self.name.." : "..tostring(self.list[_v]).._suffix, _c, text_default_border_color)
   end
 
@@ -914,25 +920,32 @@ local counter_attack_random_upback = {
   "100%",
 }
 
+-- 0%, NOT None, ON THE THREE RATE ROWS (PLAYER_UX_REVIEW 9).
+--
+-- They are the only rows where the player types a percentage, and None read
+-- as "not randomised" - which is the opposite of what index 1 does: every
+-- reader (shouldGC, get_block_chance, rolled_tech) returns false for it. The
+-- index is what the settings file stores, so only the word changes. None stays
+-- where it means no action at all, such as Guard Action Type = None.
 gc_freq = {
-    "None",
+    "0%",
     "25%",
     "50%",
     "75%",
     "100%",
 }
--- Same five as Guard Action Frequency and P2 Random Guard %, because it is the
+-- Same five as Random Guard Action % and Random Guard %, because it is the
 -- same question asked about a different reaction, and the Dummy tab already
--- teaches the reader what None/25/50/75/100 means.
+-- teaches the reader what 0/25/50/75/100 means.
 p2_throw_tech_chance = {
-  "None",
+  "0%",
   "25%",
   "50%",
   "75%",
   "100%",
 }
 p2_block_chance = {
-  "None",
+  "0%",
   "25%",
   "50%",
   "75%",
@@ -1154,7 +1167,7 @@ local gc_input_delay_menu_item = integer_menu_item(
     )
 gc_input_delay_menu_item.is_disabled = check_for_gc_disabled
 
-local guard_action_frequency_menu_item = list_menu_item("Guard Action Frequency", training_settings, "gc_freq", gc_freq,1, "Use to randomize whether the guard action is performed")
+local guard_action_frequency_menu_item = list_menu_item("Random Guard Action %", training_settings, "gc_freq", gc_freq,1, "How often the dummy does what Guard Action Type is set to, rolled once per\nchance. 0% never does it: while a Guard Action Type is set, this row turns\norange.")
 guard_action_frequency_menu_item.is_disabled = function() return training_settings.guard_action == 1 end
 
 function set_p1_reversal_names()
@@ -1185,7 +1198,7 @@ local p2_reversal_list_menu_item = list_menu_item("P2 Reversal List", training_s
 p2_reversal_list_menu_item.is_disabled = char_specific_reversal_is_disabled
 local p2_reversal_strength_menu_item = list_menu_item("Reversal Strength", training_settings, "p2_reversal_strength", { "Light", "Medium","Heavy","ES"}, 1, nil, "The strength of the reversal,\nPlease use normal game values (e.g. EX for EX moves)")
 p2_reversal_strength_menu_item.is_disabled = char_specific_reversal_is_disabled
-local p2_block_chance_menu_item = list_menu_item("P2 Random Guard %", training_settings, "p2_block_chance", p2_block_chance, 1, nil, "Randomize Blocking")
+local p2_block_chance_menu_item = list_menu_item("Random Guard %", training_settings, "p2_block_chance", p2_block_chance, 1, "How often the dummy blocks. 0% never blocks.\nRead by Stand Block, All Guard and Push Block (Guard row). While one of those\nis set and this is 0%, the row turns orange: the dummy will not block at all.")
 -- ENABLED EXACTLY WHERE THE VALUE IS STILL READ.
 --
 -- It was hidden on anything but Stand Block (2) and All Guard (4), but
@@ -1201,6 +1214,49 @@ local p2_block_chance_menu_item = list_menu_item("P2 Random Guard %", training_s
 -- dependency, it only hid it.
 p2_block_chance_menu_item.is_disabled = function()
 	return training_settings.guard ~= 2 and training_settings.guard < 4
+end
+
+-- A 0% THAT STOPS WHAT ANOTHER ROW PICKED IS SAID, NOT CHANGED
+-- (PLAYER_UX_REVIEW 4).
+--
+-- Guard and Guard Action Type pick WHAT the dummy does; these two rows say HOW
+-- OFTEN, and both ship at 0%. Picking All Guard or a guard action with the
+-- rate still at 0% looked like switching it on and did nothing. A 0% can be
+-- deliberate, so the value is left alone: the rate row turns orange, and with
+-- the cursor on any of the rows involved the legend line says why. The same
+-- orange as the Action Steps warning, which says this about its own screen.
+ZERO_RATE_COLOR = "#FF7F00"
+local function block_rate_stops_guard()
+	return not p2_block_chance_menu_item.is_disabled()
+	   and training_settings.p2_block_chance == 1
+end
+local function action_rate_stops_action()
+	return training_settings.guard_action ~= nil and training_settings.guard_action ~= 1
+	   and training_settings.gc_freq == 1
+end
+local function block_rate_warning()
+	if block_rate_stops_guard() then return "Random Guard % is 0%: the dummy never blocks." end
+	return nil
+end
+local function action_rate_warning()
+	if action_rate_stops_action() then return "Random Guard Action % is 0%: it never runs." end
+	return nil
+end
+p2_block_chance_menu_item.warn = block_rate_stops_guard
+p2_block_chance_menu_item.warning = block_rate_warning
+guard_action_frequency_menu_item.warn = action_rate_stops_action
+guard_action_frequency_menu_item.warning = action_rate_warning
+local function with_warning(_item, _fn)
+	_item.warning = _fn
+	return _item
+end
+-- On the legend line, right-aligned: the legend is short on these rows and the
+-- description block above it is full.
+function draw_entry_warning(_entry, _right, _y)
+	if _entry == nil or _entry.warning == nil then return end
+	local _w = _entry.warning()
+	if _w == nil then return end
+	gui.text(_right - #_w * 4, _y, _w, ZERO_RATE_COLOR, text_default_border_color)
 end
 
 -- SHOWN ONLY WHEN GUARD ACTION TYPE IS "Reversal - Action Steps" (0xB).
@@ -1619,12 +1675,12 @@ return {
             anak_menu_item,
             lilith_gps_menu_item,
             lei_lei_stun_menu_item,
-            list_menu_item("Tech Throws", training_settings, "p2_throw_tech", p2_throw_tech_chance, 5, "How often the dummy escapes a throw.\nRolled once per throw, not per frame - a roll every frame would come out as\n100% whatever this said, which is what Guard Action Frequency used to do.\nNone leaves the throw alone."),
-            list_menu_item("Guard", training_settings, "guard", guard,1, "Push Block (All ...) guards like All Guard and pushes, at that strength,\nwithout needing Guard Action Type - so that stays free for what you test next.\nAuto Guard writes the game's own guard flag and blocks even unblockable setups.\nStand Block holds Back while an attack is in range, by the game's own proximity\ncheck - projectiles too. All Guard also picks the height each hit needs: down\nfor lows, standing for overheads and jump attacks, the Pose for everything else."),
+            list_menu_item("Random Throw Tech %", training_settings, "p2_throw_tech", p2_throw_tech_chance, 5, "How often the dummy escapes a throw.\nRolled once per throw, not per frame - a roll every frame would come out as\n100% whatever this said, which is what Random Guard Action % used to do.\n0% leaves the throw alone."),
+            with_warning(list_menu_item("Guard", training_settings, "guard", guard,1, "Push Block (All ...) guards like All Guard and pushes, at that strength,\nwithout needing Guard Action Type - so that stays free for what you test next.\nAuto Guard writes the game's own guard flag and blocks even unblockable setups.\nStand Block holds Back while an attack is in range, by the game's own proximity\ncheck - projectiles too. All Guard also picks the height each hit needs: down\nfor lows, standing for overheads and jump attacks, the Pose for everything else."), block_rate_warning),
             -- integer_menu_item("# Guard Frames", training_settings, "p2_refill_timer", 0, 20, false, 0, nil, "This timer controls when the life meter will be refilled.\nOccurs this many seconds after being hit"),
 
             p2_block_chance_menu_item,
-            list_menu_item("Guard Action Type", training_settings, "guard_action", guard_action_type, 1, {
+            with_warning(list_menu_item("Guard Action Type", training_settings, "guard_action", guard_action_type, 1, {
               --1 "None",
               --2 "Guard Cancel",
               --3 "Push Block",
@@ -1635,8 +1691,8 @@ return {
               --8 "Counter Attack - Specified",
               --9 "Counter Attack - Recording",
               "No Guard Action will be performed",
-              "The dummy will input a guard cancel manually.\nYou can delay this with the delay option in order to get later GC's\nYou can also set the frequency option to have it be performed randomly",
-              "The dummy will input a push block manually.\nThe game counts button presses inside a 14 Tick window from the block\n($1AB, set to 14 at ROM 0x023966). Eight counted presses is guaranteed;\nbelow that the game rolls once per press.\nYou can delay this with the delay option in order to get later PB's.\nYou can also set the frequency option to have it be performed randomly.",
+              "The dummy will input a guard cancel manually.\nYou can delay this with the delay option in order to get later GC's\nRandom Guard Action % sets how often it is performed.",
+              "The dummy will input a push block manually.\nThe game counts button presses inside a 14 Tick window from the block\n($1AB, set to 14 at ROM 0x023966) and rolls on each: presses 1-2 never,\n3rd 25%, 4th 50%, 5th 75%, 6th always (the table at ROM 0x028D50).\nYou can delay this with the delay option in order to get later PB's.\nRandom Guard Action % sets how often it is performed.",
               "Specify a character specific special move.\nto be performed after the dummy hurt, block, or wakeup",
               "A recording will be played after the opponent guards, is hurt,\nor wakes up.\nThe recording played can be set in the 'Recording' tab.\nThis can be specified or random.",
               "Specify an input to be performed after the dummy hurt, block,\nor wakeup.",
@@ -1644,9 +1700,9 @@ return {
               "Specify an action to be performed after the dummy blocks or is hit.\nSame timing machinery as Reversal, minus the wake-up.",
               "A recording will be played after the opponent finishes guarding.\nThe recording played can be set in the 'Recording' tab.\nThis can be specified or random.",
               "Play recording after pushblock",
-              "Runs the list of steps set in 'Reversal Sequence', in order.\nEach step is one action and one answer to when it starts.\nThe first step's Wait replaces Guard Action Delay, so that row is off.",
+              "Runs the list of steps set in 'Reversal Action Steps', in order.\nEach step is one action and one answer to when it starts.\nThe first step's Wait replaces Guard Action Delay, so that row is off.",
 
-            }, "Use this to set up various counter attacks."),
+            }, "Use this to set up various counter attacks."), action_rate_warning),
             guard_action_frequency_menu_item,
             counter_attack_stick_menu_item,
             counter_attack_button_menu_item,
@@ -1670,7 +1726,7 @@ return {
       entries = {
         integer_menu_item("Game Speed", training_settings, "game_speed", 0, 3, false, 3, 0, "Change the game speed\n0 = normal, 1-3 = turbo 1-3"),
         checkbox_menu_item("BGM On", training_settings, "bgm_on", false, "Background music on or off.\nIt only takes proper effect after a trip through character select - switch it\nhere and the music comes back quiet. Return to Character Select below does\nthat, and so does Lua Hotkey 4."),
-        list_menu_item("P1 Min PB Presses", training_settings, "min_pb_inputs", { "Normal", "4", "5", "6" }, 1, "How many presses YOU must make before a push block is allowed. P1 only - it\ndoes not make the dummy work harder.\nNormal leaves the game alone: it counts presses in a 14 Tick window and eight\nis a guaranteed push block, fewer is a roll per press.\n4/5/6 rewrite the count the game reads to zero whenever you pressed fewer than\nthat (ROM 0x02760E), so it rolls as if you had not pressed at all."),
+        list_menu_item("P1 Min PB Presses", training_settings, "min_pb_inputs", { "Normal", "4", "5", "6" }, 1, "How many presses YOU must make before a push block is allowed. P1 only - it\ndoes not make the dummy work harder.\nNormal leaves the game alone: it counts presses in a 14 Tick window and rolls\nper press - never on 1-2, then 25/50/75%, and the 6th always pushes.\n4/5/6 rewrite the count the game reads to zero whenever you pressed fewer than\nthat (ROM 0x02760E), so it rolls as if you had not pressed at all."),
         { name = "Return to Character Select",
           draw = function(_self, _x, _y, _selected)
             local _c = text_default_color
@@ -1724,7 +1780,7 @@ return {
     {
       name = "Trainer",
       entries = {
-        checkbox_menu_item("Tick Data", training_settings, "mo_enable_frame_data", false, "Startup, active, recovery, advantage, total, hitstun, hitfreeze - in Ticks.\nThe first three come from the ATTACK HITBOX, the box the hitbox display draws,\nso they do not move with distance. They add up to Total and exclude the\nattacker's own hitfreeze; * means the attacker was not frozen.\nACTION TIMELINE (third row, green): one action on a clock, each entry stamped\nwith its Tick. LP..HK and Action Steps names. 1t PreJump > 4t Air > 10t MP."),
+        checkbox_menu_item("Tick Data", training_settings, "mo_enable_frame_data", false, "Startup, active, recovery, advantage, total, hitstun, hitfreeze - in Ticks.\nThe first three come from the ATTACK HITBOX, so they do not move with distance.\nStartup and active share the tick the box appears: 4 + 3 + 7 - 1 = 13 Total.\nTotal includes gaps between hits, minus the attacker's hitfreeze; * = not frozen.\nACTION TIMELINE (third row, green): one action on a clock, each entry stamped\nwith its Tick. LP..HK and Action Steps names. 1t PreJump > 4t Air > 10t MP."),
         child_of("mo_enable_frame_data", list_menu_item("Tick Data Side", training_settings, "mo_frame_data_side", { "P1", "P2" }, 1, "WHICH PLAYER the rows above measure. P1 is you.\nP2 measures the DUMMY: its move gets Startup / Active / Recovery, the Action\nTimeline follows what the DUMMY did, and YOUR side supplies the hit or guard\nit ran into. This is how to see what a recorded Action Steps pattern really\ncame out as.\nOne side at a time. Both readouts say P2 while it is on.")),
         checkbox_menu_item("Show Step Wait Ticks", training_settings, "display_step_wait_ticks", false,"Shows what each Action Step actually waited, in game Ticks.\nThe Wait row names a mode - Auto (After), Auto (Chain) - without saying how\nlong it came to. This measures it: Step.2 Wait:13 is step two connecting 13 Ticks\nafter step one. Act is the Ticks that step spends entering its own inputs.\nLoop Wait is the gap a loop restart waited, which is not step one own wait.\nMeasured only - what the row is set to is on the row."),
         checkbox_menu_item("Show PB Counter", training_settings, "display_pb_counter",1, "Push block presses the game counted ($170), plus any after it grants - a lucky\nthree would read three however hard you mash. Green once granted; the count\ncarries a blocked string. Right: the TICK timeline of the last window (Guard\nopens it, | closes it, digit = buttons that tick; 2+ red is simultaneous).\nMultiPush counts those. LateMash: buttons pressed AFTER the 14 ticks - they\nLEAK A NORMAL when guard stun ends. Cap 14t. The dummy shows as P2."),
@@ -1756,11 +1812,11 @@ return {
         checkbox_menu_item("Show Hit Strength + PB PushBack", training_settings, "show_move_strength", false,"Four lines at the top left: the strength of the attack each character was last\nhit by ($59), and each one's push block pushback timer ($1B0).\nAdded while chasing a delayed-pushback bug. Raw values, no measurement."),
         checkbox_menu_item("Show Projectile Allocation", training_settings, "show_projectile_count_limiter", false,"The projectile allocation value ($FFF9BE) in hex, near the top of the screen.\nThe game's own budget for what can be on screen at once.\nA readout, not a limiter - nothing here changes the value."),
         -- A CHECK ON THE TOOL, NOT PRACTICE (user, 2026-09-28): it counts
-        -- whether the dummy's Guard Action Frequency acts as often as set,
+        -- whether the dummy's Random Guard Action % acts as often as set,
         -- so it sits with the diagnostics and ships off. Was "Show GC
         -- Frequency Counter" on the Trainer tab; the property keeps its name
         -- so a saved setting still reaches it.
-        checkbox_menu_item("Guard Action Frequency Check", training_settings, "display_gc_freq_counter", false, "The dummy's Guard Action Frequency, counted: does it act as often as set?\nopp = chances the dummy had, roll+ = how many the roll allowed,\narm = guard actions started, seq = later sequence steps sent.\nGreen when roll+/opp matches the setting. seq above opp means\nleftover steps from an earlier chance are still coming out."),
+        checkbox_menu_item("Random Guard Action % Check", training_settings, "display_gc_freq_counter", false, "The dummy's Random Guard Action %, counted: does it act as often as set?\nopp = chances the dummy had, roll+ = how many the roll allowed,\narm = guard actions started, seq = later sequence steps sent.\nGreen when roll+/opp matches the setting. seq above opp means\nleftover steps from an earlier chance are still coming out."),
         checkbox_menu_item("Knockdown Logger", training_settings, "knockdown_logger_enable", false,"Writes a JSON trace of every recovery to scripts/reversal_logs.\nFor investigating timing. Leave it off unless you are measuring something -\nit writes a file per recovery.\nAir guards go to airg_s01..s30.json, one file per air-blocked chain."),
         reset_tab_item("Analysis"),
       }
@@ -2071,6 +2127,8 @@ menuModule = {
             if menu[main_menu_selected_index].entries[sub_menu_selected_index].legend then
               gui.text(_menu_x, _menu_box_bottom - 8, menu[main_menu_selected_index].entries[sub_menu_selected_index]:legend(), text_disabled_color, text_default_border_color)
             end
+            draw_entry_warning(menu[main_menu_selected_index].entries[sub_menu_selected_index],
+              _menu_box_right - 10, _menu_box_bottom - 8)
             if menu[main_menu_selected_index].entries[sub_menu_selected_index].description then
               local description = menu[main_menu_selected_index].entries[sub_menu_selected_index]:description()
               gui.text(_menu_x, _menu_box_bottom - 57, description, text_disabled_color, text_default_border_color)

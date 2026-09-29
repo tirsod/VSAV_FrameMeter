@@ -29,8 +29,16 @@ import zipfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIST = os.path.join(os.path.dirname(os.path.dirname(ROOT)), "dist")
 
+# The Japanese README, both manuals and both release notes ship too: the
+# README links to them, and a link to a file that is not in the zip is a
+# dead end for anyone reading it offline (user, 2026-09-29).
 ROOT_FILES = [
     "README.md",
+    "README.ja.md",
+    "RELEASE_NOTES.md",
+    "RELEASE_NOTES.ja.md",
+    "docs/PLAYER_MANUAL.en.md",
+    "docs/PLAYER_MANUAL.ja.md",
     "run_vsav_training.bat",
     "run_vsav_training.sh",
     "run_vsav_training_flatpak.sh",

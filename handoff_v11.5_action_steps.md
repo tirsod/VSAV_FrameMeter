@@ -1816,4 +1816,77 @@ Guard Action Frequency が設定どおりの割合で出ているかを数える
 
 - 気づいたが未調査: 本人のスクリーンショットで設定 100% (`freq=5`) なのに `roll+/opp` が 39/55
   (71%、赤)。抽選まで行かない機会も `opp` に数えている可能性がある
+  → **2026-09-29 に解決** (下の「ガード 1 発が機会 2 つに数えられていた」)
 
+## UX レビューの取り込み — 文言・確率の名前・0% の警告 (2026-09-29、実機未確認)
+
+外部のレビュー (`docs/PLAYER_UX_REVIEW.*.md`、マニュアル作成時のソース確認) から本人が選んだ
+1・2・3・4・5・9 と、AG の 6 回の件。6・7・8 は未着手 (提案のまま)。マニュアルと README も
+新しい名前に合わせた (本人: UI変更はマニュアル等にも展開して)。
+
+- **起動時のコンソール表示**: 「Press Start」「Alt + 3/4」をやめ、Lua Hotkey 1～4 の案内に。
+  Start でメニューを開く処理は controller.lua でコメントアウト済みだった
+- **Tick Data の説明**: 発生と持続が最初の判定の 1 ティックを共有する (4 + 3 + 7 - 1 = 13)、
+  Total は多段の隙間を含み攻撃側のヒットストップを除く
+- **旧名**: `Reversal Sequence` / `Reversal - Sequence` → `Reversal Action Steps` /
+  `Reversal - Action Steps` (menu.lua の Guard Action Type 11 番の説明、エディタの親行の説明)
+- **Wait の選択肢ごとの説明**: `WAIT_CHOICES` に `note`、Fastest / Not Measured / 1 歩目の
+  Fixed Ticks にも。描画は `cur.note or HELP[cur.kind]`。**説明欄は y 168 の 1 行だけ** (凡例が
+  y 181) なので、3 行あった `HELP.wait` は 2 行目以降が凡例に重なっていた。1 行に縮め、選択肢の
+  説明は Wait 画面側へ。test_editor_rows [2c]
+- **PB の確率 (ROM で確認)**: 0x28D50 の表を実行時に読んだ値 (Knockdown Logger の
+  `rom.pb_prob_028D50`) で、1～2 回目 0%、3～5 回目 25/50/75%、**6 回目で必ず成立**。8 の比較は
+  表の外の上限。menu.lua の 2 か所 (Guard Action Type = Push Block、P1 Min PB Presses) と
+  VSAV_MEMORY_NOTES 8 章、design_pb_score を直した
+- **確率の 3 行の名前と 0%**: `P2 Random Guard %` → `Random Guard %`、`Guard Action Frequency` →
+  `Random Guard Action %`、`Tech Throws` → `Random Throw Tech %`。一覧の None を `0%` に
+  (**保存されるのは添字なので表示だけ**。添字 1 はどの読み手でも false = 0%)。Analysis の
+  `Guard Action Frequency Check` → `Random Guard Action % Check`、画面の字も `freq=5` (添字) を
+  やめて `Random Guard Action 100%` に
+- **0% の警告 (表示だけ、値は変えない)**: Guard が確率を読むもの (Stand Block / All Guard /
+  Push Block) で Random Guard % が 0%、または Guard Action Type が None 以外で Random Guard
+  Action % が 0% のとき、確率の行をオレンジ (#FF7F00、エディタの警告と同じ) にし、Guard /
+  Guard Action Type / 確率の行にカーソルがあると凡例の行の右寄せに理由を出す。メニューの説明欄は
+  6 行で埋まっており、空いているのは凡例の行の右側だけ。`draw_entry_warning` (menu.lua)、
+  test_zero_rate_warning。投げ抜けの 0% は「抜けない」設定そのものなので警告しない
+- エディタの警告も `Random Guard Action % is 0%, so this never runs (Dummy tab).`
+
+気づいたが範囲外: エディタの `HELP.hold` も 4 行あり、同じく凡例 (y 181) と警告 (y 194) に重なる。
+→ 同日に対応 (本人: 追加提案も対応)。1 行 (`Keeps the direction until the next step. Charge
+moves: Yes on every step before.`) にし、落とした 2 点 (溜め技は Wait をまたいで前の全ステップで
+保持、ダッシュキャンセルの逆方向は自動) はマニュアル 6.2 / 6.4 に。test_editor_rows [2d] が
+HELP の全部を 1 行・81 字以内か見る。
+
+## ガード 1 発が機会 2 つに数えられていた — Random Guard Action % Check (2026-09-29、実機未確認)
+
+100% なのに `roll+/opp` = 39/55 の原因。`gc_opportunity` を **硬直に入ったとき** と **`$158` が
+立ったとき** の両方で進めていて、ガードは両方を起こす。アーカイブのログ (kd_*.json 1262 本) で:
+
+- ガード 76 件すべて、`$05` が 0 でなくなる tick (接触) の **次の tick** で `$158` が立つ
+- 見分けられた 54 件のうち 26 件は 1 回の呼び出しが両方を見て **番号が 2 進み抽選 1 回**
+  (= 100% でも 50% に見える)、28 件は別の呼び出しで **1 発に抽選 2 回**
+- 接触の tick に P2 の `$54` が 0xFF なのはガード 76/76、それ以外の硬直 514 件は 0/514
+
+直し方: 硬直に入ったところで `$54 == 0xFF` を渡し (`gc_note_stun_entry`)、ガードならその後の最初の
+`$158` の立ち上がりは同じ 1 発として数えない (`gc_note_block_rise`)。抽選は接触のフレームで 1 回
+(GC の started_guarding が使うフレーム)。**確率そのものは変わらない**: 前は 2 回目の抽選が 1 回目を
+上書きしていただけで、どちらも 1 回の判定に 1 回の抽選。関数はグローバル (service_held_reversal は
+upvalue が上限)。test_gc_frequency [6] が 4 場面 x フレームの区切り 5 通りで「機会 = 抽選 = 発数」を
+見て、旧の数え方がガードを含む 15 通りでずれることも示す。
+
+## v11.7.17 として公開 (2026-09-29)
+
+本人: 「変更した GUI に基づいてマニュアルを編集し、問題ないかレビューして。問題なければ GitHub の
+readme も直す、v11.7.16.1 もだす、v11.7.17 もだす。readme もいれる」。
+
+- マニュアルのレビュー: 日英の `項目名` 292 語を scripts と照合 (残りは書式の例・パス・FBNeo 本体の
+  画面名だけ)、日英の見出し・表・箇条の並びが一致することを確認。直したもの: 対象版 (v11.7.16 の
+  まま)、比較表の AG に PB Stats、PB Stats の左のボタン一覧と `TECH HIT`、GC Command Trace は
+  「ON にすれば右に並ぶ」、警告は最下行の「右側」、起動しないときのウイルス対策ソフト
+- README: 取り込んだ版で消えていた **キャッチコピー** (See what the Warlord sees...) と **ROM パッチ
+  (`support/ips`) の入れ方** を戻した。zip には IPS が入っているのに説明が無くなっていた。macOS の
+  手順は `run_vsav_training.command` が木に無いので戻していない
+- **フォーク元の表示には人名オーケー** (本人、同日)。元 README の Shoutouts と N-Bee はそのまま
+- 配布 zip に `README.ja.md`、`docs/PLAYER_MANUAL.*.md`、`RELEASE_NOTES*.md` を追加
+  (make_release_zip.py の ROOT_FILES)。README からのリンク先が zip に無いと切れるため
+- v11.7.16.1 は先に公開 (`040e381`)、続けて v11.7.17

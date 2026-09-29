@@ -158,6 +158,34 @@ function gc_should_perform(_arm_now)
 	return gc_arm_roll
 end
 
+-- ONE GUARDED HIT IS ONE OPPORTUNITY, NOT TWO (2026-09-29).
+--
+-- The serial was bumped on entering stun AND on the $158 rise, and a guarded
+-- hit does both: $05 leaves 0 on the contact tick and $158 rises on the next
+-- (76 of 76 logged guards, R - E = 1). When one displayed frame took in both
+-- ticks the serial moved by two and one draw was made, so the check read
+-- roll+/opp = 39/55 at 100%. When the two ticks fell in different frames the
+-- hit was drawn twice instead - 26 and 28 of the 54 that could be told apart.
+--
+-- P2's $54 is 0xFF from the contact tick of a guard and never on a hit (76 of
+-- 76 guards, 0 of 514 other stun entries), so the entry already knows it is a
+-- guard. It takes the draw there - the frame GC's started_guarding edge acts
+-- on - and the rise that follows belongs to the same hit and passes.
+-- Knockdown and hit stun still get theirs on entering stun. Globals, as
+-- gc_opportunity is: service_held_reversal is at the upvalue ceiling.
+gc_entry_was_guard = false
+function gc_note_stun_entry(_guarded)
+	gc_opportunity = gc_opportunity + 1
+	gc_entry_was_guard = _guarded
+end
+function gc_note_block_rise()
+	if gc_entry_was_guard then
+		gc_entry_was_guard = false
+		return
+	end
+	gc_opportunity = gc_opportunity + 1
+end
+
 -- FIX: is the move being poked one of the character's inherently-EX moves
 -- (charMoves.lua's per-move "isEX" field, e.g. Morrigan's Darkness Illusion)?
 -- That field was dead until now - see the note in poke_special() below.
@@ -6313,10 +6341,11 @@ end
 
 local function service_held_reversal()
 	-- Knockdown and hit stun arm once per stun span, so entering stun is their
-	-- opportunity. The block path bumps again on each $158 rise below, which is
+	-- opportunity. A guard enters stun too, and its first $158 rise is the
+	-- same hit - see gc_note_stun_entry. The later rises of a blockstring are
 	-- the one place a second opportunity exists inside a single span.
 	if memory.readbyte(0xFF8805) ~= 0 and not prev_in_stun then
-		gc_opportunity = gc_opportunity + 1
+		gc_note_stun_entry(memory.readbyte(0xFF8854) == 0xFF)
 	end
 	local _d = player_objects and player_objects[2]
 	local _in_stun = memory.readbyte(0xFF8805) ~= 0
@@ -6810,10 +6839,10 @@ local function service_held_reversal()
 		BLK.zero_lg = nil
 		BLK.lead = nil
 		-- A new blocked hit is a new opportunity, and the frequency gets one
-		-- draw per opportunity. This is the only place that says so - the
-		-- episode is also cleared by $140 above, which re-arms within the SAME
-		-- hit and must not buy another draw.
-		gc_opportunity = gc_opportunity + 1
+		-- draw per opportunity. The episode is also cleared by $140 above,
+		-- which re-arms within the SAME hit and must not buy another draw -
+		-- and the first rise of a guard is the hit its stun entry counted.
+		gc_note_block_rise()
 	end
 	-- Counted from the zero edge, so the wait above can be applied.
 	if _s158 == 0 and BLK.prev158 > 0 then

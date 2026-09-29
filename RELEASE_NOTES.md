@@ -6,6 +6,68 @@ Newest first. Older releases are kept below.
 
 ---
 
+## v11.7.17
+
+### The three rate rows have matching names, and None reads 0%
+
+These are the three rows on the `Dummy` tab where you set a percentage.
+
+| Before | Now |
+|---|---|
+| `P2 Random Guard %` | `Random Guard %` |
+| `Guard Action Frequency` | `Random Guard Action %` |
+| `Tech Throws` | `Random Throw Tech %` |
+
+All three show `None` as `0%`. Only the wording changes; saved settings keep
+their meaning. `Guard Action Frequency Check` on the `Analysis` tab is now
+`Random Guard Action % Check`.
+
+### A 0% that stops what you picked turns orange
+
+- `Guard` is `Stand Block` / `All Guard` / `Push Block (All …)` and
+  `Random Guard %` is 0%
+- a `Guard Action Type` is selected and `Random Guard Action %` is 0%
+
+The rate row turns orange. With the cursor on one of the rows involved, the
+right side of the bottom line says why (for example `Random Guard % is 0%: the
+dummy never blocks.`). The value is not changed for you: 0% can be intentional.
+
+### Random Guard Action % Check read 71% at 100%
+
+One blocked hit was counted as two chances. It is now one. The dummy acts
+exactly as often as before. The readout also shows the setting as
+`Random Guard Action 100%` instead of its index (`freq=5`).
+
+### Each Wait choice in Action Steps explains itself
+
+With the cursor on a Wait choice (After / Landing / Chain / Cancel and so on),
+a one-line description appears below the list.
+
+- **After**: starts the inputs once the dummy can act. Nothing is entered early
+- **Landing**: enters the motion during the fall so its last input lands on
+  touchdown
+
+The Wait and Hold descriptions no longer run into the legend below them.
+
+### Wrong descriptions corrected
+
+- **Startup console message**: names Lua Hotkey 1-4 instead of Start and
+  Alt + 3 / 4
+- **Push Block**: "eight presses guarantee it" was wrong. Presses 1-2 never
+  push, the 3rd, 4th and 5th push at 25%, 50% and 75%, and **the 6th always
+  pushes** (read from the game's probability table while it ran)
+- **Tick Data**: startup and active share the tick the box appears
+  (4 + 3 + 7 - 1 = 13). Total includes gaps between the hits of a multi-hit move
+- The old name `Reversal Sequence` is now `Reversal Action Steps`
+
+### Manuals in the zip
+
+The player manuals in Japanese and English (`docs/PLAYER_MANUAL.ja.md` /
+`.en.md`), the Japanese README and the release notes now ship in the release
+zip. The README explains the ROM patches in `support/ips` again.
+
+---
+
 ## v11.7.16.1
 
 ### Show PB Stats, rebuilt

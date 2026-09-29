@@ -6,6 +6,62 @@ English: [RELEASE_NOTES.md](RELEASE_NOTES.md)
 
 ---
 
+## v11.7.17
+
+### 確率の 3 行の名前をそろえ、None を 0% にしました
+
+`Dummy` タブで割合を指定する 3 行です。
+
+| 前 | 今 |
+|---|---|
+| `P2 Random Guard %` | `Random Guard %` |
+| `Guard Action Frequency` | `Random Guard Action %` |
+| `Tech Throws` | `Random Throw Tech %` |
+
+3 行とも `None` を `0%` と表示します。表示が変わるだけで、保存済みの設定の意味は変わりません。
+`Analysis` タブの `Guard Action Frequency Check` は `Random Guard Action % Check` になりました。
+
+### 0% で止まっているときはオレンジで知らせます
+
+- `Guard` が `Stand Block` / `All Guard` / `Push Block (All …)` なのに `Random Guard %` が 0%
+- `Guard Action Type` を選んでいるのに `Random Guard Action %` が 0%
+
+このとき、その確率の行がオレンジになります。関係する行にカーソルを合わせると、最下行の右側に理由が
+出ます（例: `Random Guard % is 0%: the dummy never blocks.`）。0% を狙って使うこともあるので、
+値は自動では変えません。
+
+### Random Guard Action % Check が 100% なのに 71% と出ていたのを直しました
+
+ガードした 1 発を機会 2 つと数えていました。1 発を 1 つとして数えます。ダミーが行動する確率は
+変わりません。画面の表示も、設定の番号（`freq=5`）ではなく `Random Guard Action 100%` と出ます。
+
+### Action Steps の Wait に、選択肢ごとの説明を付けました
+
+Wait の選択肢（After / Landing / Chain / Cancel など）にカーソルを合わせると、一覧の下に
+1 行の説明が出ます。
+
+- **After**: ダミーが動けるようになってから入力を始めます。先行入力はしません
+- **Landing**: 落下中にコマンドを入れ、最後の入力を着地に合わせます
+
+Wait と Hold の説明が下の操作案内に重なっていたのも直しました。
+
+### 説明文の誤りを直しました
+
+- **起動時のコンソール表示**: 「Start でメニュー」「Alt + 3 / 4」をやめ、Lua Hotkey 1～4 の案内に
+  しました
+- **Push Block**: 「8 回で確定」は誤りでした。1～2 回目は出ず、3・4・5 回目は 25・50・75%、
+  **6 回目で必ず出ます**（ゲームの確率表を実行中に読んで確認）
+- **Tick Data**: 発生と持続は、判定が出た最初の 1 ティックを共有します（4 + 3 + 7 - 1 = 13）。
+  Total は多段技のヒット間の隙間を含みます
+- 古い名前 `Reversal Sequence` を `Reversal Action Steps` に直しました
+
+### マニュアルを同梱しました
+
+日本語・英語のプレイヤーマニュアル（`docs/PLAYER_MANUAL.ja.md` / `.en.md`）、日本語 README、
+リリースノートを配布 zip に入れました。README に ROM パッチ（`support/ips`）の入れ方を戻しました。
+
+---
+
 ## v11.7.16.1
 
 ### Show PB Stats を作り直しました

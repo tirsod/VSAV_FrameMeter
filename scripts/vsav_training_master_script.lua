@@ -78,12 +78,14 @@ local rawStateServiceModule = require "./scripts/rawStateService"
 local playerStateServiceModule = require "./scripts/playerStateService"
 
 if show_controls_message == true then
-	print("* Press Start open the training menu..")
-	print("* Press Coin to swap controls to dummy")
-	print("* Press Volume Down to play back recording. (found in 'map game inputs')")
-	print("* Press Volume Up to record dummy. (found in 'map game inputs')")
-	print("* Press Alt + 3 to toggle looping playback.")
-	print("* Press Alt + 4 to return to character select.")
+	-- Lua Hotkey 1, not Start: the Start toggle in controller.lua is commented
+	-- out, and this line sent new players to a button that does nothing.
+	print("* Lua Hotkey 1 opens the training menu (set it in Input > Map Game Inputs).")
+	print("* Press P1 Coin to swap controls to the dummy.")
+	print("* Press Volume Up to record the dummy, Volume Down to play it back.")
+	print("* Hold a direction and press Lua Hotkey 2 to reposition both characters.")
+	print("* Lua Hotkey 3 toggles looping playback.")
+	print("* Lua Hotkey 4 returns to character select.")
 end
 
 local p1_addr = 0xFF8400

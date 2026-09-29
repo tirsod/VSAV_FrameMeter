@@ -1,0 +1,792 @@
+# VSAV_Training Player Manual
+
+English | [日本語](PLAYER_MANUAL.ja.md)
+
+A guide to practising offense, defense and execution in Vampire Savior using repeatable dummy actions and timing readouts. Menu labels are reproduced as they appear in the tool so you can find the corresponding settings.
+
+This guide uses **AG (Advancing Guard)**. **Push Block / PB** in the English UI refers to the same mechanic. Actual option names such as `Show PB Counter` are kept unchanged.
+
+For **v11.7.17 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
+
+> This manual was checked against the target version's source code and release notes. The procedures were not tested in an emulator during preparation of this document. Example drills do not guarantee success with every character or setup.
+
+## What this fork offers
+
+**Control on the game's internal clock (Ticks) reproduces opponent actions precisely, allowing you to practise GC, AG and interrupts after air guarding against them. Detailed input and interaction timelines help you identify what went wrong and track your improvement.**
+
+At Normal speed, one displayed frame equals one Tick. At Turbo 3, four Ticks pass in three displayed frames. This fork controls dummy inputs on those internal frames. It improves the earliest-action timing that was limited in the original version and lets you specify actions on wake-up, after blocking and after landing. Alongside special-move reversals, you can make the dummy challenge with light normals or throws, jump or dash at the appropriate actionable timing.
+
+Action Steps builds on this control to define actions in internal frames. It supports individual responses, strings and complex combos, including definitions that can complete infinite combos for Bulleta (B.B. Hood) or Bishamon. Reproducing these sequences repeatedly provides more advanced situations in which to test your own responses.
+
+Recording and playback operate in displayed frames, so they do not reproduce input timing with Tick-level precision. Use Action Steps for drills that require precise internal-frame timing, especially at turbo speeds. Recording Wizard, added in this fork, makes it easy to capture an input sequence from start to finish.
+
+For AG, you can check whether you delayed your input while still fitting six presses inside the window. For GC, you can see which inputs the game accepted and where you were late. For air guarding, you can see whether an interruptible gap existed, whether your press was well timed and who could act first after landing. This fork combines accurate dummy actions with detailed feedback on your response.
+
+### Compared with the original
+
+| Feature | Original | This fork |
+|---|---|---|
+| Counter actions and reversals | Specified inputs and character-specific move activation, with limitations on earliest timing at turbo speed and delays from entering motions | Input control in internal frames, with improved wake-up, post-block and landing timing |
+| Move data | Frame Data uses displayed frames, giving unstable measurements at turbo speeds | Tick Data measures internal frames, with startup, active time, recovery and advantage conventions aligned with strategy sites |
+| Building dummy behavior | Recording playback and individual counter actions | Recording Wizard simplifies recording; Action Steps defines Tick-based sequences, and Action Patterns saves, selects and shares them |
+| AG practice | Input counter and success/failure statistics | Tick history of the window, simultaneous presses, late inputs and counts that include presses after activation; PB Stats averages them with the success rate |
+| GC practice | GC window in the input viewer | Tracks accepted commands, input intervals, expiry and contact during guard-pose persistence |
+| Air-guard analysis | Frame Trap and Jump In readouts, among others | Dedicated Air Guard Gaps for gaps in air chains, actual interrupts, guard timing and landing advantage |
+
+The distinction is **the precision of reproduced actions and the detail available to review your responses**, rather than the mere presence of features the original already had. Run-ahead must be OFF. After does not enter motions in advance, and Landing's advance input depends on certain conditions; not every setting guarantees the earliest possible action in every situation. See [installation](#02-install) and [Action Steps](#06-steps).
+
+## Contents
+
+- [1. Choose what to practise](#01-purpose)
+- [2. Installation and first setup](#02-install)
+- [3. Controls and position shortcuts](#03-controls)
+- [4. Dummy defense, recovery and counter actions](#04-dummy)
+- [5. Record opponent actions](#05-recording)
+- [6. Build actions with Action Steps](#06-steps)
+- [7. Save, randomize and share Action Patterns](#07-patterns)
+- [8. Practise AG](#08-pb)
+- [9. Practise guard cancels](#09-gc)
+- [10. Read move data and gaps](#10-data)
+- [11. Practice recipes](#11-drills)
+- [12. Display and game settings](#12-options)
+- [13. Saving, backups and updates](#13-save)
+- [14. Troubleshooting](#14-troubleshooting)
+- [15. Glossary and reference version](#15-reference)
+
+<a id="01-purpose"></a>
+## 1. Choose what to practise
+
+| Goal | Feature | Where to start |
+|---|---|---|
+| Test combos and pressure strings | Dummy posture, guard and life refill | `Dummy`, `Gauge` |
+| Make the dummy challenge on wake-up or after blocking | Individual counter actions, Action Steps | `Dummy > Guard Action Type` |
+| Repeat offense seen in matches | Recording and looping | `Recording > Recording Wizard` |
+| Specify a dash into an attack precisely | Action Steps | [Section 6](#06-steps) |
+| Randomize several offensive sequences | Recording slots, Action Patterns | [Section 5](#05-recording), [Section 7](#07-patterns) |
+| Improve AG execution | `Show PB Counter`, `Show PB Stats` | [Section 8](#08-pb) |
+| Find why a GC failed | GC Command Trace, input history | [Section 9](#09-gc) |
+| Examine advantage, interrupts and landing situations | Tick Data, Air Guard Gaps | [Section 10](#10-data) |
+
+If you are new to the tool, start by repeatedly blocking a recorded attack. This makes the trainer readouts easier to observe.
+
+<a id="02-install"></a>
+## 2. Installation and first setup
+
+### 2.1 Requirements
+
+- FBNeo included with Fightcade 2.
+- This project's `run_vsav_training.bat` and the **entire `scripts` folder**.
+- Your own game ROM files. **This project does not include ROMs.**
+
+The launcher starts the Japanese `vsavj` set. First make sure the game runs in FBNeo on its own. If files are missing, check the missing-file list shown by FBNeo.
+
+### 2.2 Create a separate FBNeo installation for training
+
+**Run-ahead must be OFF for this training mode. Leaving it ON causes the script to behave incorrectly.**
+
+If you also play matches through Fightcade, **copy the entire `emulator/fbneo` folder and install the training mode in that copy** to avoid forgetting to switch settings. Copy everything under the FBNeo folder, not just the executable or scripts. Keep separate executables and settings for matches and training.
+
+1. Close Fightcade and FBNeo.
+2. Copy Fightcade's entire `emulator/fbneo` folder to another location, such as `C:/VSAV_Training/fbneo`.
+3. Download the target version from the [repository](https://github.com/vampiresavior001/VSAV_Training) and extract it.
+4. Put `run_vsav_training.bat` and `scripts` in the **copied fbneo folder**. The batch file must sit next to the copied `fcadefbneo.exe`.
+5. Double-click `run_vsav_training.bat` **in the copy**.
+6. Turn **Run-ahead OFF** in this training FBNeo. The original settings were copied too; copying the folder alone does not turn it off.
+7. Fully close FBNeo, start it again through the copied batch file and confirm that Run-ahead remains OFF.
+8. Open `Input > Map Game Inputs` and assign game controls and the functions below.
+
+Launch matches through your usual Fightcade installation and training through the copied batch file. A shortcut named “VSAV Training” helps distinguish the two.
+
+For a fresh installation, use a short path without spaces or Japanese characters to avoid problems with the existing launcher and Lua file access. Before updating, follow the [backup instructions](#13-save).
+
+| FBNeo input entry | Purpose | Priority |
+|---|---|---|
+| `Lua Hotkey 1` | Open/close the training menu | Required |
+| `Lua Hotkey 2` | Reposition both characters using a direction modifier | Recommended |
+| `Lua Hotkey 3` | Toggle recording playback looping | Optional |
+| `Lua Hotkey 4` | Return to character select | Recommended |
+| `Volume Up` | Start/stop standard recording | For standard recording |
+| `Volume Down` | Start/stop playback | Recommended |
+| `P1 Coin` | Switch controlled side in a match; select a stage at character select | Recommended |
+
+`Volume Up / Down` are **entries in FBNeo's input mapping**, not instructions to change Windows audio volume.
+
+Configure P2's game inputs as well as P1's; check these if input behavior is unusual. You can map the functions to arcade-stick or controller buttons.
+
+### 2.3 First check
+
+Start the copied training installation and confirm Run-ahead is OFF before proceeding.
+
+1. Choose your character and the dummy, then wait for the match to begin. After P1 is selected, P1's controls can also select P2.
+2. Open the menu with `Lua Hotkey 1`.
+3. Set `Dummy > Guard = All Guard` and `Random Guard % = 100%`.
+4. Leave `Guard Action Type = None`.
+5. Close the menu and attack to confirm that the dummy blocks.
+
+**Selecting `All Guard` alone is not enough. If `Random Guard %` is `0%`, the dummy will not auto-block.** The row turns orange as a reminder.
+
+<a id="03-controls"></a>
+## 3. Controls and position shortcuts
+
+### 3.1 Menu navigation
+
+| Context | Controls |
+|---|---|
+| Tab names at the top | Left/right changes tabs; up/down enters the items |
+| Item list | Up/down selects an item; left/right changes its value |
+| Items with a detail screen | Right or LP opens it; follow the legend at the bottom |
+| Ordinary settings | MP resets that item to its default |
+| Open/close menu | `Lua Hotkey 1` |
+
+LP/MP/HP mean light/medium/heavy punch; LK/MK/HK mean light/medium/heavy kick.
+
+Moving beyond either end of a list returns to the tab selection. MP has different meanings in different screens: it toggles a pattern's selection in Action Patterns and records another take at the recording confirmation screen. Follow the on-screen legend.
+
+`Reset This Tab` on `Display`, `Trainer` and `Analysis` resets all settings on that tab. A confirmation opens with `Cancel` selected. Child settings hidden by an OFF parent are reset too.
+
+### 3.2 Controlled side and character select
+
+- During a match, `P1 Coin` switches the side you control.
+- You cannot switch sides during recording playback. Stop playback first.
+- Use `Lua Hotkey 4` or `Game > Return to Character Select` to choose characters again.
+- Returning to character select stops playback and clears the match's recording savestate, input history and previous AG/GC readouts.
+
+### 3.3 Quickly restore positions
+
+During a match, hold the following direction and press `Lua Hotkey 2`. Left and right here mean screen directions.
+
+| Direction | Arrangement |
+|---|---|
+| Neutral | Center, you on the left and dummy on the right |
+| Down | Center, you on the right and dummy on the left |
+| Left | Left corner, dummy against the wall |
+| Down-left | Left corner, you against the wall |
+| Right | Right corner, dummy against the wall |
+| Down-right | Right corner, you against the wall |
+
+Corner arrangements place the characters next to each other. Center arrangements restore round-start spacing. Wait until repositioning finishes before acting.
+
+You can also use `Dummy > Position`. In its diagram, `1` is you, `2` is the dummy and `|` is a wall.
+
+- Left/right: choose an arrangement.
+- LP: reapply the selected arrangement.
+- HP: reapply it and close the menu.
+- MP: reset to `Off`. `Off` leaves positions unchanged.
+
+<a id="04-dummy"></a>
+## 4. Dummy defense, recovery and counter actions
+
+### 4.1 Basic defense settings
+
+| Option | Meaning |
+|---|---|
+| `Pose` | Direction held normally: `None`, crouching, forward/back or jumping directions |
+| `Wakeup` | Movement on recovery from knockdown: `None`, `Towards`, `Away` or random choices |
+| `Random Throw Tech %` | Throw-tech probability: `0% / 25% / 50% / 75% / 100%` |
+| `Guard` | Blocking method |
+| `Random Guard %` | Probability of blocking with the applicable guard methods: `0% / 25% / 50% / 75% / 100%` |
+
+`Random Throw Tech %` defaults to `100%`. Set it to `0%` when examining throws without automatic techs.
+
+| `Guard` value | Behavior and use |
+|---|---|
+| `None` | No automatic guard. A backward `Pose` can still cause blocking through that held input |
+| `Stand Block` | Holds back when an attack approaches; does not automatically choose low blocking |
+| `All Guard` | Crouches for lows, stands for overheads/jump attacks and follows `Pose` for attacks blockable either way |
+| `Auto Guard` | Directly uses the game's guard flag, including in normally unblockable situations. Do not use it to validate unblockables |
+| `Push Block (All Light / Medium / Heavy)` | Blocks like `All Guard` and inputs AG at the selected strength |
+
+For consistent testing with `Stand Block`, `All Guard` or `Push Block (All …)`, set `Random Guard % = 100%`. AG selected under `Guard` can be combined with the counter-action settings below.
+
+**A 0% that stops what you selected is shown in orange.** While `Guard` is `Stand Block`, `All Guard` or `Push Block (All …)` and `Random Guard %` is `0%`, the `Random Guard %` row turns orange. With the cursor on `Guard` or `Random Guard %`, the right side of the bottom line reads `Random Guard % is 0%: the dummy never blocks.` The value is not changed for you, because 0% can be intentional.
+
+### 4.2 Actions after blocking, being hit or waking up
+
+Selecting `Guard Action Type` reveals the settings for that type. Start with **`Random Guard Action % = 100%`** to verify behavior, then lower it to 25–75% to practise against the possibility of a response. At `0%` the action never runs: the `Random Guard Action %` row turns orange, and with the cursor on `Guard Action Type` or that row the right side of the bottom line reads `Random Guard Action % is 0%: it never runs.`
+
+| Type | Purpose |
+|---|---|
+| `None` | No counter action |
+| `Guard Cancel` | Inputs a GC command; choose a button and `GC Input Delay (Ticks)` |
+| `Push Block` | Inputs AG; choose `Push Block Type` |
+| `Reversal - Specified` | Specifies a motion and button after blocking, being hit or waking up |
+| `Counter Attack - Specified` | Specifies an action after blocking or being hit, excluding wake-up |
+| `Reversal - Recording` | Plays a recording after blocking, being hit or waking up |
+| `Counter Attack - Recording` | Plays a recording after blocking |
+| `PB Recording` | Plays a recording after AG |
+| `Reversal - Action Steps` | Runs the edited sequence of steps |
+| `Reversal - Action Patterns` | Selects and runs a checked saved pattern |
+| `Reversal - Character Specific` | Activates a character-specific move through internal state changes, rather than normal command input |
+| `Counter Attack - Character Specific` | Legacy character-specific response with an on-screen crash warning; prefer Specified or Steps for ordinary practice |
+
+`Reversal` is also the name of a response mode in this tool. It does not mean the game will show `REVERSAL` for every earliest-action normal.
+
+### 4.3 Make the dummy challenge with a normal
+
+1. Set `Guard = All Guard` and `Random Guard % = 100%`.
+2. Set `Guard Action Type = Reversal - Specified`.
+3. Set `Random Guard Action % = 100%`.
+4. Set `Reversal/Counter Input Motion = None`.
+5. Set `Reversal/Counter Button = LP`.
+6. Set `Reversal/Counter Button Lever = Neutral` and `Guard Action Delay (Ticks) = 0`.
+7. Have the dummy block an attack, then test whether your pressure beats its LP after blockstun.
+
+For a crouching normal, select the appropriate downward direction. For a special, match `Input Motion` and the button to the move.
+
+**`Guard Action Delay (Ticks)` primarily delays the button after the motion.** For a dash into an attack, it does not delay the dash itself. Dash `Auto` uses character-specific attack timing. A timing measured after blocking may not also work after being hit.
+
+`Button Lever = As Is` keeps the motion's final direction; `Neutral` releases it at the button press. Changing the direction for a dash cancel can overwrite the reverse direction needed for the cancel.
+
+<a id="05-recording"></a>
+## 5. Record opponent actions
+
+Recording suits offense you can perform by hand. Action Steps suits actions whose timing you want to specify precisely. A recording stores gameplay inputs for replay, not video.
+
+Recording and playback operate in displayed frames, so they do not reproduce input timing with Tick-level precision. Use Action Steps for drills that require precise internal-frame timing, especially at turbo speeds.
+
+### 5.1 Record with Recording Wizard
+
+Added in this fork, Recording Wizard makes it easy to capture an input sequence from start to finish. It simplifies starting and ending a recording; it does not make recording Tick-accurate.
+
+1. Choose the desired dummy character as P2 and arrange the starting position.
+2. Open `Recording > Recording Wizard` with Right or LP.
+3. Choose `Slot 1`–`Slot 5`. Pick another slot if you want to preserve an existing recording.
+4. When control moves to P2, **release all inputs once**.
+5. Wait for `START MOVING TO RECORD!`, then act. Your first input starts recording.
+6. Finish the sequence and release the controls. Recording automatically ends after about two seconds of no input while the dummy has finished its action and is free to act.
+7. The characters return to the starting positions and the recording plays once for review.
+8. Select save at the confirmation screen and confirm with LP or Right. MP records again; LK replays for another check.
+
+Saving returns to the slot list so you can record another action. `Lua Hotkey 1` cancels the wizard and discards the current unsaved take. At confirmation, LP chooses the currently selected item; if you moved the cursor, check the label before pressing it.
+
+### 5.2 Playback and looping
+
+1. Set `Use Random Recording Slot = no`.
+2. Select the saved slot under `Recording Slot`.
+3. Activate `Play Recording` with Right or LP, or use `Volume Down`.
+4. For repetition, set `Looped Playback = yes`.
+5. Stop by activating `Play Recording` or pressing `Volume Down` again.
+
+Use `Before / After` in `Loop Interval (Frames)` to adjust pauses. `After` waits after the previous playback and recovery, before positions are restored. `Before` waits after that restoration and before the next playback. These values use **displayed frames**, unlike the Ticks used by Action Steps.
+
+`Reset Distance Each Loop = yes` restores recorded spacing each pass. It works with recordings made from v11.4.1 onward that contain distance information. Playback directions are also mirrored when sides switch, but this alone does not guarantee identical spacing or game state.
+
+### 5.3 Randomize recordings
+
+1. Save different actions in multiple slots.
+2. Set `Use Random Recording Slot = yes`.
+3. Set the desired `Enable Slot 1`–`Enable Slot 5` entries to `yes`.
+4. Enable `Looped Playback` and start playback.
+
+Enable at least one slot and make sure it contains a recording. With `Use Character Specific Slots = yes`, the slots are separate for each dummy character. This is why different recordings appear after changing characters.
+
+### 5.4 Standard recording and savestates
+
+To record without the wizard, select the destination in `Recording Slot`. Use `P1 Coin` to control P2, press `Volume Up` to begin recording and press it again to finish. Switch control back to P1 before playback.
+
+`Use Savestate Upon Recording` is an experimental feature that saves the state at the start of standard recording and restores it for playback. Use it when you need the whole situation restored, not just spacing. Savestate restoration takes precedence over `Reset Distance Each Loop`. Returning to character select discards that match's recording savestate.
+
+<a id="06-steps"></a>
+## 6. Build actions with Action Steps
+
+Action Steps defines a sequence by pairing “when” with “what” for each action. Saving does not immediately start the sequence; it begins at a response opportunity such as recovery from blocking, being hit or knockdown.
+
+### 6.1 Open, edit and save
+
+1. Set `Dummy > Guard Action Type = Reversal - Action Steps`.
+2. Set `Random Guard Action % = 100%`.
+3. Open `Reversal Action Steps` with Right or LP.
+4. Open a step and set its `Action`, direction/button as needed, and `Wait`.
+5. Add another action with `+ Add Step`.
+6. Return to the list and select **`Save`**.
+7. Close the menu and create a trigger, for example by making the dummy block an attack.
+
+To reliably trigger from a block, also set `Guard = All Guard` and `Random Guard % = 100%`.
+
+Edits do not take effect until `Save`. `Back Without Saving` discards changes. If you close the menu while editing, check whether you are saving or discarding. Step lists are stored per dummy character.
+
+### 6.2 Fields
+
+| Field | Meaning |
+|---|---|
+| `Action` | Attack, standing/crouching, dash, jump, special, Custom and other actions |
+| `Direction / Motion` | Direction held with the button or the command motion; depends on the Action |
+| `Button` | Attack button to press; `None` means no button |
+| `Wait` | Delay **before this step starts**; measured from the response timing for step one and from the previous step thereafter |
+| `Hold` | Keeps the direction held until the next step; does not repeatedly press the button. A dash cancel keeps its reverse direction by itself |
+| `Move Step` | Changes the step's position in the list |
+| `Remove This Step` | Deletes the step after confirmation |
+
+`Clear All Steps` returns the list to one empty step and asks for confirmation.
+
+### 6.3 Read Wait settings
+
+| Display | Meaning |
+|---|---|
+| `Auto (Fastest)` | Earliest setting for step one |
+| `Auto (After)` | Starts command input once the dummy can act; no advance input, so a dash is not the earliest possible dash |
+| `Auto (N)` | Uses the measured timing for this combination; N is that value |
+| `Auto (Landing)` | Can enter the motion before landing so the action comes out on the landing Tick |
+| `Auto (Rapid Fire)` | Rapid-fire cancels an applicable light attack; no hit required |
+| `Auto (Chain)` | Uses the first legal chain timing |
+| `Auto (Cancel)` | Uses the first legal cancel timing, such as into a special |
+| `Auto (Late Cancel)` | Uses the known late cancel timing |
+| `Auto (Not Measured)` | Timing for this combination has not been measured; switch to a numerical wait and adjust |
+| `+30t` | List notation for 30 Ticks after the previous step; shown as `30 Ticks` in the detail screen |
+
+The Wait selector offers `After / Landing / Rapid / Chain / Cancel / Late Cancel / Fixed Ticks`, as applicable. After a dash, a choice may read `Fastest (N)`. For step one, the minimum value inside `Fixed Ticks` appears as `Auto (Fastest)`. With the cursor on a choice, a one-line description of it appears below the list.
+
+**After starts inputs once the dummy can act; Landing aims to complete inputs on landing.** A dash needs multiple directional inputs, so After adds the time required to finish the command after the dummy becomes actionable. Landing predicts touchdown and can start the motion in the air, placing its final input on the landing Tick. Actions requiring no input lead-in, such as a single button press, are entered on landing itself.
+
+If landing cannot be predicted, or hitstop causes the advance-input opportunity to be missed, input starts after touchdown. Landing therefore does not always guarantee the earliest action.
+
+Available choices depend on the step's position and the preceding action. Auto cannot create a cancel the move does not have or make the game accept an illegal action.
+
+### 6.4 Distinguish waiting from holding
+
+To “crouch at the earliest timing, then stand 60 Ticks later,” use:
+
+| Step | Wait | Action | Hold |
+|---|---|---|---|
+| 1 | `Auto (Fastest)` | `Crouch : Neutral` | `Yes` |
+| 2 | `60 Ticks` | `Stand : Neutral` | `No` |
+
+The list shows `Crouch : Neutral (Hold 60t)` for step one and `+60t` for step two.
+
+**Setting step one's Wait to 60 instead means waiting 60 Ticks before crouching.** Hold duration is generally determined by the next step's Wait.
+
+For charge moves, establish the required direction and duration in earlier steps. Selecting a special's name does not automatically supply charge time. Check Hold on intervening steps if the charge must be maintained across them.
+
+### 6.5 Example: dash into an attack
+
+1. Set step one's Action to `Dash > Forward` and Wait to `Auto (Fastest)`.
+2. Set step two to `Attack` with the desired button.
+3. Use Direction `Forward` for an attack with the dash direction held, or `Neutral` for a move requiring that direction to be released.
+4. Set step two's Wait to Auto and check its displayed value or `Not Measured` status.
+5. Save, then use `Tick Data Side = P2` or P2's input display to verify which move comes out.
+
+This is a construction example. Valid timing depends on the character, move and whether the dummy is recovering from a block or a hit.
+
+### 6.6 Loop a sequence
+
+Set `Dummy > Loop Steps = yes` and configure `Loop Wait`.
+
+- `Auto (After)`: starts the next pass's command once the dummy can act. It does not enter the command in advance, so a dash is delayed by the input lead-in.
+- `Auto (Landing)`: can enter the command before touchdown so the next pass's first action comes out on the landing Tick. Useful for repeating hops or air attacks from an earliest landing dash. See the conditions in [6.3](#06-steps).
+- A number: Ticks from the final step to the first step of the next pass.
+
+The first pass still requires a response trigger. Subsequent passes use `Loop Wait` at the boundary rather than simply reusing step one's Wait.
+
+If a dash stops coming out from the second pass onward, check whether the preceding Hold keeps the same direction held. Setting an unnecessary Hold to `No` can resolve this.
+
+<a id="07-patterns"></a>
+## 7. Save, randomize and share Action Patterns
+
+Action Steps holds one action list; Action Patterns holds multiple named lists. Patterns are stored separately from the five recording slots.
+
+### 7.1 Create and use a pattern
+
+1. Set `Guard Action Type = Reversal - Action Patterns`.
+2. Open `Reversal Action Patterns`.
+3. Create one with `New` or import the current Steps with `Add from current Steps`.
+4. Edit the contents and Save.
+5. Press MP on the list to mark a pattern `[x]`, or set `Use in Random = Yes` in its individual screen.
+6. Set `Random Guard Action % = 100%` and create a response opportunity.
+
+With one pattern checked, that pattern runs. With several checked, one is chosen at random. **Whole sequences are selected**, not individual steps mixed between patterns. With `Loop Steps`, another selection is made on the next pass.
+
+Use `Edit / Rename / Copy / Move / Delete` to manage the list. Naming opens a separate Windows dialog. Use ASCII names because of the in-game text display's limitations.
+
+### 7.2 Exchange pattern files
+
+| Option | Purpose |
+|---|---|
+| `Export to a File` on the list | Exports the pattern list |
+| `Export this Pattern` on an individual pattern | Exports that pattern |
+| `Import from a File` | Adds patterns from a file |
+
+The game pauses until you close the file dialog. If it is behind the emulator, use `Alt+Tab` to find it.
+
+Import adds to the existing list without replacing it. Imported patterns start unchecked; review them before enabling them. A file identifying a different dummy character is rejected.
+
+Naming and file dialogs are implemented for Windows. Equivalent operation on Linux/macOS has not been verified for this manual.
+
+<a id="08-pb"></a>
+## 8. Practise AG
+
+### 8.1 Set up the drill
+
+1. Prepare and loop a dummy attack using Recording Wizard or another method.
+2. Set `Trainer > Show PB Counter = yes`.
+3. Optionally set `Show PB Stats = yes`.
+4. Block and perform AG yourself.
+
+**This feature visualizes the goal of delaying AG as much as possible while fitting six valid presses inside its window.** You can check when you started and whether you completed all six presses, as well as whether AG activated.
+
+Start against a fixed attack to stabilize your execution, then use random offense to distinguish execution problems from reactions.
+
+### 8.2 Read the AG counter (PB Counter)
+
+| Display | Meaning |
+|---|---|
+| Count | Game-counted AG inputs plus presses after activation; carries through a blocked string |
+| Green | AG has activated |
+| Timeline from `Guard` to `\|` | Tick history of the latest window; `\|` marks its end |
+| Digits on the timeline | Number of buttons pressed that Tick; two or more are red simultaneous presses |
+| `MultiPush` | Number of Ticks on which multiple buttons were pressed simultaneously |
+| `LateMash` | Buttons pressed during the 14 Ticks after the 14-Tick window closes; `(+Nt)` shows lateness |
+| `P2` | The dummy's result |
+
+The AG window is 14 Ticks. **Six valid presses inside the window give a 100% activation rate, so make six presses your consistent practice target.** If AG activates on an earlier press, you do not need to react to that activation and stop your hands.
+
+The game rolls on each press: presses 1–2 never activate AG, the 3rd, 4th and 5th activate it at 25%, 50% and 75%, and the 6th always does. This was confirmed by reading the game's probability table while it ran.
+
+**Counting presses after activation is intentional.** If the count stopped at activation, an attempt that succeeded early would hide whether you completed six presses. Use green to check activation and the final count to check the full input sequence.
+
+Pressing multiple buttons on the same Tick gives only one game-counted AG press. If `MultiPush` is high, check whether your presses overlap on the same Tick.
+
+To judge delay, look at the interval from `Guard` to the first press and whether all six presses fit before the closing `|`. The goal is **to start as late as possible while still fitting six presses into the window**, rather than stopping as soon as AG activates.
+
+`LateMash` means **inputs after the window closes, not inputs after AG activates**. Post-activation presses inside the window count toward the training total, not LateMash. If LateMash grows, check for excessive delay or extra presses. Inputs beyond the window can cause an unwanted normal when blockstun ends.
+
+### 8.3 Statistics and practice conditions
+
+`Show PB Stats` keeps the values of the PB Counter line and averages them. It appears in a dark box. Turn on `Show GC Command Trace` as well and the trace sits to its right, so you can practise AG and GC together.
+
+```
+Count Total 20
+      Pass 14  Fail 6
+      Success 70.00%
+Avg   PB 4.22  at 5.89-11.50t
+      Multi 1.44  Late 0.33
+```
+
+- `Total` counts ground contacts in which you pressed a button. A blocked string is one contact. Contacts without a press, and those you guard-cancelled out of, are not counted.
+- `Pass`: you pressed and AG activated. `Fail`: it did not, or you were hit. `Success` is Pass divided by Total, to two decimals.
+- `Avg`: the press count (`PB`), the first and last pressed Tick (`at`), `MultiPush` (`Multi`) and `LateMash` (`Late`), averaged over the contacts you pressed in and blocked through.
+- To the left of the box, each press in the latest window is listed with its buttons. The press that activated AG is marked `TECH HIT` in green.
+- Counts stop at 99999. Toggle it OFF then ON to reset the statistics. Returning to character select also clears the previous match's totals.
+
+The `4 / 5 / 6` choices under `Game > P1 Min PB Presses` **modify game behavior for practice** by preventing AG from activating below the selected press count. Use `Normal` when practising or comparing ordinary game behavior. This setting applies to P1; it does not change the dummy's required press count.
+
+<a id="09-gc"></a>
+## 9. Practise guard cancels
+
+### 9.1 Set up the drill
+
+1. Record a dummy attack and repeat it.
+2. Set `Display > Show Scrolling Input = yes`.
+3. Enable its child option, `Show GC Trainer`.
+4. Set `Trainer > Show GC Command Trace = yes`.
+5. Block and enter your character's GC command.
+
+Start with one attack, then move on to strings that keep you blocking.
+
+### 9.2 Input history versus command trace
+
+- **Input history** shows your inputs over time. Newer inputs appear on the right of the bottom bar.
+- **GC Command Trace** shows the directions the game accepted toward a GC, the finishing button and the result. It also follows motions begun before the block. It appears without a title in a dark box, placed to the right of PB Stats so the two can be shown together.
+
+The raw direction history and the sequence accepted by the game's command parser need not match exactly.
+
+| Display | Meaning |
+|---|---|
+| `Guard` | Contact occurred while you held the guard direction |
+| `G-Persist n` | Contact occurred during guard-pose persistence after releasing back; n is the Tick within that persistence |
+| `Nt` beside directions/buttons | Interval from the previous input, or an intervening guard/expiry marker |
+| `Success` | GC activated; the number measures from the opening of the GC window |
+| `GC Expired` | The GC window ended |
+| `Cmd Expired` | The command in progress expired |
+| Orange numbers, arrows and related marks | An input interval of at least 12 Ticks, highlighting a delay |
+
+Orange does not mean guaranteed failure. Successful results are gold. On a button row, the unpressed dots turn orange, while pressed dots keep their light/medium/heavy colors.
+
+### 9.3 `G / GP / GC` and the one-Tick difference
+
+The input bar places `G` or `GP n` on the contact column and `GC` on the window-opening column **one Tick later**.
+
+- `G`: blocked while holding the direction.
+- `GP n`: blocked on Tick n of guard-pose persistence.
+- The Tick on which back is released counts as persistence Tick 1.
+
+The trace's Guard row refers to contact; the Success number refers to the window opening. Adding the intervals after Guard can therefore differ from Success by one Tick.
+
+After a failure, check whether you blocked, whether the necessary directions were accepted, whether the command expired and whether the button arrived in time. Do not always read the number beside `GC Expired` as the full window length from the block. Some result intervals are measured from the last input.
+
+<a id="10-data"></a>
+## 10. Read move data and gaps
+
+### 10.1 Ticks versus displayed frames
+
+**A Tick (`t`) is an internal game frame.** Distinguish it from a displayed frame.
+
+| Speed | Relationship |
+|---|---|
+| Normal (`Game Speed = 0`) | One displayed frame = one Tick |
+| Turbo 3 (`Game Speed = 3`) | Three displayed frames = four Ticks |
+
+At Turbo 3, some displayed frames contain two Ticks of game processing. You cannot compare move startup or input intervals by assuming one displayed frame always equals one Tick. Check each feature's unit.
+
+| Measured in Ticks | Measured in displayed frames |
+|---|---|
+| Tick Data, Action Timeline | Recording/playback and recording `Loop Interval (Frames)` |
+| Action Steps Wait, Loop Wait | Show Jump In Trainer |
+| AG/GC windows and histories | Show Dashes Interval, Show Dash Time |
+| Air Guard Gaps, Frame Trap Trainer | Dash Attack Cancel / Attack Dash Gap Trainer |
+
+Match the measured side, game speed and units before comparing numbers.
+
+### 10.2 Tick Data
+
+The original Frame Data measured displayed frames, which made its results unstable at turbo speeds. This fork’s **Tick Data** measures internal frames to avoid variation caused by turbo frames. Its **counting conventions for startup, active time, recovery and frame advantage are aligned with those used by strategy sites**. This does not guarantee a match with every published value; check move conditions and counting conventions when comparing results.
+
+Enable `Trainer > Tick Data` and select P1 or P2 under `Tick Data Side`. P2 is useful for checking a move performed by a recording or Action Steps.
+
+| Field | Meaning |
+|---|---|
+| `Startup` | Startup until the attack hitbox appears |
+| `Active` | Duration of the attack hitbox |
+| `Recovery` | Recovery portion of the move |
+| `Total` | Measured duration of the whole action, including gaps between the hits of a multi-hit move; the attacker's own hitstop is excluded |
+| `Advantage` | Advantage for the measured side; positive means that side can act first |
+| `Hitstun / Wakeup` | Measurements relating to the opponent's stun or wake-up |
+| `Hitfreeze` | Contact freeze; `*` means the attacker was not frozen |
+
+Startup, active and recovery use the attack hitbox; startup is not simply the moment the move contacts the opponent. The attacker's own hitstop is excluded from these values.
+
+Keep these limits in mind:
+
+- A chain may be measured as one continuous sequence. Do not copy its result directly into a single-move data table.
+- Moves with a super flash may produce large Total or Recovery values.
+- Projectile active time does not represent all the time the projectile continues flying after the character's measurement ends.
+- Startup and active share the first hitbox Tick. For a basic single move, read `Total = Startup + Active + Recovery − 1`: startup 4, active 3 and recovery 7 give Total 13.
+
+### 10.3 Action History, Action Timeline and Step Wait Ticks
+
+**Action History in Tick Data** displays a sequence of actions so you can examine the total time a setup takes in Ticks, as well as individual move data. This lets you inspect both move properties and the duration of a complete setup in internal frames.
+
+For example, you can test **how many Ticks to spend before a wake-up attack reaches its intended timing**, or **how far away you can start a walk-up throw and still perform it within 15 displayed frames (20 Ticks at Turbo 3)**. Check the elapsed time in Action History, vary the starting distance and compare the actual results to develop practical setups.
+
+> The Action History description is an addendum based on the developer’s feature description. Its display and controls have not been verified against this manual’s target commit, so specific operating steps are not included.
+
+The green `ACTION TIMELINE` in Tick Data follows one action on a shared clock. For example, `1t PreJump > 4t Air > 10t MP` identifies the Ticks when prejump, airborne state and MP occurred. Do not add these timestamps together.
+
+`Show Step Wait Ticks` measures what Action Steps actually waited. `Step.2 Wait:13` is the measured interval from the preceding step. `Act` is the Ticks spent entering that step's own inputs. `Loop Wait` measures the boundary between passes. This lets you distinguish a configured timing from its measured result.
+
+### 10.4 Air Guard Gaps
+
+**This feature visualizes where you could act after air guarding, whether your actual interrupt was well timed and who can act first after landing.** Use it against jump attacks and air-dash attacks as well as air chains.
+
+Enable `Trainer > Show Air Guard Gaps` and air-block the dummy's offense.
+
+| Question | What to inspect |
+|---|---|
+| Can I interrupt an air chain that looks like continuous blockstun? | Gap between hits and the startup of your chosen response |
+| Was my actual interrupt timed well? | Press time, contact time and WIN/LATE/blockstun-input results |
+| Who has advantage after I air-block a jump or air-dash attack and land? | Side and Tick value in Landing Advantage |
+| When did I air-block? | Opponent's Jump/Dash-to-attack timing and your PreJump-to-Guard display |
+
+Change the timing of your air guard against the same attack to compare gaps and landing advantage.
+
+| Example or symbol | Meaning |
+|---|---|
+| `Jump > 6t J.LP(5t)` | Opponent started J.LP on jump Tick 6; the move has 5-Tick startup |
+| `PreJump … > Guard …` | Your prejump and guard timing; compare it with the opponent's opening action |
+| `Gap` | Time you could act before the next contact or landing |
+| `\|` | Next contact |
+| `L` | Landing; blue for P1, orange for P2 |
+| `LP 2t>6t (5t) WIN` | LP pressed on gap Tick 2 and hit on Tick 6, with 5-Tick startup |
+| `LATE 4t` | Four Ticks later than the last winning press timing |
+| `NO GAP` | Even the earliest press of that move would not be fast enough |
+| `In Blockstun 14t at 9,13t` | Presses occurred on Ticks 9 and 13 of 14-Tick blockstun; normal inputs during stun are discarded |
+| `Landing Advantage P2 +15t` | After the last contact, P2 could act 15 Ticks earlier |
+
+`NO GAP` applies to the move being examined. It does not mean every possible response is impossible.
+
+An Action Steps setting of `Auto (10)` can appear here as `Dash > 12t`. The input sender and the game's input reception use different counting origins. Do not compare those values as if they started from the same Tick.
+
+### 10.5 Other trainers
+
+| Option | What it measures |
+|---|---|
+| `Show Frame Trap Trainer` | Gap from P2 leaving hitstun/blockstun to the next contact |
+| `Show Jump In Trainer` | Displayed frames from contact with P2 to your landing |
+| `Show IAD Trainer` | Air-dash height, not time |
+| `Show Dashes Interval` | Displayed frames between dashes |
+| `Show Dash Time` | Dash duration in displayed frames |
+| `Show Dash Attack Cancel Trainer` | Displayed frames from dash start to attack start |
+| `Show Attack Dash Gap Trainer` | Displayed frames from attack recovery to dash start |
+| `Show Short Hop Counter (Sas)` | Consecutive Sasquatch short hops |
+| `Show Bishamon UBK Trainer` | Standing/crouching unblockable-range aid on P2 for the supported Bishamon moves |
+
+<a id="11-drills"></a>
+## 11. Practice recipes
+
+### A. Hit confirms and stopping on block
+
+1. Set `Guard = All Guard` and `Random Guard % = 50%`.
+2. Set `Guard Action Type = None`.
+3. Repeat the same starter, continue the combo on hit and stop on block.
+4. Then set a light normal under `Reversal - Specified` to check the gaps you leave after being blocked.
+
+### B. Does your wake-up pressure beat the earliest challenge?
+
+1. Select `Guard Action Type = Reversal - Specified`, with `Random Guard Action % = 100%`.
+2. Configure the desired normal or special. See [4.3](#04-dummy) for a normal example.
+3. Start with `Wakeup = None` to keep conditions fixed.
+4. Knock the dummy down and test your setup.
+5. Once consistent, vary wake-up movement and response probability.
+
+Do not judge an earliest-action normal solely by whether the game displays REVERSAL.
+
+### C. What reaches after your attack is pushblocked?
+
+1. Set `Guard = Push Block (All Light)` and `Random Guard % = 100%`.
+2. Start with `Guard Action Type = None` and examine spacing and reach after pushback.
+3. Try the same sequence against medium and heavy AG.
+4. Add a counter action and check whether your follow-up beats the dummy's response.
+
+Selecting AG under `Guard` leaves `Guard Action Type` available for the response.
+
+### D. Examine air-guard interrupts and landing situations
+
+1. Use a recording or Action Steps to prepare the dummy's air string.
+2. Enable `Show Air Guard Gaps`.
+3. Jump and block; first observe the Gap without pressing buttons.
+4. Choose one move and practise interrupting with it.
+5. `In Blockstun` means you pressed too early; `LATE` means too late; `NO GAP` suggests reconsidering the move or response.
+6. Vary your jump timing and compare when you air-blocked and how the gap changed.
+7. Also try landing without interrupting and read `Landing Advantage`. Compare jump attacks and air-dash attacks.
+
+### E. Defend against mixed offense
+
+1. Save different offensive sequences in recording slots or Action Patterns.
+2. Play each one individually and verify the intended moves.
+3. Enable several candidates and randomize playback.
+4. For repeatable spacing in recordings, use `Reset Distance Each Loop`. For Steps, check positioning and the situation after each pass separately.
+
+<a id="12-options"></a>
+## 12. Display and game settings
+
+### 12.1 Keep the screen readable
+
+Enable only the readouts you need under `Display`.
+
+| Option | Purpose |
+|---|---|
+| `HUD (Life / Meter)` | Life, meter and related readouts |
+| `Movelist` | Character move list |
+| `Display Hitboxes` | Hitbox display |
+| `Display Pushbox X Center` | Pushbox center; available when Hitboxes is enabled |
+| `Show Pushbox Distance` | Character spacing: horizontal only, or horizontal/vertical/triangle |
+| `Show Damage Calc (on P2)` | Damage taken by P2 |
+| `Recording GUI` | Recording status |
+| `Show Scrolling Input` | Your input history at the bottom |
+| `Scrolling Input History` | How far back to view; 0 is newest. Does not pause the game |
+| `Show Button Releases` | Marks button releases |
+| `Hide Negative Edge Inputs` | Omits columns with no new input; does not remove dedicated release markers |
+| `Show P2 Inputs` | Dummy inputs on the right |
+
+Child options are hidden when their parent is OFF. The GC input bar requires `Show Scrolling Input`; some other readouts require `HUD (Life / Meter)`.
+
+### 12.2 Life, Dark Force and speed
+
+- `Gauge`: separate P1/P2 `Max Life`, `Refill Timer (seconds)` and `Infinite Dark Force`. Turn infinite DF OFF to let it end.
+- `Game > Game Speed`: 0 is Normal; 1–3 are Turbo. Default is 3.
+- `Game > BGM On`: after changing it, return through character select for it to take effect.
+
+Character-specific options include `Anak Projectile`, `Gloomy Puppet Show` and `Lei-Lei Always Stun Item`. Some depend on the P1 character; not every option under Dummy applies exclusively to P2.
+
+With Anakaris as the dummy, `Pit of Blame` offers `None / Normal / ES / Random`. Random chooses no move, normal or ES once per knockdown. Its purpose is separate from an ordinary wake-up reversal, but `Random Guard Action %` also affects whether it runs.
+
+### 12.3 Use Analysis when needed
+
+`Analysis` provides internal timers for invulnerability, throw invulnerability, AG and other states. Leave these OFF for ordinary practice unless you need them.
+
+`Random Guard Action % Check` counts whether the dummy acts as often as `Random Guard Action %` says. It shows the setting, the chances the dummy had (`opp`) and how many the roll allowed (`roll+`). After eight chances it turns green when the measured rate is within five points of the setting, and red otherwise. It was the GC Frequency Counter on the Trainer tab before v11.7.16.1.
+
+`Knockdown Logger` writes diagnostic logs under `scripts/reversal_logs`, including air-guard situations. `Show Pursuit Indicator` is explicitly marked incomplete; do not rely on it as a definitive OTG eligibility indicator.
+
+<a id="13-save"></a>
+## 13. Saving, backups and updates
+
+| Content to preserve | Location or method |
+|---|---|
+| Settings, Action Steps and Action Patterns | `scripts/training_settings.json` |
+| Character-specific recordings | `scripts/macro/<character name>/slot_1.mis` through `slot_5.mis` |
+| Shared recordings | `scripts/macro/slot_1.mis` through `slot_5.mis` |
+| Last recording and other recording data | Under `scripts/macro`; back up the entire folder |
+| Patterns to share | Files created with Action Patterns Export |
+
+Ordinary settings save when the menu closes. Action Steps edits are separate: **you must select Save for them to be included**.
+
+To update:
+
+1. Save edits such as Steps and close the ordinary menu.
+2. Close FBNeo.
+3. Copy `scripts/training_settings.json` and the entire `scripts/macro` folder elsewhere.
+4. Install the update in the separate training copy. A distribution may contain recordings, so avoid overwriting your own `.mis` files.
+5. Restart from the copied batch file and confirm that Run-ahead is OFF and your settings and recordings remain.
+
+When resetting settings for diagnosis, move the JSON aside instead of deleting it. It contains your Steps and Patterns too. For sharing, pattern Export limits what you send compared with distributing your entire personal settings file.
+
+<a id="14-troubleshooting"></a>
+## 14. Troubleshooting
+
+| Symptom | Check first |
+|---|---|
+| Does not start | Whether FBNeo alone runs `vsavj`; batch/EXE placement; complete `scripts` folder; spaces or Japanese characters in the path; whether antivirus software is blocking `fcadefbneo.exe` |
+| `gd.dll` error | Fightcade installation; the original README suggests reinstalling Fightcade |
+| Dummy actions or readouts behave incorrectly | Whether you launched the separate training copy and Run-ahead is OFF |
+| Menu will not open | Whether the match has started and `Lua Hotkey 1` is assigned; do not rely on Start to open the menu |
+| Dummy will not block | Check `Random Guard %` as well as `Guard`; an orange row means it is 0%. Set it to 100% |
+| Dummy will not respond | `Random Guard Action %` (an orange row means 0%), whether the required button is None, and whether a trigger occurred |
+| Steps will not run | `Guard Action Type`, `Random Guard Action %`, whether you saved, and whether this is the current dummy's list |
+| Patterns will not run | At least one `[x]`, the correct dummy character and `Random Guard Action %` above 0% |
+| Crouch duration is wrong | This step's Wait is the delay before it; Hold and the next Wait determine duration |
+| Dash fails from the second loop | Whether the preceding Hold keeps the same direction held |
+| Auto does not produce the expected move | `Not Measured`, direction/button, charge and air-action restrictions. Steps cannot force the game to accept an input it rejects |
+| Recording will not start | Release all inputs once in the wizard; check `Ready`, `Held` and P2 mappings |
+| Recording will not finish | It needs about two seconds with no input after the dummy's action has finished |
+| Recording cannot be found | Character-specific slots, selected character, Recording Slot and random candidates |
+| Coin will not switch control to P2 | Stop recording playback first |
+| An option is missing | Parent settings, Guard Action Type and character selection can hide it |
+| Numbers differ from a guide | Ticks versus displayed frames, speed, single move versus chain, measured side, super flash and projectile measurement limits |
+| File operation appears frozen | Look for a Windows dialog behind the emulator using `Alt+Tab` |
+| Behavior did not change after updating | Fully close FBNeo and restart using the updated copy's batch file |
+
+For reports, include version, P1/P2 characters, side arrangement, setting screenshots and reproduction steps. This manual assumes Run-ahead OFF. If an issue occurs with it ON, disable it in the training installation, fully restart and check again.
+
+<a id="15-reference"></a>
+## 15. Glossary and reference version
+
+| Term | Meaning here |
+|---|---|
+| AG / Push Block / PB | Advancing Guard; the English UI uses Push Block / PB |
+| GC / Guard Cancel | Guard cancel |
+| Tick / t | Internal frame: Normal has one Tick per displayed frame; Turbo 3 has four Ticks in three displayed frames |
+| Frame | Displayed/emulator frame in this guide; check the option's label and description |
+| Forward / Back | Relative to the character's facing, unlike screen-left/right position shortcuts |
+| QCF / QCB | Quarter-circle forward / back |
+| DPF / DPB | Dragon-punch motion forward / back |
+| HCF / HCB | Half-circle forward / back |
+| 360 | One full-circle stick motion, 360 degrees |
+| 720 | Two full-circle stick motions, 720 degrees |
+| Hold | Maintain the direction until the next step |
+| Trigger | An event that starts a sequence |
+
+### Reference version and sources
+
+- Document checked: 2026-09-29.
+- Upstream comparison: [`fc2`, 92980a5](https://github.com/NBeing/VSAV_Training/tree/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6). Earliest-input limitations and existing trainers were checked in [upstream menu.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/menu.lua), and input delivery in [upstream controller.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/controller.lua).
+- The comparison covers source-level features and control methods. An emulator A/B comparison and execution of the infinite-combo definitions were not performed while preparing this manual. The infinite-combo examples reflect use cases supplied by the developer.
+- Fork version: v11.7.17; labels checked 2026-09-29. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
+- [English README](../README.md) / [English release notes](../RELEASE_NOTES.md).
+- Menus/settings: [menu.lua](../scripts/menu.lua), [config.lua](../scripts/config.lua).
+- Controls: [controller.lua](../scripts/controller.lua), [position.lua](../scripts/position.lua).
+- Recording: [recordingWizard.lua](../scripts/recordingWizard.lua), [macro.lua](../scripts/macro.lua).
+- Steps/patterns: [actionSequenceEditor.lua](../scripts/actionSequenceEditor.lua), [actionSequenceRunner.lua](../scripts/actionSequenceRunner.lua).
+- AG/GC displays: [hud.lua](../scripts/hud.lua), [guardCancel.lua](../scripts/guardCancel.lua), [inputHistory.lua](../scripts/inputHistory.lua).
+- Measurements: [tickData.lua](../scripts/tickData.lua), [airGuardGap.lua](../scripts/airGuardGap.lua).
+
+When labels or behavior change in a later version, update the affected sections and reference version.

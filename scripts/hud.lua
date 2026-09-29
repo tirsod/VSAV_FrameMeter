@@ -802,8 +802,9 @@ local function draw_gc_frequency_counter()
 	if _opp >= 8 and _want >= 0 then
 		_c = (math.abs(_got - _want) <= 5) and "#00FF00" or "#FF0000"
 	end
-	gui.text(21, 36, string.format("Guard Action freq=%s opp=%d roll+=%d arm=%d seq=%d drop=%d wait=%d",
-		tostring(globals.options.gc_freq), _opp, _true, gc_fires or 0, _seq, _drop, _wait), _c)
+	-- The setting as the menu names it, not its index: freq=1 read as 1%.
+	gui.text(21, 36, string.format("Random Guard Action %s opp=%d roll+=%d arm=%d seq=%d drop=%d wait=%d",
+		(_want >= 0) and (_want .. "%") or "?", _opp, _true, gc_fires or 0, _seq, _drop, _wait), _c)
 end
 
 -- WHAT THE ACTION STEPS ACTUALLY WAITED.

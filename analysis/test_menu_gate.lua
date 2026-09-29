@@ -295,9 +295,9 @@ end
 do
 	local row
 	for _, e in ipairs(player.entries) do
-		if e.name == "P2 Random Guard %" then row = e end
+		if e.name == "Random Guard %" then row = e end
 	end
-	want("P2 Random Guard % の行がある", row ~= nil, true)
+	want("Random Guard % の行がある", row ~= nil, true)
 	local function shown(g)
 		training_settings.guard = g
 		return not row.is_disabled()

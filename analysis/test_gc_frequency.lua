@@ -209,5 +209,108 @@ for _, f in ipairs({ 0x1, 0x5 }) do
 	else print(string.format("  ok %-4s は %d/500", LABEL[f], hit)) end
 end
 
+print("[6] ガード 1 発は機会 1 つ - 硬直に入る tick と $158 が立つ tick が同じフレームでも")
+-- 硬直に入ったとき (+1) と $158 が立ったとき (+1) の両方で数えていて、ガードは
+-- 両方を起こす: $05 が接触の tick、$158 がその次の tick (ログ 76/76)。1 フレーム
+-- に 2 tick 入ると機会が 2 つ進んで抽選は 1 回 - 100% なのに roll+/opp = 39/55
+-- (本人のスクリーンショット)。別のフレームなら 1 発に抽選 2 回。
+-- ガードは接触の tick から P2 の $54 が 0xFF (76/76、ほかの硬直 514 件は 0/514)。
+do
+	local s2 = src:find("gc_entry_was_guard = false", 1, true)
+	local e2 = src:find("\nfunction gc_note_block_rise()", s2, true)
+	assert(s2 and e2, "gc_note_stun_entry / gc_note_block_rise が見つからない")
+	e2 = src:find("\nend", e2 + 10, true)
+	assert(loadstring(src:sub(s2, e2 + 4)))()
+	assert(type(gc_note_stun_entry) == "function" and type(gc_note_block_rise) == "function")
+
+	-- service_held_reversal の 2 か所がこの 2 つを呼んでいること。
+	local _body = src:sub((src:find("local function service_held_reversal()", 1, true)))
+	local function eq_src(what, pat)
+		if _body:find(pat, 1, true) then print("  ok " .. what)
+		else fail(what, "無い", pat) end
+	end
+	eq_src("硬直に入るところは $54 を渡す",
+		"if memory.readbyte(0xFF8805) ~= 0 and not prev_in_stun then\n\t\tgc_note_stun_entry(memory.readbyte(0xFF8854) == 0xFF)")
+	eq_src("$158 が立つところ", "if _s158 > BLK.prev158 then")
+	local _rise = _body:sub((_body:find("if _s158 > BLK.prev158 then", 1, true)))
+	_rise = _rise:sub(1, _rise:find("\n\tend", 1, true))
+	if _rise:find("gc_note_block_rise()", 1, true) and not _rise:find("gc_opportunity = ", 1, true) then
+		print("  ok $158 が立つところは gc_note_block_rise() だけ")
+	else fail("$158 が立つところ", _rise, "gc_note_block_rise() のみ") end
+
+	-- tick の並び: { st=$05, s158=$158, g54=P2 $54 }。フレームの区切りを 1 か 2 tick
+	-- で振り、各フレームの終わりに service_held_reversal と同じ 2 つの判定をする。
+	local function run(ticks, per_frame, old)
+		-- 番号は戻さない。gc_should_perform は「前に見た番号と違う」で引くので、
+		-- 0 に戻すと前の場面の番号と食い違って 1 回余計に引く。
+		gc_entry_was_guard = false
+		gc_should_perform(false)
+		local opp0 = gc_opportunity
+		local draws0 = marks["gc_roll"] or 0
+		local prev_st, prev158 = false, 0
+		local i, k = 1, 1
+		while i <= #ticks do
+			i = i + per_frame[(k - 1) % #per_frame + 1]
+			k = k + 1
+			local t = ticks[math.min(i - 1, #ticks)]
+			local st = t.st ~= 0
+			if st and not prev_st then
+				if old then gc_opportunity = gc_opportunity + 1
+				else gc_note_stun_entry(t.g54 == 0xFF) end
+			end
+			if t.s158 > prev158 then
+				if old then gc_opportunity = gc_opportunity + 1
+				else gc_note_block_rise() end
+			end
+			prev_st, prev158 = st, t.s158
+			gc_should_perform(false)
+		end
+		return gc_opportunity - opp0, (marks["gc_roll"] or 0) - draws0
+	end
+	local function free(n) local a = {} for _ = 1, n do a[#a + 1] = { st = 0, s158 = 0, g54 = 0 } end return a end
+	local function cat(...) local a = {} for _, x in ipairs({ ... }) do for _, v in ipairs(x) do a[#a + 1] = v end end return a end
+	-- ガード n 発: 接触の tick は $05=2 / $54=FF、次の tick で $158=14、以後 1 ずつ減る。
+	local function guards(n)
+		local a = {}
+		for h = 1, n do
+			a[#a + 1] = { st = 2, s158 = (h == 1) and 0 or 1, g54 = 0xFF }
+			for v = 14, 2, -1 do a[#a + 1] = { st = 2, s158 = v, g54 = 0xFF } end
+		end
+		for _ = 1, 8 do a[#a + 1] = { st = 2, s158 = 0, g54 = 0xFF } end
+		return a
+	end
+	local function hit()
+		local a = {}
+		for _ = 1, 20 do a[#a + 1] = { st = 2, s158 = 0, g54 = 0x03 } end
+		return a
+	end
+	globals.options.gc_freq = 0x5
+	local SCENES = {
+		{ "ガード 1 発", cat(free(3), guards(1), free(3)), 1 },
+		{ "3 発の連続ガード", cat(free(3), guards(3), free(3)), 3 },
+		{ "食らい 1 回", cat(free(3), hit(), free(3)), 1 },
+		{ "ガード 2 発 + 食らい + ガード 1 発",
+		  cat(free(3), guards(2), free(4), hit(), free(4), guards(1), free(3)), 4 },
+	}
+	-- 1 フレームの tick 数。Normal は毎回 1、Turbo 3 は 3 フレームに 4 tick。
+	-- ずらし方を変えて、接触の 2 tick が同じフレームに入る場合と入らない場合を両方作る。
+	local PACES = { { 1 }, { 2, 1, 1 }, { 1, 2, 1 }, { 1, 1, 2 }, { 2 } }
+	local old_bad = 0
+	for _, sc in ipairs(SCENES) do
+		for _, pace in ipairs(PACES) do
+			local tag = sc[1] .. " / " .. table.concat(pace, ",")
+			local opp, draws = run(sc[2], pace, false)
+			if opp ~= sc[3] then fail(tag .. " の機会", opp, sc[3])
+			elseif draws ~= sc[3] then fail(tag .. " の抽選", draws, sc[3])
+			else print("  ok " .. tag .. ": 機会 " .. opp .. " / 抽選 " .. draws) end
+			local oopp, odraws = run(sc[2], pace, true)
+			if oopp ~= sc[3] or odraws ~= sc[3] then old_bad = old_bad + 1 end
+		end
+	end
+	-- 旧の数え方は、ガードを含む場面で必ずどこかが狂っていたこと (この節の前提)。
+	if old_bad > 0 then print("  ok 旧の数え方では " .. old_bad .. " 通りで機会か抽選がずれる")
+	else fail("旧の数え方でもずれない - 前提が崩れている", old_bad, "> 0") end
+end
+
 print(fails == 0 and "\n全て通った" or ("\n" .. fails .. " 件 NG"))
 os.exit(fails == 0 and 0 or 1)

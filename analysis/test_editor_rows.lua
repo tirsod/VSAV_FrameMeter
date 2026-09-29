@@ -225,7 +225,73 @@ rows_eq("攻撃の後は After のまま",{
   "   Late Cancel",
   "   Fixed Ticks",
   "   Back"})
+
+print("[2c] Wait の選択肢は 1 行ずつ自分の説明を持つ")
+-- After と Landing が同じ「Auto is the earliest」の 1 文を共有していて、
+-- 同じ意味に読めた (PLAYER_UX_REVIEW 5)。説明は y=168 の 1 行きり: 凡例が
+-- y=181 にあるので、2 行目は凡例に重なる。
+local function note()
+  local got = nil
+  gui.text=function(x,y,t) if x==33 and y==168 then got=t end end
+  E.guiRegister()
+  gui.text=function() end
+  return got or ""
+end
+local function note_ok(what, head)
+  local n = note()
+  eq(what.." の説明", n:sub(1, #head), head)
+  eq(what.." の説明は 1 行", n:find("\n", 1, true), nil)
+  eq(what.." の説明は 81 字以内", #n <= 81, true)
+end
+note_ok("After", "After: ")
+local _seen = {}
+for _, want in ipairs({ "Landing: ", "Rapid: ", "Chain: ", "Cancel: ",
+                        "Late Cancel: ", "Fixed Ticks: " }) do
+  tap("down")
+  note_ok(want, want)
+  _seen[note()] = true
+end
+_seen[""] = nil
+local _k = 0
+for _ in pairs(_seen) do _k = _k + 1 end
+eq("選択肢ごとに違う説明", _k, 6)
 tap("left")
+note_ok("詳細の Wait 行", "When this step starts")
+tap("left")
+
+-- ダッシュの後の Fastest は実測値の説明。After の文を借りない。
+open(0x05,{{action="dash.f",wait=-1},{action="atk",lever="none",button="LK",wait=-1}})
+tap("down") tap("LP")
+goto_row("Wait") tap("LP")
+note_ok("Fastest (11)", "Fastest: ")
+tap("down")
+note_ok("ダッシュの後の Landing", "Landing: ")
+tap("left") tap("left")
+
+-- 1 歩目は Fixed Ticks だけ。引き金から数えることを言う。
+open(0x05,{{action="atk",lever="none",button="LP",wait=-1}})
+tap("LP")
+goto_row("Wait") tap("LP")
+note_ok("1 歩目の Fixed Ticks", "Step one counts")
+tap("left") tap("left")
+
+print("[2d] 説明はどれも 1 行で 81 字以内 - 2 行目は凡例に重なる")
+-- 説明は y=168、凡例は y=181、その下 y=194 は警告の行。1 行 8 ドットなので
+-- 2 行目は凡例に重なる。Wait (3 行) と Hold (4 行) がそうなっていた。
+-- HELP の表を元のファイルから読んで、全部を見る。
+do
+  local src = io.open("actionSequenceEditor.lua"):read("*a")
+  local a = src:find("\nlocal HELP = {", 1, true)
+  local b = a and src:find("\n}", a, true)
+  eq("HELP の表が見つかる", a ~= nil and b ~= nil, true)
+  local n, bad = 0, {}
+  for key, text in src:sub(a, b):gmatch('\n\t(%w+)%s*=%s*"(.-)",') do
+    n = n + 1
+    if text:find("\\n", 1, true) or #text > 81 then bad[#bad + 1] = key .. " (" .. #text .. ")" end
+  end
+  eq("HELP の説明を 10 本以上読めた", n >= 10, true)
+  eq("2 行以上か 82 字以上の説明", table.concat(bad, ", "), "")
+end
 
 print("[3] 見出しは経路 - 押した行の名前がそのまま伸びる")
 open(0x05,{{action="atk",lever="none",button="LP",wait=-1},{action="neutral",wait=-1}})

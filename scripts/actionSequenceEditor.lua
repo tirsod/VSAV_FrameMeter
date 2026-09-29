@@ -271,10 +271,16 @@ local HELP = {
 	save   = "Keep this list. Guard Action Type is what runs it.",
 	cancel = "Leave without saving. Nothing changes.",
 	action = "What the dummy does on this step.",
-	wait   = "Ticks from the trigger, or from the step before. Auto is the earliest. Chain and Cancel use the first legal point; Late uses the last known point.\nRapid Fire repeats the same light button off the animation, with no hit needed.\nNot Measured: nobody has timed this pair yet. Set a number instead.",
+	-- ONE LINE. The note sits at y=168 and the legend at y=181, so a second
+	-- line runs into the legend. What each choice does is on the Wait screen,
+	-- one line per choice (WAIT_CHOICES), where the cursor is on it.
+	wait   = "When this step starts, counted from the step before. Step one: from the trigger.",
 	lever  = "Held with the button. Attack takes a direction, Custom a motion.",
 	button = "Pressed on the last input of the motion. None does the motion alone.",
-	hold   = "Keep the direction down after the attack, until the next step.\nA charge move needs the steps before it to hold.\nA charge Special leaves the charge out of its command - it starts from neutral, so hold the direction here on every step before it, including across a Wait.\nA dash cancel holds its reverse direction automatically.",
+	-- One line, as wait is. The rest - a charge Special starts from neutral so
+	-- the charge is held across every step and Wait before it, and a dash
+	-- cancel holds its reverse by itself - is in the player manual (6.2, 6.4).
+	hold   = "Keeps the direction until the next step. Charge moves: Yes on every step before.",
 	order  = "Where this step sits in the list. Left and Right move it.",
 	delete = "Remove this step from the list. Asks first.",
 	clear  = "Empty the list back to one step. Asks first.",
@@ -767,15 +773,34 @@ end
 -- remain the existing strings/numbers, so changing the GUI does not migrate or
 -- reinterpret saved Action Steps. Step one is still a trigger offset and only
 -- offers Fixed Ticks.
+--
+-- AFTER AND LANDING ARE NOT TWO NAMES FOR "EARLIEST".
+--
+-- After starts the inputs once the dummy can act, so a motion begins on the
+-- ground. Landing puts a motion in during the fall so its last input lands on
+-- the touchdown (landing_ready in the runner). The one note under the list
+-- said "Auto is the earliest" for both, which read as the same thing
+-- (PLAYER_UX_REVIEW, item 5). Each choice now says what it does, one line,
+-- under the list where the cursor is.
 local WAIT_CHOICES = {
-	{ label = "After",       timing = nil },
-	{ label = "Landing",     timing = TIMING_LANDING },
-	{ label = "Rapid",       timing = TIMING_RAPID },
-	{ label = "Chain",       timing = TIMING_CHAIN },
-	{ label = "Cancel",      timing = TIMING_CANCEL },
-	{ label = "Late Cancel", timing = TIMING_LATE_CANCEL },
-	{ label = "Fixed Ticks", fixed = true },
+	{ label = "After",       timing = nil,
+	  note = "After: waits until the dummy can act, then starts the inputs. None go in early." },
+	{ label = "Landing",     timing = TIMING_LANDING,
+	  note = "Landing: a motion goes in during the fall so its last input lands on touchdown." },
+	{ label = "Rapid",       timing = TIMING_RAPID,
+	  note = "Rapid: repeats the light button off the animation, with no hit needed." },
+	{ label = "Chain",       timing = TIMING_CHAIN,
+	  note = "Chain: into the next normal at the first tick the game takes it. Missed: After." },
+	{ label = "Cancel",      timing = TIMING_CANCEL,
+	  note = "Cancel: starts on contact, so the hit stop holds the whole motion. Missed: After." },
+	{ label = "Late Cancel", timing = TIMING_LATE_CANCEL,
+	  note = "Late Cancel: the latest tick the cancel is sure to be taken. Missed: After." },
+	{ label = "Fixed Ticks", fixed = true,
+	  note = "Fixed Ticks: a number of ticks you set, counted from the step before." },
 }
+local NOTE_FASTEST = "Fastest: the earliest tick measured for this pair, counted from the step before."
+local NOTE_NOT_MEASURED = "Not Measured: nobody has timed this pair yet. Pick Fixed Ticks and set a number."
+local NOTE_STEP_ONE = "Step one counts its ticks from the trigger - there is no step before it."
 
 -- RAPID FIRE IS ONLY OFFERED BEHIND A LIGHT ATTACK.
 --
@@ -1848,11 +1873,11 @@ local function build(s)
 			-- Step one is measured from the trigger, not from a preceding action.
 			-- Connection conditions have no meaning here.
 			a[1] = { label = "Fixed Ticks : " .. wait_label(draft.steps[s.index], s.index),
-			         kind = "fixed_wait", child = true, fixed = true }
+			         kind = "fixed_wait", child = true, fixed = true, note = NOTE_STEP_ONE }
 		else
 			for _, c in ipairs(wait_choices_for(draft.steps[s.index],
 			                                    draft.steps[s.index - 1])) do
-				local label = c.label
+				local label, note = c.label, c.note
 				-- SAY WHAT PICKING IT WILL DO.
 				--
 				-- The row this writes reads Auto (10) after a dash, because the
@@ -1868,9 +1893,11 @@ local function build(s)
 					local _n = auto_ticks(draft.steps[s.index], s.index)
 					if _n ~= nil then
 						label = "Fastest (" .. _n .. ")"
+						note = NOTE_FASTEST
 					elseif seq_auto_needs_number ~= nil
 					       and seq_auto_needs_number(draft.steps[s.index - 1]) then
 						label = "Fastest (Not Measured)"
+						note = NOTE_NOT_MEASURED
 					end
 				end
 				if c.fixed and draft.steps[s.index].timing == nil
@@ -1878,7 +1905,7 @@ local function build(s)
 					label = label .. " : " .. tostring(draft.steps[s.index].wait)
 				end
 				a[#a + 1] = { label = label, kind = "wait_choice",
-				                 timing = c.timing, fixed = c.fixed }
+				                 timing = c.timing, fixed = c.fixed, note = note }
 			end
 		end
 		a[#a + 1] = { label = "Back", kind = "back", gap_before = true }
@@ -2836,7 +2863,7 @@ function M.guiRegister()
 	end
 
 	local cur = items[s.cursor]
-	local note = cur and HELP[cur.kind or ""] or nil
+	local note = cur and (cur.note or HELP[cur.kind or ""]) or nil
 	if note then gui.text(33, 168, note, text_disabled_color, text_default_border_color) end
 
 	local help = "Up/Down: Select   Right or LP: Enter   Left: Back"
@@ -2868,14 +2895,14 @@ function M.guiRegister()
 
 	-- A LIST THAT CANNOT RUN SAYS SO (user, 2026-09-26).
 	--
-	-- Guard Action Frequency None (1) rolls every guard action away, so the
+	-- Random Guard Action % at 0% (1) rolls every guard action away, so the
 	-- steps never go out and nothing on this screen said why: a crouch pattern
 	-- was chased through the runner before the logger's gc_roll showed the
 	-- roll. training_settings is what globals.options is, and the
 	-- only thing this file already reads. Below the legend, the one free line.
 	if training_settings ~= nil and training_settings.gc_freq == 1 then
 		gui.text(33, 194,
-			"Guard Action Frequency is None, so this never runs (Dummy tab).",
+			"Random Guard Action % is 0%, so this never runs (Dummy tab).",
 			"#FF7F00", text_default_border_color)
 	end
 
@@ -2946,7 +2973,7 @@ function M.parent_item(which, label)
 		left = function() end,
 		legend = function() return "Right or LP: Edit" end,
 		description = function()
-			return "A list of actions the dummy runs in order when it reverses.\nEach step is one action and one answer to when it starts.\nNothing is saved until you Save. Set Guard Action Type to\nReversal - Sequence to make the dummy run it."
+			return "A list of actions the dummy runs in order when it reverses.\nEach step is one action and one answer to when it starts.\nNothing is saved until you Save. Set Guard Action Type to\nReversal - Action Steps to make the dummy run it."
 		end,
 	}
 end
