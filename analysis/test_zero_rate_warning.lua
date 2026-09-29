@@ -3,12 +3,12 @@
 -- Guard と Guard Action Type は「何をするか」、Random Guard % と Random Guard
 -- Action % は「どれだけの割合でするか」。後の 2 つはどちらも 0% で出荷して
 -- いるので、All Guard やガードアクションを選んでも何も起きず、選んだことが
--- 効いていないとは画面のどこにも出ていなかった (PLAYER_UX_REVIEW 4)。
+-- 効いていないとは画面のどこにも出ていなかった (UI レビュー、2026-09-29)。
 --
 -- 値は変えない (0% が狙いのこともある)。言うだけ:
 --   * 確率の行がオレンジになる (カーソルが無いとき)
 --   * 関係する行にカーソルがあると、凡例の行の右側に理由が出る
--- 確率の行の表記は None ではなく 0% (PLAYER_UX_REVIEW 9)。
+-- 確率の行の表記は None ではなく 0% (同じレビュー)。
 --
 -- Run from scripts/ - the reads below are relative.
 --   cd scripts && lua5.1 ../analysis/test_zero_rate_warning.lua

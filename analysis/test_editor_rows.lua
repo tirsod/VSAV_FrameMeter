@@ -228,7 +228,7 @@ rows_eq("攻撃の後は After のまま",{
 
 print("[2c] Wait の選択肢は 1 行ずつ自分の説明を持つ")
 -- After と Landing が同じ「Auto is the earliest」の 1 文を共有していて、
--- 同じ意味に読めた (PLAYER_UX_REVIEW 5)。説明は y=168 の 1 行きり: 凡例が
+-- 同じ意味に読めた (UI レビュー、2026-09-29)。説明は y=168 の 1 行きり: 凡例が
 -- y=181 にあるので、2 行目は凡例に重なる。
 local function note()
   local got = nil

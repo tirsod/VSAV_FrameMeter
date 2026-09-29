@@ -920,7 +920,7 @@ local counter_attack_random_upback = {
   "100%",
 }
 
--- 0%, NOT None, ON THE THREE RATE ROWS (PLAYER_UX_REVIEW 9).
+-- 0%, NOT None, ON THE THREE RATE ROWS (UI review, 2026-09-29).
 --
 -- They are the only rows where the player types a percentage, and None read
 -- as "not randomised" - which is the opposite of what index 1 does: every
@@ -1217,7 +1217,7 @@ p2_block_chance_menu_item.is_disabled = function()
 end
 
 -- A 0% THAT STOPS WHAT ANOTHER ROW PICKED IS SAID, NOT CHANGED
--- (PLAYER_UX_REVIEW 4).
+-- (UI review, 2026-09-29).
 --
 -- Guard and Guard Action Type pick WHAT the dummy does; these two rows say HOW
 -- OFTEN, and both ship at 0%. Picking All Guard or a guard action with the

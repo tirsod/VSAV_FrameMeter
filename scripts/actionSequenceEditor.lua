@@ -780,7 +780,7 @@ end
 -- ground. Landing puts a motion in during the fall so its last input lands on
 -- the touchdown (landing_ready in the runner). The one note under the list
 -- said "Auto is the earliest" for both, which read as the same thing
--- (PLAYER_UX_REVIEW, item 5). Each choice now says what it does, one line,
+-- (UI review, 2026-09-29). Each choice now says what it does, one line,
 -- under the list where the cursor is.
 local WAIT_CHOICES = {
 	{ label = "After",       timing = nil,
