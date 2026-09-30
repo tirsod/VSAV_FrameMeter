@@ -6,6 +6,7 @@ Design notes, investigation results and handoffs are collected here. File names 
 
 | Document / 資料 | Contents / 内容 |
 |---|---|
+| [Project instructions](CLAUDE.md) | 開発の規約・テストの回し方・公開手順。Claude Code がルートの `CLAUDE.md` から読み込む |
 | [Action Steps handoff](handoff_v11.5_action_steps.md) | 開発の経緯・注意点・残件。開発再開時の入口 |
 | [VSAV investigation handoff](handoff_VSAV_investigation.md) | ゲーム調査の引継ぎ |
 | [Memory notes](VSAV_MEMORY_NOTES.md) | ゲーム側の解析・測定結果 |
@@ -17,4 +18,4 @@ Design notes, investigation results and handoffs are collected here. File names 
 
 Analysis tools and their accompanying investigation documents remain in [analysis/](../../analysis/). / 解析ツールと付属の調査資料は引き続き`analysis/`にあります。
 
-[English player manual](../PLAYER_MANUAL.en.md) · [日本語プレイヤーマニュアル](../PLAYER_MANUAL.ja.md) · [Project instructions](../../CLAUDE.md)
+[English player manual](../PLAYER_MANUAL.en.md) · [日本語プレイヤーマニュアル](../PLAYER_MANUAL.ja.md) · [Project instructions](CLAUDE.md)

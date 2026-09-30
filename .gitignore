@@ -18,7 +18,10 @@
 # The UI review the manual was written alongside is a working note, not for
 # players: kept on this machine, out of the public tree (user, 2026-09-29).
 /docs/PLAYER_UX_REVIEW.*.md
-!/CLAUDE.md
+# The project instructions live in docs/development/CLAUDE.md. The root
+# CLAUDE.md is only a one-line loader for Claude Code on this machine
+# (@docs/development/CLAUDE.md) and stays out of the public tree (user,
+# 2026-09-30).
 # Development documents and release notes live under the tracked docs/ tree.
 !/run_vsav_training_flatpak.sh
 !/vsav_training_flatpak.desktop

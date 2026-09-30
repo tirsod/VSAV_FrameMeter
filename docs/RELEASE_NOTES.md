@@ -6,6 +6,38 @@ Newest first. Older releases are kept below.
 
 ---
 
+## v11.7.19
+
+### Reorganized manuals and a guided practice against Sasquatch
+
+- The English README is the entry point; the Japanese README and both player
+  manuals now run from installation to basic controls to practice
+- **New guided practice: AG and GC against Sasquatch.** Build a short-dash LP,
+  try AG and GC against it, repeat it and save it in Action Patterns, with
+  screenshots from the game
+- Development documents moved to `docs/development/`, release notes to `docs/`
+
+### The naming and file windows no longer stay hidden behind FBNeo
+
+The Action Patterns naming window and the Export / Import file window could
+slip behind FBNeo and stay there. While open, they now come back in front on
+their own. Click the window to type.
+
+### For full screen, use Windowed Fullscreen
+
+FBNeo's older full-screen mode cannot show those windows. To play in full
+screen, check `Video > Blitter options > Windowed Fullscreen` (toggle full
+screen with `Alt+Enter`).
+
+### Other
+
+- The release zip can be built from a plain clone of the repository (the IPS
+  patches are included only when present)
+- Manual corrections: an Action Steps step with `Attack` and `Neutral` has no
+  Hold row, and step one's Wait already defaults to `Auto (Fastest)`
+
+---
+
 ## v11.7.18
 
 ### Screenshots in the manuals

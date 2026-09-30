@@ -1,7 +1,12 @@
 # VSAV Training Tool — プロジェクト指示
 
 VSAV (Vampire Savior / CPS2 / 970519 Japan) の FBNeo 用トレーニングツール。Lua。
-**リポジトリはこのフォルダ。** `C:\fightcade\emulator\fbneo` は移行済みで触らない。
+**リポジトリはこのファイルの 2 つ上 (ルート)。** `C:\fightcade\emulator\fbneo` は移行済みで触らない。
+文中のパスとコマンドはルート基準。
+
+**この指示の本体はここ (`docs/development/CLAUDE.md`)。** Claude Code が自動で読むのはルートの
+`CLAUDE.md` なので、ルートには `@docs/development/CLAUDE.md` の 1 行だけを置く (手元専用、git 管理外。
+2026-09-30、本人: 引き継ぎ用の資料なので開発資料へ)。ルートの 1 行が無いと、この指示は読まれない。
 
 **最初に `docs/development/handoff_v11.5_action_steps.md` を読むこと。** 経緯・落とし穴・残件はそこ。
 Action Pattern Library の仕様は `docs/development/design_action_pattern_library.md`。UI から設計し直す方針。
