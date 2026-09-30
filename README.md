@@ -57,9 +57,9 @@ The English UI calls AG **Push Block / PB**.
 
 The original Frame Data measured displayed frames, which made its results unstable at turbo speeds. This fork’s **Tick Data** measures internal frames to avoid variation caused by turbo frames. Its **counting conventions for startup, active time, recovery and frame advantage are aligned with those used by strategy sites**. This does not guarantee a match with every published value; check move conditions and counting conventions when comparing results.
 
-**Action History in Tick Data** displays a sequence of actions so you can examine the total time a setup takes in Ticks, as well as individual move data. This lets you inspect both move properties and the duration of a complete setup in internal frames.
+**Action Timeline in Tick Data** displays a sequence of actions so you can examine the total time a setup takes in Ticks, as well as individual move data. This lets you inspect both move properties and the duration of a complete setup in internal frames.
 
-For example, you can test **how many Ticks to spend before a wake-up attack reaches its intended timing**, or **how far away you can start a walk-up throw and still perform it within 15 displayed frames (20 Ticks at Turbo 3)**. Check the elapsed time in Action History, vary the starting distance and compare the actual results to develop practical setups.
+For example, you can test **how many Ticks to spend before a wake-up attack reaches its intended timing**, or **how far away you can start a walk-up throw and still perform it within 15 displayed frames (20 Ticks at Turbo 3)**. Check the elapsed time in Action Timeline, vary the starting distance and compare the actual results to develop practical setups.
 
 ### Measure and repeat
 
