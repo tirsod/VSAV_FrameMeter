@@ -364,7 +364,14 @@ For a crouching normal, select the appropriate downward direction. For a special
 <a id="05-recording"></a>
 ## 5. Record opponent actions
 
-Recording suits offense you can perform by hand. Action Steps suits actions whose timing you want to specify precisely. A recording stores gameplay inputs for replay, not video.
+Recording and Action Steps offer two ways to prepare the opponent's behavior.
+
+| Method | How you prepare the sequence | Best suited to |
+|---|---|---|
+| Recording | Play the opponent's character and record the inputs yourself | Quickly reproducing offense you can perform by hand |
+| Action Steps | Specify the actions and their timing | Reproducing difficult execution or earliest possible actions |
+
+A recording stores gameplay inputs for replay, not video.
 
 Recording and playback operate in displayed frames, so they do not reproduce input timing with Tick-level precision. Use Action Steps for drills that require precise internal-frame timing, especially at turbo speeds.
 
@@ -412,6 +419,8 @@ To record without the wizard, select the destination in `Recording Slot`. Use `P
 
 <a id="06-steps"></a>
 ## 6. Build actions with Action Steps
+
+**Reproduce expert-level execution without having to perform it yourself.** Recording requires you to play the opponent's character and record the sequence by hand. With Action Steps, you can define difficult sequences such as a dash at the earliest possible moment followed by the earliest possible attack, or crouching medium kick canceled into Tenraiha. Specify the actions and their timing, then practise AG, GC and interrupts against the dummy's execution.
 
 Action Steps defines a sequence by pairing “when” with “what” for each action. Saving does not immediately start the sequence; it begins at a response opportunity such as recovery from blocking, being hit or knockdown.
 

@@ -23,6 +23,8 @@ This fork controls inputs on that internal clock, improving response timing that
 
 **Reproduce an opponent's action → try your response → examine the readouts → adjust your timing and repeat.** Precise action control and detailed feedback work together to improve both offense and defense. See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions governing earliest inputs.
 
+**Reproduce expert-level execution without having to perform it yourself.** Recording requires you to play the opponent's character and record the sequence by hand. With Action Steps, you can define difficult sequences such as a dash at the earliest possible moment followed by the earliest possible attack, or crouching medium kick canceled into Tenraiha. Specify the actions and their timing, then practise AG, GC and interrupts against the dummy's execution.
+
 ## What you can test and practise
 
 | Goal | How to use the tool |
