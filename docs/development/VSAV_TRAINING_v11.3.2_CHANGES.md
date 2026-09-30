@@ -1,5 +1,8 @@
 # 共同開発者向け差分
 
+> **資料の位置づけ / Status:** 過去の変更記録（v11.3.2） / Historical changes (v11.3.2)。
+> 現在の操作方法は[プレイヤーマニュアル](../PLAYER_MANUAL.ja.md)、現行実装は[ソース](../../scripts/)を確認してください。 / For current behavior, consult the [player manual](../PLAYER_MANUAL.en.md) and source.
+
 このフォルダは v11.3.2 です。
 
 基は `VSAV_Training-fc2_v11.3.1` です。

@@ -1,5 +1,8 @@
 # 引継ぎ — VSAV Training v11.5 / Action Steps
 
+> **資料の位置づけ / Status:** 継続更新の開発履歴・引継ぎ。冒頭の日付以降の追記あり / Ongoing development history and handoff; includes updates after the opening date。
+> 現在の操作方法は[プレイヤーマニュアル](../PLAYER_MANUAL.ja.md)、現行実装は[ソース](../../scripts/)を確認してください。 / For current behavior, consult the [player manual](../PLAYER_MANUAL.en.md) and source.
+
 2026-08-31 時点。次のセッションが最初に読むもの。
 
 ---

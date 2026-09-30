@@ -1,5 +1,8 @@
 # VSAV 解析メモ ― アドレスと時間の扱い
 
+> **資料の位置づけ / Status:** 解析・測定記録 / Analysis and measurement record。
+> 現在の操作方法は[プレイヤーマニュアル](../PLAYER_MANUAL.ja.md)、現行実装は[ソース](../../scripts/)を確認してください。 / For current behavior, consult the [player manual](../PLAYER_MANUAL.en.md) and source.
+
 Vampire Savior (CPS2, 970519 Japan) をトレーニングモードから調べた結果のうち、
 **確定しているものだけ**をまとめたものです。経緯は省いて事実だけ載せています。
 

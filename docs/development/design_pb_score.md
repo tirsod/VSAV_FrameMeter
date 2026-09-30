@@ -1,5 +1,8 @@
 # PB 採点の再設計 (保留) — 設計メモ
 
+> **資料の位置づけ / Status:** 保留の設計案・一部実装済み。現行との差分は下記注記を参照 / Deferred proposal, partly implemented; see the differences noted below。
+> 現在の操作方法は[プレイヤーマニュアル](../PLAYER_MANUAL.ja.md)、現行実装は[ソース](../../scripts/)を確認してください。 / For current behavior, consult the [player manual](../PLAYER_MANUAL.en.md) and source.
+
 > **2026-09-28: 一部を実装した (`scripts/pbStats.lua`)。**本人の決めた形は次のとおりで、この
 > メモとは違うところがある。詳しくは handoff の「Show PB Stats を作り直す」。
 > - 3 択は Pass / Fail / Guard Only。**被弾は独立の数でなく Fail に入れる** (本人)

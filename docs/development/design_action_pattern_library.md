@@ -1,5 +1,8 @@
 # Action Pattern Library — 設計メモ (2026-09-17)
 
+> **資料の位置づけ / Status:** 実装前に作成された設計資料 / Pre-implementation design record。
+> 現在の操作方法は[プレイヤーマニュアル](../PLAYER_MANUAL.ja.md)、現行実装は[ソース](../../scripts/)を確認してください。 / For current behavior, consult the [player manual](../PLAYER_MANUAL.en.md) and source.
+
 作りかけの実装ではなく、**これから作るものの仕様**。中断しても、この 1 枚で
 再開できることを目的にする。
 

@@ -14,6 +14,8 @@ This fork extends [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Tr
 
 A Tick is an internal game frame.
 
+**Reproduce expert-level execution without having to perform it yourself.** Recording requires you to play the opponent's character and record the sequence by hand. With Action Steps, you can define difficult sequences such as an earliest-possible dash into its fastest attack, or crouching medium kick canceled into Tenraiha. Specify the actions and their timing, then practise AG, GC and interrupts against the dummy's execution.
+
 | Game speed | Displayed frames and internal frames |
 |---|---|
 | Normal | One displayed frame = one Tick |
@@ -22,8 +24,6 @@ A Tick is an internal game frame.
 This fork controls inputs on that internal clock, improving response timing that was limited in the original. On wake-up, after blocking and after landing, you can specify **light-normal or throw challenges, jumps and dashes**, as well as special-move reversals.
 
 **Reproduce an opponent's action → try your response → examine the readouts → adjust your timing and repeat.** Precise action control and detailed feedback work together to improve both offense and defense. See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions governing earliest inputs.
-
-**Reproduce expert-level execution without having to perform it yourself.** Recording requires you to play the opponent's character and record the sequence by hand. With Action Steps, you can define difficult sequences such as a dash at the earliest possible moment followed by the earliest possible attack, or crouching medium kick canceled into Tenraiha. Specify the actions and their timing, then practise AG, GC and interrupts against the dummy's execution.
 
 ## What you can test and practise
 
@@ -80,6 +80,9 @@ Use a short path without spaces or Japanese characters. Before updating an exist
 
 **Always assign `Lua Hotkey 1` and `P1 Coin`: neither has a menu equivalent.** The other shortcuts can be replaced by the menu operations below.
 
+<details>
+<summary>Show shortcuts and their menu alternatives</summary>
+
 | FBNeo input entry | Function | Menu alternative |
 |---|---|---|
 | `Lua Hotkey 1` | Open/close the training menu | No alternative — **required** |
@@ -98,6 +101,8 @@ Recording's `Looped Playback` and Action Steps' `Loop Steps` are separate settin
 
 `Volume Up / Down` are FBNeo input entries. You can assign them to arcade-stick or controller buttons.
 
+</details>
+
 <a id="first-ag-drill"></a>
 
 ## First drill: Practise AG and GC against Sasquatch
@@ -105,7 +110,7 @@ Recording's `Looped Playback` and Action Steps' `Loop Steps` are separate settin
 Make Sasquatch perform short-dash LP, then practise AG (Advancing Guard / Push Block) and GC (Guard Cancel) against it. Save the sequence so you can use it again next time.
 
 1. **Build it.** Choose Sasquatch as the dummy. With `Reversal - Action Steps`, define `Dash > Forward Cancel` (`Auto (Fastest)`) followed by LP (`Auto (8)`).
-2. **AG it.** Make the dummy block your attack to trigger its response, then AG the LP. Use PB Counter / PB Stats to check whether you delayed input while fitting six presses inside the window.
+2. **Practise AG.** Make the dummy block your attack to trigger its response, then AG the LP. Use PB Counter / PB Stats to check whether you delayed input while fitting six presses inside the window.
 3. **Try GC too.** Enter your character’s GC against the same LP. Check the success indicator, accepted directions and buttons, and input intervals.
 4. **Repeat it.** Set `Loop Steps = yes` and `Loop Wait = Auto (Landing)` to repeat short-dash LP from landing.
 5. **Save it.** Use `Add from current Steps` in Action Patterns to save it as `Short LP`. Add other offense later to practise against randomly selected sequences.

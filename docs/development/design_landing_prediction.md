@@ -1,5 +1,8 @@
 # 着地予測 — 調査結果と実装案 (2026-09-18)
 
+> **資料の位置づけ / Status:** 調査結果と実装案の記録 / Investigation and implementation proposal。
+> 現在の操作方法は[プレイヤーマニュアル](../PLAYER_MANUAL.ja.md)、現行実装は[ソース](../../scripts/)を確認してください。 / For current behavior, consult the [player manual](../PLAYER_MANUAL.en.md) and source.
+
 **問い:** `Landing` と `After` は予測できるか。
 **きっかけ:** サスカッチの前ダッシュキャンセル小技を連発し、着地して次のダッシュ
 攻撃を**最速で**出したい。

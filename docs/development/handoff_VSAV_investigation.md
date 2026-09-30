@@ -1,5 +1,8 @@
 # VSAV Training Mode 改修 — 引き継ぎ資料
 
+> **資料の位置づけ / Status:** 調査・改修の引継ぎ記録 / Investigation and development handoff。
+> 現在の操作方法は[プレイヤーマニュアル](../PLAYER_MANUAL.ja.md)、現行実装は[ソース](../../scripts/)を確認してください。 / For current behavior, consult the [player manual](../PLAYER_MANUAL.en.md) and source.
+
 このファイルを新しいスレッドの冒頭にアップロードしてください。経緯と次にやることが書いてあります。
 
 ---

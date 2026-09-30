@@ -1,3 +1,6 @@
+> **資料の位置づけ / Status:** 過去の挙動・修正記録（v11.3.2） / Historical behavior and fixes (v11.3.2)。
+> 現在の操作方法は[プレイヤーマニュアル](../PLAYER_MANUAL.ja.md)、現行実装は[ソース](../../scripts/)を確認してください。 / For current behavior, consult the [player manual](../PLAYER_MANUAL.en.md) and source.
+
 この文書は、起き上がり挙動（無敵）と起き上がり挙動（投げのセルフディレクション）の詳細である。
 
 # Character Specificの修正
