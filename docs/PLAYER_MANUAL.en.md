@@ -38,6 +38,7 @@ The distinction is **the precision of reproduced actions and the detail availabl
 ## Contents
 
 - [1. Choose what to practise](#01-purpose)
+- [Guided practice: AG against Sasquatch’s short-dash LP](#sasquatch-ag-tutorial)
 - [2. Installation and first setup](#02-install)
 - [3. Controls and position shortcuts](#03-controls)
 - [4. Dummy defense, recovery and counter actions](#04-dummy)
@@ -68,6 +69,94 @@ The distinction is **the precision of reproduced actions and the detail availabl
 | Examine advantage, interrupts and landing situations | Tick Data, Air Guard Gaps | [Section 10](#10-data) |
 
 If you are new to the tool, start by repeatedly blocking a recorded attack. This makes the trainer readouts easier to observe.
+
+<a id="sasquatch-ag-tutorial"></a>
+## Guided practice: AG against Sasquatch's short-dash LP
+
+**Build an action → practise one AG → repeat the offense → save it for reuse.** Follow this sequence to try the fork's features together. Complete [installation and input mapping](#02-install) first.
+
+### 1. Prepare the counter action
+
+Choose yourself as P1 and **Sasquatch** as the P2 dummy. Face each other on the ground, initially close enough for both attacks to reach. Open the menu with `Lua Hotkey 1` and configure `Dummy`:
+
+| Option | Setting |
+|---|---|
+| `Guard` | `All Guard` |
+| `Random Guard %` | `100%` |
+| `Guard Action Type` | `Reversal - Action Steps` |
+| `Random Guard Action %` | `100%` |
+| `Loop Steps` | `no` (start with one response at a time) |
+
+`Random Guard %` controls blocking probability; `Random Guard Action %` controls the response probability. Set both to 100% to keep the drill consistent.
+
+### 2. Build short-dash LP
+
+Open `Reversal Action Steps` with Right or LP and create **only these two steps**. To preserve an existing definition, save it in [Action Patterns](#07-patterns) first.
+
+| Step | Action selection | Wait | Other settings |
+|---|---|---|---|
+| 1 | `Dash > Forward Cancel` | `Auto (Fastest)` | Cancels the forward dash |
+| 2 | `Attack`, with Button `LP` | `Auto (8)` | Direction `Neutral`, Hold `No` |
+
+For step one's Wait, open `Fixed Ticks` and select its minimum, `Auto (Fastest)`. Add step two with `+ Add Step`, then select `Fastest (8)` under Wait. The resulting display is `Auto (8)`. This is different from manually entering a fixed `8 Ticks` wait.
+
+The implementation's measured Auto value for an attack following Sasquatch's `Forward Cancel` is eight Ticks. Combining that dash cancel with LP creates short-dash LP. `Auto (8)` describes this pair's input timing; it does not mean LP has eight-Tick startup.
+
+Return to the list and **`Save`**. Close the menu, make Sasquatch block a ground attack from P1, then immediately block his response. Confirm that short-dash LP comes out. This action type can also trigger after being hit or waking up; start with a blocked attack to keep the situation consistent.
+
+### 3. AG the LP
+
+Open the menu and configure these readouts and practice settings:
+
+| Location | Setting |
+|---|---|
+| `Trainer > Show PB Counter` | `yes` |
+| `Trainer > Show PB Stats` | `yes` |
+| `Game > P1 Min PB Presses` | `Normal` (practise with ordinary activation rules) |
+
+Close the menu and repeat: **make the dummy block your attack → block its LP response → perform AG**. Push Block / PB in the UI means AG (Advancing Guard).
+
+![PB Counter and PB Stats for reviewing AG timing and practice results](images/pb_counter_stats.png)
+
+- First fit **six valid presses inside the window**. Several buttons pressed on the same Tick count as one game-counted press.
+- Green means AG activated. Keep pressing to complete six even if it activates earlier. Post-activation presses remain in the counter so you can check that you completed the sequence.
+- Once consistent, delay your first press relative to `Guard`. Aim to **start as late as possible while fitting six presses into the 14-Tick window**.
+- `MultiPush` counts Ticks with simultaneous presses. `LateMash` counts inputs after the window closes, not post-activation inputs that are still inside it.
+- Use PB Stats' success rate and average input timing to track improvement under the same conditions.
+
+See [Section 8](#08-pb) for the full readouts and counting rules. If AG separates the characters, restore the spacing using [position shortcuts](#03-controls) or reposition before continuing.
+
+### 4. Repeat short-dash LP and practise consecutive AGs
+
+After practising one response at a time, change these `Dummy` settings:
+
+| Option | Setting |
+|---|---|
+| `Loop Steps` | `yes` |
+| `Loop Wait` | `Auto (Landing)` |
+
+Close the menu and make the dummy block another attack to start the first response. **Enabling Loop alone does not start the first pass.**
+
+Landing wait enters the required directions before touchdown so the next dash's final input arrives on landing. Use it to practise against repeated short-dash LPs starting as early as possible on landing. `Auto (After)` starts inputs only once the dummy can act and does not produce the same timing. See [Section 6](#06-steps) for limitations such as unavailable landing prediction.
+
+Block the repeated LPs and perform consecutive AGs. Check whether you can maintain six presses and delayed timing across repeated attempts. AG changes spacing; reposition if attacks stop reaching. This action loop does not restore starting positions on every pass as recording playback can.
+
+To stop looping, open the menu and set `Loop Steps = no`. To disable counter actions too, set `Guard Action Type = None`.
+
+### 5. Save it as `Short LP`
+
+Import the action into Action Patterns for future use:
+
+1. Confirm that you have used `Save` in Action Steps.
+2. Switch `Dummy > Guard Action Type` to `Reversal - Action Patterns`.
+3. Open `Reversal Action Patterns` and choose **`Add from current Steps`**.
+4. Name it **`Short LP`** and confirm. This copies your currently saved Steps.
+5. Check that `Short LP` is marked `[x]` in the list. MP toggles whether a pattern is selected.
+6. Keep `Random Guard Action % = 100%` and make the dummy block your attack to test it. Use `Loop Steps = no` for individual responses, or `yes` with `Auto (Landing)` for repeated practice.
+
+This is a copy: editing the pattern later does not change the original Action Steps. Check Loop settings separately from these two steps.
+
+**With only `Short LP` selected, the dummy performs the same sequence every time.** Save other offensive sequences and mark several `[x]` to select one at random for each response opportunity. This takes the drill from AG against a known action to reacting to different offense.
 
 <a id="02-install"></a>
 ## 2. Installation and first setup

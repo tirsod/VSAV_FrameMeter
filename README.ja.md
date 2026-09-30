@@ -90,16 +90,16 @@ Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐた�
 
 <a id="first-ag-drill"></a>
 
-## 最初の練習：録画した攻撃にAGする
+## 最初の練習：サスカッチのショートダッシュ小PにAGする
 
-1. **攻撃を録る。** 自分をP1、攻撃させたいキャラクターをP2に選び、地上の攻撃が届く間合いに置きます。`Lua Hotkey 1`でメニューを開き、`Recording > Recording Wizard`で空きスロットを選びます。全入力を一度離し、`START MOVING TO RECORD!`が出たらP2で単発の攻撃を出します。入力を離し、動作終了後に約2秒待つと録画が終了します。確認再生後、保存を選びます。
-2. **繰り返す。** `Recording`で`Use Random Recording Slot = no`、`Recording Slot`を保存先、`Looped Playback = yes`、`Reset Distance Each Loop = yes`にします。`Play Recording`で再生します。
-3. **表示して練習する。** `Trainer > Show PB Counter = yes`、`Show PB Stats = yes`にしてメニューを閉じます。P1で攻撃をガードし、AGを入力します。
-4. **一回ごとに振り返る。** 緑色のカウントで成立を確認し、最初に押したTickと入力回数を見ます。受付内で6回の有効入力を安定させてから、入力開始を遅らせていきます。同時押しが多ければ`MultiPush`、受付終了後の入力は`LateMash`を確認します。
+まずは一つの攻めを作り、その対処を練習して、繰り返し使える形で保存してみましょう。
 
-**AGが途中で成立しても、6回まで入力して構いません。成立後の入力も数えるのは、この練習のための仕様です。** 停止は`Volume Down`。録り方で迷ったら[録画の手順](docs/PLAYER_MANUAL.ja.md#05-recording)、表示の読み方は[AG練習](docs/PLAYER_MANUAL.ja.md#08-pb)を参照してください。
+1. **作る。** ダミーをサスカッチにし、`Reversal - Action Steps`で`Dash > Forward Cancel`（`Auto (Fastest)`）→LP（`Auto (8)`）を定義します。
+2. **AGする。** こちらの技をガードさせて反撃を始め、その小PにAGします。PB Counter／PB Statsで、遅らせながら受付内に6回入力できたか確認します。
+3. **連続で練習する。** `Loop Steps = yes`、`Loop Wait = Auto (Landing)`にして、着地からショートダッシュ小Pを繰り返させます。
+4. **保存する。** Action Patternsの`Add from current Steps`で`Short LP`として保存します。別の攻めも登録すれば、複数候補のランダム練習へ発展させられます。
 
-次は[GCの練習](docs/PLAYER_MANUAL.ja.md#09-gc)、[空中ガードの分析](docs/PLAYER_MANUAL.ja.md#10-data)、[Action Stepsでの正確な動作指定](docs/PLAYER_MANUAL.ja.md#06-steps)へ進めます。
+**[設定からAG表示の読み方・ループ・保存までの手順](docs/PLAYER_MANUAL.ja.md#sasquatch-ag-tutorial)**に沿って進めてください。最初は一回ずつ動作を確認します。着地待ちの条件や、AGで離れた間合いの戻し方も説明しています。
 
 ## マニュアル
 

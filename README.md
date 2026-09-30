@@ -90,16 +90,16 @@ Use a short path without spaces or Japanese characters. Before updating an exist
 
 <a id="first-ag-drill"></a>
 
-## First drill: AG against a recorded attack
+## First drill: AG against Sasquatch's short-dash LP
 
-1. **Record an attack.** Choose yourself as P1 and the attacking character as P2, and place them within range of a ground attack. Open the menu with `Lua Hotkey 1`, then choose an unused slot in `Recording > Recording Wizard`. Release all inputs; when `START MOVING TO RECORD!` appears, perform a single attack as P2. Release the controls and wait about two seconds after the action finishes for recording to end. Review playback, then choose save.
-2. **Repeat it.** Under `Recording`, set `Use Random Recording Slot = no`, choose the saved `Recording Slot`, and set `Looped Playback = yes` and `Reset Distance Each Loop = yes`. Start `Play Recording`.
-3. **Show the feedback and practise.** Set `Trainer > Show PB Counter = yes` and `Show PB Stats = yes`, then close the menu. As P1, block the attack and perform AG.
-4. **Review each attempt.** Green means AG activated. Check your first pressed Tick and press count. First make six valid presses inside the window consistently, then delay your starting input. Inspect `MultiPush` for simultaneous presses and `LateMash` for inputs after the window closes.
+Build one offensive sequence, practise defending against it, then save it for reuse.
 
-**Keep pressing to complete six even if AG activates earlier. Counting presses after activation is intentional and supports this drill.** Stop playback with `Volume Down`. See [recording instructions](docs/PLAYER_MANUAL.en.md#05-recording) or [AG practice](docs/PLAYER_MANUAL.en.md#08-pb) for more detail.
+1. **Build it.** Choose Sasquatch as the dummy. With `Reversal - Action Steps`, define `Dash > Forward Cancel` (`Auto (Fastest)`) followed by LP (`Auto (8)`).
+2. **AG it.** Make the dummy block your attack to trigger its response, then AG the LP. Use PB Counter / PB Stats to check whether you delayed input while fitting six presses inside the window.
+3. **Repeat it.** Set `Loop Steps = yes` and `Loop Wait = Auto (Landing)` to repeat short-dash LP from landing.
+4. **Save it.** Use `Add from current Steps` in Action Patterns to save it as `Short LP`. Add other offense later to practise against randomly selected sequences.
 
-Next, try [GC practice](docs/PLAYER_MANUAL.en.md#09-gc), [air-guard analysis](docs/PLAYER_MANUAL.en.md#10-data), or [precise action control with Action Steps](docs/PLAYER_MANUAL.en.md#06-steps).
+Follow the **[complete walkthrough: setup, AG feedback, looping and saving](docs/PLAYER_MANUAL.en.md#sasquatch-ag-tutorial)**. Begin with one response at a time; the guide also covers landing-wait conditions and restoring spacing after AG.
 
 ## Manual
 
