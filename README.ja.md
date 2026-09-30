@@ -8,7 +8,7 @@ See what the Warlord sees, and practice what the Warlord practices, in VSAV trai
 
 [VSAV_Trainingのfc2ブランチ](https://github.com/NBeing/VSAV_Training/tree/fc2)を基に拡張したフォークです。本書の対象は **v11.7.18** です。
 
-**[ダウンロード](https://github.com/vampiresavior001/VSAV_Training/archive/refs/heads/fc2-v11.zip)** · [導入](#windowsでの導入) · [最初のAG練習](#first-ag-drill) · [日本語マニュアル](docs/PLAYER_MANUAL.ja.md)
+**[ダウンロード](https://github.com/vampiresavior001/VSAV_Training/archive/refs/heads/fc2-v11.zip)** · [導入](#windowsでの導入) · [最初のAG・GC練習](#first-ag-drill) · [日本語マニュアル](docs/PLAYER_MANUAL.ja.md)
 
 ## Tick単位で、再現・検証・改善する
 
@@ -90,16 +90,17 @@ Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐた�
 
 <a id="first-ag-drill"></a>
 
-## 最初の練習：サスカッチのショートダッシュ小PにAGする
+## 最初の練習：サスカッチのショートダッシュ小PにAG・GCする
 
 まずは一つの攻めを作り、その対処を練習して、繰り返し使える形で保存してみましょう。
 
 1. **作る。** ダミーをサスカッチにし、`Reversal - Action Steps`で`Dash > Forward Cancel`（`Auto (Fastest)`）→LP（`Auto (8)`）を定義します。
 2. **AGする。** こちらの技をガードさせて反撃を始め、その小PにAGします。PB Counter／PB Statsで、遅らせながら受付内に6回入力できたか確認します。
-3. **連続で練習する。** `Loop Steps = yes`、`Loop Wait = Auto (Landing)`にして、着地からショートダッシュ小Pを繰り返させます。
-4. **保存する。** Action Patternsの`Add from current Steps`で`Short LP`として保存します。別の攻めも登録すれば、複数候補のランダム練習へ発展させられます。
+3. **GCも試す。** 同じ小Pに自キャラのGCを入力し、成功表示と、受け付けられた方向・ボタン・入力間隔を確認します。
+4. **連続で練習する。** `Loop Steps = yes`、`Loop Wait = Auto (Landing)`にして、着地からショートダッシュ小Pを繰り返させます。
+5. **保存する。** Action Patternsの`Add from current Steps`で`Short LP`として保存します。別の攻めも登録すれば、複数候補のランダム練習へ発展させられます。
 
-**[設定からAG表示の読み方・ループ・保存までの手順](docs/PLAYER_MANUAL.ja.md#sasquatch-ag-tutorial)**に沿って進めてください。最初は一回ずつ動作を確認します。着地待ちの条件や、AGで離れた間合いの戻し方も説明しています。
+**[設定からAG・GC表示の読み方・ループ・保存までの手順](docs/PLAYER_MANUAL.ja.md#sasquatch-ag-tutorial)**に沿って進めてください。最初は一回ずつ動作を確認します。着地待ちの条件や、AGで離れた間合いの戻し方も説明しています。
 
 ## マニュアル
 

@@ -8,7 +8,7 @@ English | [日本語](README.ja.md)
 
 This fork extends [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2). This README covers **v11.7.18**.
 
-**[Download](https://github.com/vampiresavior001/VSAV_Training/archive/refs/heads/fc2-v11.zip)** · [Installation](#windows-installation) · [First AG drill](#first-ag-drill) · [English manual](docs/PLAYER_MANUAL.en.md)
+**[Download](https://github.com/vampiresavior001/VSAV_Training/archive/refs/heads/fc2-v11.zip)** · [Installation](#windows-installation) · [First AG / GC drill](#first-ag-drill) · [English manual](docs/PLAYER_MANUAL.en.md)
 
 ## Reproduce, test and improve in Ticks
 
@@ -90,16 +90,17 @@ Use a short path without spaces or Japanese characters. Before updating an exist
 
 <a id="first-ag-drill"></a>
 
-## First drill: AG against Sasquatch's short-dash LP
+## First drill: AG and GC against Sasquatch's short-dash LP
 
 Build one offensive sequence, practise defending against it, then save it for reuse.
 
 1. **Build it.** Choose Sasquatch as the dummy. With `Reversal - Action Steps`, define `Dash > Forward Cancel` (`Auto (Fastest)`) followed by LP (`Auto (8)`).
 2. **AG it.** Make the dummy block your attack to trigger its response, then AG the LP. Use PB Counter / PB Stats to check whether you delayed input while fitting six presses inside the window.
-3. **Repeat it.** Set `Loop Steps = yes` and `Loop Wait = Auto (Landing)` to repeat short-dash LP from landing.
-4. **Save it.** Use `Add from current Steps` in Action Patterns to save it as `Short LP`. Add other offense later to practise against randomly selected sequences.
+3. **Try GC too.** Enter your character’s GC against the same LP. Check the success indicator, accepted directions and buttons, and input intervals.
+4. **Repeat it.** Set `Loop Steps = yes` and `Loop Wait = Auto (Landing)` to repeat short-dash LP from landing.
+5. **Save it.** Use `Add from current Steps` in Action Patterns to save it as `Short LP`. Add other offense later to practise against randomly selected sequences.
 
-Follow the **[complete walkthrough: setup, AG feedback, looping and saving](docs/PLAYER_MANUAL.en.md#sasquatch-ag-tutorial)**. Begin with one response at a time; the guide also covers landing-wait conditions and restoring spacing after AG.
+Follow the **[complete walkthrough: setup, AG / GC feedback, looping and saving](docs/PLAYER_MANUAL.en.md#sasquatch-ag-tutorial)**. Begin with one response at a time; the guide also covers landing-wait conditions and restoring spacing after AG.
 
 ## Manual
 

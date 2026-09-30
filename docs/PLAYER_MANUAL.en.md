@@ -38,7 +38,7 @@ The distinction is **the precision of reproduced actions and the detail availabl
 ## Contents
 
 - [1. Choose what to practise](#01-purpose)
-- [Guided practice: AG against Sasquatch’s short-dash LP](#sasquatch-ag-tutorial)
+- [Guided practice: AG and GC against Sasquatch’s short-dash LP](#sasquatch-ag-tutorial)
 - [2. Installation and first setup](#02-install)
 - [3. Controls and position shortcuts](#03-controls)
 - [4. Dummy defense, recovery and counter actions](#04-dummy)
@@ -71,9 +71,9 @@ The distinction is **the precision of reproduced actions and the detail availabl
 If you are new to the tool, start by repeatedly blocking a recorded attack. This makes the trainer readouts easier to observe.
 
 <a id="sasquatch-ag-tutorial"></a>
-## Guided practice: AG against Sasquatch's short-dash LP
+## Guided practice: AG and GC against Sasquatch's short-dash LP
 
-**Build an action → practise one AG → repeat the offense → save it for reuse.** Follow this sequence to try the fork's features together. Complete [installation and input mapping](#02-install) first.
+**Build an action → practise individual AGs and GCs → repeat the offense → save it for reuse.** Follow this sequence to try the fork's features together. Complete [installation and input mapping](#02-install) first.
 
 ### 1. Prepare the counter action
 
@@ -126,7 +126,28 @@ Close the menu and repeat: **make the dummy block your attack → block its LP r
 
 See [Section 8](#08-pb) for the full readouts and counting rules. If AG separates the characters, restore the spacing using [position shortcuts](#03-controls) or reposition before continuing.
 
-### 4. Repeat short-dash LP and practise consecutive AGs
+### 4. GC the same LP
+
+Keep the same two dummy steps and leave `Loop Steps = no`. Now practise **GC (Guard Cancel)** instead of AG. You are practising P1's GC, not making the dummy GC, so keep `Guard Action Type = Reversal - Action Steps`.
+
+| Location | Setting |
+|---|---|
+| `Display > Show Scrolling Input` | `yes` |
+| Its child option `Show GC Trainer` | `yes` |
+| `Trainer > Show GC Command Trace` | `yes` |
+
+You can leave PB Counter / PB Stats enabled. GC Command Trace sits to the right of PB Stats.
+
+1. Make Sasquatch block P1's attack to trigger the short-dash LP response.
+2. Block the LP and enter **the GC command for your P1 character**.
+3. Check `Success` in the trace or `SUCCESS` in the input history. **Activating GC and hitting the opponent with that move are separate outcomes.** First practise the input using the success indicator as your reference.
+4. If it fails, check whether you blocked, whether the directions were accepted in order and whether the final button arrived in time. `Cmd Expired` means the command expired; `GC Expired` means the GC window closed. Inspect direction/button intervals and adjust one part of your input at a time.
+
+![Successful GC Command Trace showing accepted directions and buttons, intervals and Success](images/gc_trace.png)
+
+The image is a readout example; use your own character's GC command. Orange highlights help identify slow inputs but do not by themselves mean failure. See [Section 9](#09-gc) for the full guide. Restore spacing when it changes and repeat under the same conditions.
+
+### 5. Repeat short-dash LP and practise AG or GC
 
 After practising one response at a time, change these `Dummy` settings:
 
@@ -141,9 +162,11 @@ Landing wait enters the required directions before touchdown so the next dash's 
 
 Block the repeated LPs and perform consecutive AGs. Check whether you can maintain six presses and delayed timing across repeated attempts. AG changes spacing; reposition if attacks stop reaching. This action loop does not restore starting positions on every pass as recording playback can.
 
+You can practise GC against the same repeated offense. Choose AG or GC for each attempt; when practising GC, check `Success`. If a GC hit or another interaction changes the situation or spacing, reset the situation and trigger the response again.
+
 To stop looping, open the menu and set `Loop Steps = no`. To disable counter actions too, set `Guard Action Type = None`.
 
-### 5. Save it as `Short LP`
+### 6. Save it as `Short LP`
 
 Import the action into Action Patterns for future use:
 
