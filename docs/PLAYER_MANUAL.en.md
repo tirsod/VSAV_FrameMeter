@@ -101,6 +101,10 @@ If you also play matches through Fightcade, **copy the entire `emulator/fbneo` f
 7. Fully close FBNeo, start it again through the copied batch file and confirm that Run-ahead remains OFF.
 8. Open `Input > Map Game Inputs` and assign game controls and the functions below.
 
+**To play in full screen, check `Video > Blitter options > Windowed Fullscreen`**, then switch with `Video > Toggle fullscreen mode` (`Alt+Enter`). Without the check, FBNeo uses its older full-screen mode, and the Windows windows used to name patterns and to export or import them cannot appear over it.
+
+![FBNeo's Video menu: Blitter options > Windowed Fullscreen checked, and Toggle fullscreen mode (Alt+Enter)](images/fbneo_windowed_fullscreen.png)
+
 Launch matches through your usual Fightcade installation and training through the copied batch file. A shortcut named “VSAV Training” helps distinguish the two.
 
 For a fresh installation, use a short path without spaces or Japanese characters to avoid problems with the existing launcher and Lua file access. Before updating, follow the [backup instructions](#13-save).
@@ -204,6 +208,10 @@ Choose your character for P1 and **Sasquatch** for the P2 dummy. Face each other
 | `Random Guard Action %` | `100%` |
 | `Loop Steps` | `no` (start with one response at a time) |
 
+![The Dummy tab set up for the drill](images/tut_dummy_setup.png)
+
+This screenshot was taken after building the steps in 2, so `Reversal Action Steps` already reads `2 steps`; until then it reads `Empty`.
+
 `Random Guard %` controls blocking probability; `Random Guard Action %` controls the response probability. Set both to 100% to keep the drill consistent.
 
 ### 2. Build short-dash LP
@@ -213,13 +221,25 @@ Open `Reversal Action Steps` with Right or LP and create **only these two steps*
 | Step | Action selection | Wait | Other settings |
 |---|---|---|---|
 | 1 | `Dash > Forward Cancel` | `Auto (Fastest)` | Cancels the forward dash |
-| 2 | `Attack`, with Button `LP` | `Auto (8)` | Direction `Neutral`, Hold `No` |
+| 2 | `Attack`, with Button `LP` | `Auto (8)` | Direction `Neutral` (no Hold row appears) |
 
-For the first step's Wait, open `Fixed Ticks` and select the lowest value, `Auto (Fastest)`. Add step two with `+ Add Step`, then select `Fastest (8)` under Wait. The resulting display is `Auto (8)`. This is different from manually entering a fixed `8 Ticks` wait.
+Step one's action is under `Action > Dash`:
 
-`Auto (8)` is the wait from the dash to the LP input. It does not mean LP has eight-Tick startup.
+![STEP 1 > Action > Dash with Forward Cancel under the cursor](images/tut_action_dash_cancel.png)
+
+Leave the first step's Wait at its default, `Auto (Fastest)` (the lowest value under `Fixed Ticks`). Add step two with `+ Add Step`, then select `Fastest (8)` under Wait. The resulting display is `Auto (8)`. This is different from manually entering a fixed `8 Ticks` wait.
+
+![Step two's Wait screen with Fastest (8) under the cursor](images/tut_wait_fastest8.png)
+
+The line under the list describes the choice under the cursor. `Auto (8)` is the wait from the dash to the LP input. It does not mean LP has eight-Tick startup.
+
+![The finished list: Auto (Fastest) Dash : Forward Cancel, then Auto (8) Attack : LP](images/tut_steps_list.png)
 
 Return to the list and **`Save`**. Close the menu, make Sasquatch block a ground attack from P1, then immediately block his response. Confirm that short-dash LP comes out. The dummy can also perform this response after being hit or waking up; start with a blocked attack to keep the situation consistent.
+
+![After Save, the Dummy tab reads Reversal Action Steps : Sasquatch : 2 steps](images/tut_steps_saved.png)
+
+After `Save`, the Dummy tab shows `Reversal Action Steps : Sasquatch : 2 steps`.
 
 **Check: Setup is complete when the dummy responds with short-dash LP after blocking your attack.**
 
@@ -264,9 +284,9 @@ You can leave PB Counter / PB Stats enabled. GC Command Trace sits to the right 
 3. Check `Success` in the trace or `SUCCESS` in the input history. **Activating GC and hitting the opponent with that move are separate outcomes.** First practice the input using the success indicator as your reference.
 4. If it fails, check whether you blocked, whether the directions were accepted in order and whether the final button was pressed in time. `Cmd Expired` means the command expired; `GC Expired` means the GC window closed. Inspect direction/button intervals and adjust one part of your input at a time.
 
-![Successful GC Command Trace showing accepted directions and buttons, intervals and Success](images/gc_trace.png)
+![Demitri guard-cancels Sasquatch's LP: the trace reads Success 14t and the input bar SUCCESS 14t](images/tut_gc_success.png)
 
-The image is a readout example; use your own character's GC command. Orange highlights help identify slow inputs but do not by themselves mean failure. See [Section 9](#09-gc) for the full guide. Restore spacing when it changes and repeat under the same conditions.
+In this example Demitri guard-cancelled Sasquatch's LP. The trace shows → 7t, ↓ 4t, ↘ 4t and the buttons 0t (on the same Tick as ↘), then `Success 14t`; the input bar shows `SUCCESS 14t` too. Use your own character's GC command. Orange highlights help identify slow inputs but do not by themselves mean failure. See [Section 9](#09-gc) for the full guide. Restore spacing when it changes and repeat under the same conditions.
 
 **Check: `Success` / `SUCCESS` confirms that GC activated. Whether the move hit the opponent is a separate result.**
 
@@ -278,6 +298,8 @@ After practicing one response at a time, change these `Dummy` settings:
 |---|---|
 | `Loop Steps` | `yes` |
 | `Loop Wait` | `Auto (Landing)` |
+
+![Loop Steps : yes and Loop Wait : Auto (Landing), with the description of both Auto choices](images/tut_loop_landing.png)
 
 Close the menu and make the dummy block another attack to start the first response. **Enabling Loop alone does not start the first pass.**
 
@@ -295,9 +317,20 @@ Save the sequence in Action Patterns for future use:
 
 1. Make sure you have selected `Save` in Action Steps.
 2. Switch `Dummy > Guard Action Type` to `Reversal - Action Patterns`.
+
+   ![Guard Action Type : Reversal - Action Patterns, with Reversal Action Patterns still Empty](images/tut_patterns_type.png)
+
 3. Open `Reversal Action Patterns` and choose **`Add from current Steps`**.
-4. Name it **`Short LP`** and confirm. This copies your currently saved Steps.
+
+   ![The empty pattern list with Add from current Steps under the cursor](images/tut_patterns_add.png)
+
+4. Name it **`Short LP`** and confirm. This copies your currently saved Steps. The name is typed in a separate Windows window, and the game is stopped until you close it. If the emulator covers it, it comes back in front on its own; click it to type. This window cannot appear over FBNeo's older full-screen mode; to play in full screen, check `Video > Blitter options > Windowed Fullscreen` (see [installation](#02-install)).
+
+   ![The Pattern Name window with Short LP typed in](images/tut_pattern_name.png)
+
 5. Check that `Short LP` is marked `[x]` in the list. MP toggles whether a pattern is selected.
+
+   ![The pattern list showing [x] 01 Short LP](images/tut_patterns_ticked.png)
 6. Keep `Random Guard Action % = 100%` and make the dummy block your attack to test it. Use `Loop Steps = no` for individual responses, or `yes` with `Auto (Landing)` for repeated practice.
 
 **Check: Select `Short LP` and trigger a response. If the saved short-dash LP plays, you are done.**
@@ -537,6 +570,8 @@ Action Steps holds one action list; Action Patterns holds multiple named lists. 
 3. Create one with `New` or import the current Steps with `Add from current Steps`.
 4. Edit the contents and Save.
 5. Press MP on the list to mark a pattern `[x]`, or set `Use in Random = Yes` in its individual screen.
+
+   ![A pattern's own screen with Use in Random : Yes](images/patterns_use_in_random.png)
 6. Set `Random Guard Action % = 100%` and create a response opportunity.
 
 ![The Action Patterns list](images/action_patterns.png)
@@ -545,7 +580,7 @@ Action Steps holds one action list; Action Patterns holds multiple named lists. 
 
 With one pattern checked, that pattern runs. With several checked, one is chosen at random. **Whole sequences are selected**, not individual steps mixed between patterns. With `Loop Steps`, another selection is made on the next pass.
 
-Use `Edit / Rename / Copy / Move / Delete` to manage the list. Naming opens a separate Windows dialog. Use ASCII names because of the in-game text display's limitations.
+Use `Edit / Rename / Copy / Move / Delete` to manage the list. Naming opens a separate Windows dialog. This window cannot appear over FBNeo's older full-screen mode; to play in full screen, check `Video > Blitter options > Windowed Fullscreen` (see [installation](#02-install)). Use ASCII names because of the in-game text display's limitations.
 
 ### 7.2 Exchange pattern files
 
@@ -555,7 +590,7 @@ Use `Edit / Rename / Copy / Move / Delete` to manage the list. Naming opens a se
 | `Export this Pattern` on an individual pattern | Exports that pattern |
 | `Import from a File` | Adds patterns from a file |
 
-The game pauses until you close the file dialog. If it is behind the emulator, use `Alt+Tab` to find it.
+The game pauses until you close the file dialog. If the emulator covers it, it comes back in front on its own; click it to use it.
 
 Import adds to the existing list without replacing it. Imported patterns start unchecked; review them before enabling them. A file identifying a different dummy character is rejected.
 
@@ -928,7 +963,7 @@ When resetting settings for diagnosis, move the JSON aside instead of deleting i
 | Coin will not switch control to P2 | Stop recording playback first |
 | An option is missing | Parent settings, Guard Action Type and character selection can hide it |
 | Numbers differ from a guide | Ticks versus displayed frames, speed, single move versus chain, measured side, super flash and projectile measurement limits |
-| File operation appears frozen | Look for a Windows dialog behind the emulator using `Alt+Tab` |
+| File operation appears frozen | A Windows dialog is waiting for you. If the emulator covers it, it comes back in front on its own; click it. It cannot appear over the older full-screen mode: check `Video > Blitter options > Windowed Fullscreen` |
 | Behavior did not change after updating | Fully close FBNeo and restart using the updated copy's batch file |
 
 For reports, include version, P1/P2 characters, which character is on each side, screenshots of your settings and steps to reproduce the problem. This manual assumes Run-ahead OFF. If an issue occurs with it ON, disable it in the training installation, fully restart and check again.

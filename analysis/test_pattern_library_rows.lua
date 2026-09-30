@@ -225,7 +225,7 @@ rows_eq("知らせの行", {
   "   A window has opened for the name of this pattern.",
   "   The game is stopped until you close it.",
   "   ",
-  "   If it is hiding behind this one, Alt+Tab to it.",
+  "   If it goes behind this one, it comes back on top. Click it.",
   "   Cancel there changes nothing.",
 })
 eq("カーソルは出ない", selected(), "")

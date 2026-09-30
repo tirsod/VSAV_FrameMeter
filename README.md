@@ -74,6 +74,8 @@ The target game is **Vampire Savior - the lord of vampire (970519 Japan / `vsavj
 5. Fully close FBNeo, relaunch through the same batch file and confirm Run-ahead remains OFF.
 6. Use `Input > Map Game Inputs` to configure game controls and the functions below. Configure P2 game inputs too.
 
+To play in full screen, check `Video > Blitter options > Windowed Fullscreen` first. The older full-screen mode cannot show the windows used to name, export and import patterns.
+
 Use a short path without spaces or Japanese characters. Before updating an existing installation, make a [backup](#updates-and-backups).
 
 ### Basic controls

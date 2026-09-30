@@ -1475,7 +1475,9 @@ local function naming_items(s)
 		{ plain = true, label = "A window has opened for the name of " .. what .. "." },
 		{ plain = true, label = "The game is stopped until you close it." },
 		{ plain = true, label = "" },
-		{ plain = true, label = "If it is hiding behind this one, Alt+Tab to it." },
+		-- Alt+Tab did not bring it back past a top-most emulator (user,
+		-- 2026-09-30); the dialog now puts itself back on top (see the .ps1).
+		{ plain = true, label = "If it goes behind this one, it comes back on top. Click it." },
 		{ plain = true, label = "Cancel there changes nothing." },
 	}
 end
@@ -1779,7 +1781,9 @@ local function transfer_items(s)
 		{ plain = true, label = "Pick where to " .. verb .. " the pattern file." },
 		{ plain = true, label = "The game is stopped until you close it." },
 		{ plain = true, label = "" },
-		{ plain = true, label = "If it is hiding behind this one, Alt+Tab to it." },
+		-- Alt+Tab did not bring it back past a top-most emulator (user,
+		-- 2026-09-30); the dialog now puts itself back on top (see the .ps1).
+		{ plain = true, label = "If it goes behind this one, it comes back on top. Click it." },
 		{ plain = true, label = "Cancel there changes nothing." },
 	}
 end

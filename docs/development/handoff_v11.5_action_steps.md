@@ -1925,3 +1925,37 @@ readme も直す、v11.7.16.1 もだす、v11.7.17 もだす。readme もいれ�
   あるので、クリーンに取得した環境では `os.listdir` で止まっていた。**あれば入れる** に変更 (本人)。
   クリーン環境 192 ファイル、この PC 211 ファイルで、差は `support/ips` の 19 ファイルだけ
 - 文書では IPS の手順を説明しない (本人の方針。v11.7.17 で README に戻したものは削除済み。戻さない)
+
+## マニュアルに実機の手順画像、ダイアログを最前面に保つ (2026-09-30)
+
+- **サスカッチのチュートリアルに実機画像 12 枚** (`docs/images/tut_*.png`、`patterns_use_in_random.png`)。
+  本人の撮影から、`Guard : None` が写るものはその行より下だけを切り抜いた (チュートリアルは All Guard)。
+  画像で分かった誤りを直した: 2 ステップ目 (Attack / Neutral) には **Hold の行が出ない** (`can_hold` →
+  `motion_holdable("none")` が false)、1 ステップ目の Wait は **初期値がもう `Auto (Fastest)`**
+- **名前入力とファイル選択のダイアログが FBNeo の裏に回り、Alt+Tab でも戻らなかった** (本人)。開いた瞬間の
+  TopMost だけで、FBNeo 自身が最前面だと FBNeo を手前にした時点で負けていた。`name_prompt.ps1` /
+  `pattern_file.ps1` に 300ms ごとの `SetWindowPos(HWND_TOPMOST, SWP_NOACTIVATE)` を足した。別プロセスの
+  最前面ウィンドウで修正前後を比べて確認 (実験はサンドボックス外で)。**実機: ウィンドウ化した全画面では出る。
+  古い形式の全画面 (排他フルスクリーン) では出ない** (本人)。ゲーム内の案内と日英マニュアルから「Alt+Tab」を
+  外し、排他フルスクリーンでは使えないと書いた
+- **排他フルスクリーンの対策は未着手**。本人案の「Esc を送って全画面を解除」は、ダイアログの間 FBNeo が
+  `io.popen` で止まっていてキーを処理できないので効かない見込み。候補は、開く前に
+  `SHQueryUserNotificationState` (QUNS_RUNNING_D3D_FULL_SCREEN) で排他フルスクリーンを見分けて、開かずに
+  画面で知らせること。FBNeo の描画方式で本当に見分けられるかは未測定 (プローブで測ってから)
+
+## マニュアルに実機の手順画像、ダイアログを最前面に保つ (2026-09-30)
+
+- **サスカッチのチュートリアルに実機画像** (`docs/images/tut_*.png`、`patterns_use_in_random.png`、
+  `fbneo_windowed_fullscreen.png`)。本人の撮影から、`Guard : None` が写るものはその行より下だけを切り抜いた
+  (チュートリアルは All Guard)。画像で分かった誤りを直した: 2 ステップ目 (Attack / Neutral) には **Hold の行が
+  出ない** (`can_hold` → `motion_holdable("none")` が false)、1 ステップ目の Wait は **初期値がもう
+  `Auto (Fastest)`**
+- **名前入力とファイル選択のダイアログが FBNeo の裏に回り、Alt+Tab でも戻らなかった** (本人)。開いた瞬間の
+  TopMost だけで、FBNeo 自身が最前面だと FBNeo を手前にした時点で負けていた。`name_prompt.ps1` /
+  `pattern_file.ps1` に 300ms ごとの `SetWindowPos(HWND_TOPMOST, SWP_NOACTIVATE)` を足した。別プロセスの
+  最前面ウィンドウで修正前後を比べて確認 (実験はサンドボックス外で)。**実機: Windowed Fullscreen では出る。
+  古い形式の全画面では出ない** (本人)。ゲーム内の案内と日英マニュアルから「Alt+Tab」を外した
+- **全画面で遊ぶときは `Video > Blitter options > Windowed Fullscreen` にチェック**、と README とマニュアル
+  2 章に書いた (本人の指示)。本人案の「Esc を送って全画面を解除」は、ダイアログの間 FBNeo が `io.popen` で
+  止まっていてキーを処理できないので効かない見込み。古い形式の全画面を開く前に見分けて知らせる案
+  (`SHQueryUserNotificationState`) は未着手・未測定

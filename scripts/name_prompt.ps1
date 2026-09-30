@@ -33,6 +33,24 @@ $name = ''
 try {
   Add-Type -AssemblyName System.Windows.Forms
   Add-Type -AssemblyName System.Drawing
+  # KEPT ON TOP WHILE IT IS OPEN, NOT ONLY WHEN IT OPENS (user, 2026-09-30).
+  #
+  # TopMost alone loses to an emulator that is top-most itself (full screen, or
+  # its own always-on-top): bring FBNeo forward and it covers this window, and
+  # Alt+Tab did not bring it back while the emulator sat frozen on io.popen.
+  # A timer below puts it back at the top of the top-most band every 300 ms.
+  # SWP_NOACTIVATE: it never takes the focus - click it to type. Compiling this
+  # costs about a quarter of a second (measured), while the game is stopped.
+  Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class VsavTopmost {
+  [DllImport("user32.dll")]
+  static extern bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
+  // HWND_TOPMOST; SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE
+  public static void Keep(IntPtr hWnd) { SetWindowPos(hWnd, new IntPtr(-1), 0, 0, 0, 0, 0x0013); }
+}
+'@
 
   $f = New-Object System.Windows.Forms.Form
   $f.Text = 'VSAV Training - Pattern Name'
@@ -68,9 +86,15 @@ try {
   $f.Controls.AddRange(@($lab, $box, $ok, $no))
   $f.AcceptButton = $ok
   $f.CancelButton = $no
-  $f.Add_Shown({ $f.Activate(); $box.Focus(); $box.SelectAll() })
+  $keep = New-Object System.Windows.Forms.Timer
+  $keep.Interval = 300
+  $keep.Add_Tick({ [VsavTopmost]::Keep($f.Handle) })
+  $f.Add_Shown({ $f.Activate(); $box.Focus(); $box.SelectAll(); $keep.Start() })
 
-  if ($f.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+  $answer = $f.ShowDialog()
+  $keep.Stop()
+  $keep.Dispose()
+  if ($answer -eq [System.Windows.Forms.DialogResult]::OK) {
     $name = $box.Text
     $status = 'OK'
   } else {

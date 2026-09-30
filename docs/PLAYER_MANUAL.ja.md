@@ -101,6 +101,10 @@ Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐた�
 7. FBNeoを完全に終了して複製先のバッチから起動し直し、Run-aheadがOFFになっていることを確認します。
 8. FBNeoの `Input > Map Game Inputs` を開き、ゲーム操作と下表の機能を割り当てます。
 
+**全画面で遊ぶときは、`Video > Blitter options > Windowed Fullscreen` にチェックを入れてください。** 全画面の切り替えは `Video > Toggle fullscreen mode`（`Alt+Enter`）です。チェックがないと古い形式の全画面になり、パターンの名前入力やExport・Importで開くWindowsのウィンドウを表示できません。
+
+![FBNeoのVideoメニュー。Blitter options > Windowed Fullscreenにチェック、全画面の切り替えはToggle fullscreen mode（Alt+Enter）](images/fbneo_windowed_fullscreen.png)
+
 対戦は通常のFightcadeから、練習は複製先のバッチから起動します。複製先のバッチへのショートカットを「VSAVトレーニング」などの名前で作ると、起動先を区別しやすくなります。
 
 初回は、配置先に空白や日本語を含まない短いパスを使うと、既存ランチャーやLuaのファイル読み込みに起因する問題を避けやすくなります。更新時は、先に[13章](#13-save)のバックアップを行ってください。
@@ -204,6 +208,10 @@ LP＝弱P、MP＝中P、HP＝強P、LK＝弱K、MK＝中K、HK＝強Kです。
 | `Random Guard Action %` | `100%` |
 | `Loop Steps` | `no`（最初は一回ずつ） |
 
+![練習用に設定したDummyタブ](images/tut_dummy_setup.png)
+
+この画像は2で動きを作った後に撮ったため、`Reversal Action Steps`は`2 steps`と出ています。作る前は`Empty`です。
+
 `Random Guard %`はガードする確率、`Random Guard Action %`は反撃を行う確率です。ここでは両方100%にして、同じ条件で練習します。
 
 ### 2. ショートダッシュ小Pを作る
@@ -213,13 +221,25 @@ LP＝弱P、MP＝中P、HP＝強P、LK＝弱K、MK＝中K、HK＝強Kです。
 | ステップ | Actionの選択 | Wait | その他 |
 |---|---|---|---|
 | 1 | `Dash > Forward Cancel` | `Auto (Fastest)` | ダッシュを途中でキャンセルする動作 |
-| 2 | `Attack`、Buttonを`LP` | `Auto (8)` | Directionは`Neutral`、Holdは`No` |
+| 2 | `Attack`、Buttonを`LP` | `Auto (8)` | Directionは`Neutral`（Holdの行は出ません） |
 
-1ステップ目のWaitは`Fixed Ticks`を開き、最小値の`Auto (Fastest)`にします。2ステップ目は`+ Add Step`で追加し、Waitの`Fastest (8)`を選びます。編集後の表示は`Auto (8)`です。数値の`8 Ticks`を手入力する設定とは区別してください。
+1ステップ目の動作は`Action > Dash`の中にあります。
 
-`Auto (8)`は、ダッシュから小Pを入力するまでの待ち時間です。小Pの発生が8 Tickという意味ではありません。
+![STEP 1 > Action > Dash。カーソルはForward Cancel](images/tut_action_dash_cancel.png)
+
+1ステップ目のWaitは、初期値の`Auto (Fastest)`（`Fixed Ticks`の最小値）のままにします。2ステップ目は`+ Add Step`で追加し、Waitの`Fastest (8)`を選びます。編集後の表示は`Auto (8)`です。数値の`8 Ticks`を手入力する設定とは区別してください。
+
+![2ステップ目のWait画面。カーソルはFastest (8)](images/tut_wait_fastest8.png)
+
+一覧の下には、カーソルを合わせた選択肢の説明が出ます。`Auto (8)`は、ダッシュから小Pを入力するまでの待ち時間です。小Pの発生が8 Tickという意味ではありません。
+
+![完成した一覧。1がAuto (Fastest) Dash : Forward Cancel、2がAuto (8) Attack : LP](images/tut_steps_list.png)
 
 一覧に戻り、**`Save`**します。メニューを閉じ、P1でサスカッチに地上の技をガードさせてから、すぐにガードしてください。設定したショートダッシュ小Pが反撃として出ることを確認します。このタイプは被弾後や起き上がりも反撃のきっかけになりますが、最初はガードさせて確かめると条件を揃えやすくなります。
+
+![Save後のDummyタブ。Reversal Action Steps : Sasquatch : 2 steps](images/tut_steps_saved.png)
+
+`Save`すると、Dummyタブの表示が`Reversal Action Steps : Sasquatch : 2 steps`になります。
 
 **確認：技をガードさせると、ショートダッシュ小Pで反撃してくれば準備完了です。**
 
@@ -264,9 +284,9 @@ PB Counter／PB StatsはONのままで構いません。GC Command TraceはPB St
 3. トレースの`Success`、または入力履歴の`SUCCESS`でGC成立を確認します。**GCが成立したかと、その技が相手に当たったかは別です。** まず成功表示を基準に入力を練習します。
 4. 失敗したら、ガード自体が成立したか、方向が順番に受け付けられたか、最後のボタンが間に合ったかを確認します。`Cmd Expired`はコマンドの失効、`GC Expired`はGC受付終了を示します。方向・ボタンの間隔を見て、一か所ずつ入力を調整します。
 
-![成立時のGC Command Trace。方向とボタンの受付、入力間隔、Successを確認する](images/gc_trace.png)
+![デミトリがサスカッチの小PにGC。トレースはSuccess 14t、入力履歴はSUCCESS 14t](images/tut_gc_success.png)
 
-画像は表示の読み方の例で、GCコマンドは自分のキャラクターに合わせます。オレンジの表示は入力の遅れを見る目印であり、それだけで失敗を意味しません。詳しい読み方は[9章](#09-gc)を参照してください。間合いが変わったら戻し、同じ条件で繰り返します。
+この例では、デミトリがサスカッチの小PをGCしています。トレースは→ 7t、↓ 4t、↘ 4t、ボタン0t（↘と同じTick）の後に`Success 14t`、入力履歴にも`SUCCESS 14t`が出ています。GCコマンドは自分のキャラクターに合わせます。オレンジの表示は入力の遅れを見る目印であり、それだけで失敗を意味しません。詳しい読み方は[9章](#09-gc)を参照してください。間合いが変わったら戻し、同じ条件で繰り返します。
 
 **確認：まず`Success`／`SUCCESS`でGC成立を確認します。相手に当たったかは別に確認します。**
 
@@ -278,6 +298,8 @@ PB Counter／PB StatsはONのままで構いません。GC Command TraceはPB St
 |---|---|
 | `Loop Steps` | `yes` |
 | `Loop Wait` | `Auto (Landing)` |
+
+![Loop Steps : yesとLoop Wait : Auto (Landing)。説明文に2つのAutoの違いが出る](images/tut_loop_landing.png)
 
 メニューを閉じ、もう一度こちらの技をガードさせて最初の反撃を始めます。**LoopをONにしただけでは初回は始まりません。**
 
@@ -295,9 +317,20 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 
 1. Action Stepsを`Save`済みであることを確認します。
 2. `Dummy > Guard Action Type = Reversal - Action Patterns`に切り替えます。
+
+   ![Guard Action Type : Reversal - Action Patterns。Reversal Action Patternsはまだ空](images/tut_patterns_type.png)
+
 3. `Reversal Action Patterns`を開き、**`Add from current Steps`**を選びます。
-4. 名前を **`Short LP`** として確定します。保存済みの現在のStepsがコピーされます。
+
+   ![空のパターン一覧。カーソルはAdd from current Steps](images/tut_patterns_add.png)
+
+4. 名前を **`Short LP`** として確定します。保存済みの現在のStepsがコピーされます。名前は別に開くWindowsのウィンドウで入力し、閉じるまでゲームは止まります。エミュレーターの裏に隠れても自動で手前に戻るので、クリックして入力してください。FBNeoの古い形式の全画面ではこのウィンドウを表示できないので、全画面で遊ぶときは`Video > Blitter options > Windowed Fullscreen`にチェックを入れてください（[2章](#02-install)）。
+
+   ![Short LPと入力したPattern Nameのウィンドウ](images/tut_pattern_name.png)
+
 5. 一覧で`Short LP`が`[x]`になっていることを確認します。MPで使用チェックを切り替えられます。
+
+   ![パターン一覧に[x] 01 Short LPが並ぶ](images/tut_patterns_ticked.png)
 6. `Random Guard Action % = 100%`のまま、こちらの技をガードさせて動作を確認します。一回ずつなら`Loop Steps = no`、連続練習なら`yes`と`Auto (Landing)`を使います。
 
 **確認：`Short LP`を選び、保存したショートダッシュ小Pが出れば完了です。**
@@ -537,6 +570,8 @@ Action Stepsが一つの動作一覧なのに対し、Action Patternsは名前�
 3. `New` で作成するか、`Add from current Steps` で現在のStepsを取り込みます。
 4. 内容を編集し、Saveします。
 5. 一覧でMPを押して、使用するパターンを `[x]` にします。個別画面の `Use in Random = Yes` でも指定できます。
+
+   ![パターンの個別画面。Use in Random : Yes](images/patterns_use_in_random.png)
 6. `Random Guard Action % = 100%` にして、反撃のきっかけを作ります。
 
 ![Action Patternsの一覧](images/action_patterns.png)
@@ -545,7 +580,7 @@ Action Stepsが一つの動作一覧なのに対し、Action Patternsは名前�
 
 チェックが一つならそのパターン、複数ならその中からランダムに選びます。一つのパターン内のステップを混ぜるのではなく、**一連の動きを丸ごと選びます**。`Loop Steps` を使う場合は次の周でも選び直します。
 
-`Edit / Rename / Copy / Move / Delete` で編集・名前変更・複製・並べ替え・削除ができます。名前の入力ではWindowsの別ウィンドウが開きます。ゲーム内表示の制約があるため、名前は半角英数字を基本にしてください。
+`Edit / Rename / Copy / Move / Delete` で編集・名前変更・複製・並べ替え・削除ができます。名前の入力ではWindowsの別ウィンドウが開きます。FBNeoの古い形式の全画面ではこのウィンドウを表示できないので、全画面で遊ぶときは`Video > Blitter options > Windowed Fullscreen`にチェックを入れてください（[2章](#02-install)）。ゲーム内表示の制約があるため、名前は半角英数字を基本にしてください。
 
 ### 7.2 ファイルで受け渡す
 
@@ -555,7 +590,7 @@ Action Stepsが一つの動作一覧なのに対し、Action Patternsは名前�
 | 個別画面の `Export this Pattern` | 選んだパターンを出す |
 | `Import from a File` | ファイルからパターンを追加する |
 
-ファイル選択ウィンドウを閉じるまでゲームは止まります。ウィンドウが裏に隠れた場合は `Alt+Tab` で切り替えてください。
+ファイル選択ウィンドウを閉じるまでゲームは止まります。エミュレーターの裏に隠れても自動で手前に戻るので、クリックして操作してください。
 
 インポートは既存一覧への追加で、置き換えません。追加されたパターンは使用チェックがOFFです。内容を確認してから有効にしてください。キャラクター情報が現在のダミーと異なるファイルは拒否されます。
 
@@ -928,7 +963,7 @@ AGを `Guard` 側で設定することで、`Guard Action Type` を反撃用に�
 | CoinでP2を操作できない | 録画再生中なら先に停止 |
 | 設定項目が見えない | 親設定、Guard Action Type、選択キャラクターによって非表示になる |
 | 数値が攻略情報と違う | ティック／表示フレーム、速度、単発／チェーン、測定側、暗転、飛び道具の測定範囲 |
-| ファイル操作で止まったように見える | Windowsダイアログが裏にないか。`Alt+Tab` で確認 |
+| ファイル操作で止まったように見える | Windowsダイアログが入力を待っています。エミュレーターの裏に隠れても自動で手前に戻るので、クリックして操作。古い形式の全画面では表示できないので、`Video > Blitter options > Windowed Fullscreen`にチェックを入れる |
 | 更新したのに挙動が変わらない | FBNeoを完全終了して、更新先のバッチから再起動 |
 
 不具合を報告するときは、バージョン、P1／P2キャラ、左右配置、設定画面、再現手順を添えると条件を共有できます。本書の使用条件はRun-ahead OFFです。ONで異常が出た場合は、トレーニング用FBNeoでOFFにして完全再起動し、再現するか確認してください。

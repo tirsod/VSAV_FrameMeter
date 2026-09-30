@@ -68,6 +68,25 @@ try {
   $owner.StartPosition = 'CenterScreen'
   $owner.Show()
   $owner.Activate()
+  # AND KEPT THERE WHILE THE DIALOG IS OPEN (user, 2026-09-30) - the same fix
+  # as name_prompt.ps1: TopMost alone loses to an emulator that is top-most
+  # itself, and Alt+Tab did not bring the dialog back. Every 300 ms the owner,
+  # and with it the dialog it owns, goes back to the top of the top-most band.
+  # SWP_NOACTIVATE: the focus is never taken.
+  Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class VsavTopmost {
+  [DllImport("user32.dll")]
+  static extern bool SetWindowPos(IntPtr hWnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
+  // HWND_TOPMOST; SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE
+  public static void Keep(IntPtr hWnd) { SetWindowPos(hWnd, new IntPtr(-1), 0, 0, 0, 0, 0x0013); }
+}
+'@
+  $keep = New-Object System.Windows.Forms.Timer
+  $keep.Interval = 300
+  $keep.Add_Tick({ [VsavTopmost]::Keep($owner.Handle) })
+  $keep.Start()
 
   if ($Mode -eq 'save') {
     $d = New-Object System.Windows.Forms.SaveFileDialog
@@ -96,6 +115,8 @@ try {
   }
 
   $result = $d.ShowDialog($owner)
+  $keep.Stop()
+  $keep.Dispose()
   $owner.Close()
 
   if ($result -ne [System.Windows.Forms.DialogResult]::OK) {
