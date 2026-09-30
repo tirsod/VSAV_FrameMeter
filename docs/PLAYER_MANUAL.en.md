@@ -124,7 +124,7 @@ Close the menu and repeat: **make the dummy block your attack → block its LP r
 - `MultiPush` counts Ticks with simultaneous presses. `LateMash` counts inputs after the window closes, not post-activation inputs that are still inside it.
 - Use PB Stats' success rate and average input timing to track improvement under the same conditions.
 
-See [Section 8](#08-pb) for the full readouts and counting rules. If AG separates the characters, restore the spacing using [position shortcuts](#03-controls) or reposition before continuing.
+See [Section 8](#08-pb) for the full readouts and counting rules.
 
 ### 4. GC the same LP
 
@@ -160,7 +160,7 @@ Close the menu and make the dummy block another attack to start the first respon
 
 Landing wait enters the required directions before touchdown so the next dash's final input arrives on landing. Use it to practise against repeated short-dash LPs starting as early as possible on landing. `Auto (After)` starts inputs only once the dummy can act and does not produce the same timing. See [Section 6](#06-steps) for limitations such as unavailable landing prediction.
 
-Block the repeated LPs and perform consecutive AGs. Check whether you can maintain six presses and delayed timing across repeated attempts. AG changes spacing; reposition if attacks stop reaching. This action loop does not restore starting positions on every pass as recording playback can.
+Block the repeated LPs and perform consecutive AGs. Check whether you can maintain six presses and delayed timing across repeated attempts. After AG pushes the dummy away, it approaches again with short dashes, so keep responding to its offense.
 
 You can practise GC against the same repeated offense. Choose AG or GC for each attempt; when practising GC, check `Success`. If a GC hit or another interaction changes the situation or spacing, reset the situation and trigger the response again.
 
