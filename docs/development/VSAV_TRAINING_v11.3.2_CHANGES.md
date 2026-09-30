@@ -6,9 +6,9 @@
 
 内部の実験番号、カットした試作、メニューのテンキー表記は入れていません。
 
-起き上がりの詳細は [wakeup_reversal_behavior.md](wakeup_reversal_behavior.md) です。
+起き上がりの詳細は [wakeup_reversal_behavior.md](wakeup_reversal_behavior_v11.3.2.md) です。
 
-同じ内容の一覧は [COLLABORATOR_CHANGES.html](COLLABORATOR_CHANGES.html) です。
+同じ内容の一覧は `COLLABORATOR_CHANGES.html`（現在のリポジトリには未収録） です。
 
 ## メニューの操作速度
 
@@ -44,7 +44,7 @@ poke 時に向きバイト `0xFF880B` を相手向きにします。
 - `scripts/menu.lua`
 - `scripts/vsav_training_master_script.lua`
 - `scripts/guardCancel.lua`
-- [wakeup_reversal_behavior.md](wakeup_reversal_behavior.md)
+- [wakeup_reversal_behavior.md](wakeup_reversal_behavior_v11.3.2.md)
 
 ## 含めていないもの
 

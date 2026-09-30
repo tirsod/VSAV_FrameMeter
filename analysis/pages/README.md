@@ -9,7 +9,7 @@
 | `release_notes.html` | **公開を止めた。** 変更点ページと内容が重なるため。ソースは残してあるが更新しない | (旧) https://claude.ai/code/artifact/c2c88a21-4125-49c3-a6cf-737a47c6945b |
 
 公開しているページは変更点ページの1つだけ。リリースノートは
-`RELEASE_NOTES.md` / `RELEASE_NOTES.ja.md` として配布物に同梱し、ページは持たない。
+`docs/RELEASE_NOTES.md` / `docs/RELEASE_NOTES.ja.md` として配布物に同梱し、ページは持たない。
 版を出すときはこの markdown 2 本と変更点ページの計 3 箇所を更新する。
 
 公開物に個人名・ハンドル・X へのリンクを入れない (2026-09-14 の判断)。

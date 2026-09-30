@@ -3,11 +3,11 @@
 VSAV (Vampire Savior / CPS2 / 970519 Japan) の FBNeo 用トレーニングツール。Lua。
 **リポジトリはこのフォルダ。** `C:\fightcade\emulator\fbneo` は移行済みで触らない。
 
-**最初に `handoff_v11.5_action_steps.md` を読むこと。** 経緯・落とし穴・残件はそこ。
-Action Pattern Library の仕様は `design_action_pattern_library.md`。UI から設計し直す方針。
-着地予測の調査結果と実装案は `design_landing_prediction.md`。
-PB 採点の再設計 (保留) は `design_pb_score.md`。
-ゲーム側の解析結果は `VSAV_MEMORY_NOTES.md`(事実だけ。推測を書かない)。
+**最初に `docs/development/handoff_v11.5_action_steps.md` を読むこと。** 経緯・落とし穴・残件はそこ。
+Action Pattern Library の仕様は `docs/development/design_action_pattern_library.md`。UI から設計し直す方針。
+着地予測の調査結果と実装案は `docs/development/design_landing_prediction.md`。
+PB 採点の再設計 (保留) は `docs/development/design_pb_score.md`。
+ゲーム側の解析結果は `docs/development/VSAV_MEMORY_NOTES.md`(事実だけ。推測を書かない)。
 
 ## 守ること
 

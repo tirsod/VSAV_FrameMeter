@@ -143,8 +143,8 @@ Update the separate training installation. A distribution may contain recordings
 
 ## Release history and reports
 
-- [Release notes](RELEASE_NOTES.md)
-- [日本語リリースノート](RELEASE_NOTES.ja.md)
+- [Release notes](docs/RELEASE_NOTES.md)
+- [日本語リリースノート](docs/RELEASE_NOTES.ja.md)
 - [This fork's Issues](https://github.com/vampiresavior001/VSAV_Training/issues)
 
 When reporting a problem, include the version, P1/P2 characters, side arrangement, setting screenshots and reproduction steps. Confirm that Run-ahead is OFF in the training FBNeo.

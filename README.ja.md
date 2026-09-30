@@ -143,8 +143,8 @@ FBNeoを終了する前に編集内容を保存し、次のファイルをバッ
 
 ## 変更履歴・不具合報告
 
-- [日本語リリースノート](RELEASE_NOTES.ja.md)
-- [Release notes (English)](RELEASE_NOTES.md)
+- [日本語リリースノート](docs/RELEASE_NOTES.ja.md)
+- [Release notes (English)](docs/RELEASE_NOTES.md)
 - [このフォークのIssues](https://github.com/vampiresavior001/VSAV_Training/issues)
 
 不具合を報告する際は、バージョン、P1／P2キャラクター、左右配置、設定画面、再現手順を添えてください。トレーニング用FBNeoのRun-aheadがOFFであることも確認してください。

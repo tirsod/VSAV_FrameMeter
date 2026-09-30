@@ -938,7 +938,7 @@ AGを `Guard` 側で設定することで、`Guard Action Type` を反撃用に�
 - 比較対象のフォーク元：[`fc2`、92980a5](https://github.com/NBeing/VSAV_Training/tree/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6)。最速入力の制約と既存トレーナーは[元のmenu.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/menu.lua)、入力列の処理は[元のcontroller.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/controller.lua)と照合。
 - 比較はソースに基づく機能・制御方式の確認。両版の実機比較および上記の永久コンボ定義の実行は本書作成時には未実施。永久コンボの例は開発者から提供された用途説明に基づく。
 - 対象：v11.7.18（項目名は2026-09-29に確認）。最初の確認：[351e310（v11.7.16）](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20)。
-- [README](../README.ja.md)／[日本語リリースノート](../RELEASE_NOTES.ja.md)。
+- [README](../README.ja.md)／[日本語リリースノート](RELEASE_NOTES.ja.md)。
 - メニュー・設定：[menu.lua](../scripts/menu.lua)、[config.lua](../scripts/config.lua)。
 - 基本操作：[controller.lua](../scripts/controller.lua)、[position.lua](../scripts/position.lua)。
 - 録画：[recordingWizard.lua](../scripts/recordingWizard.lua)、[macro.lua](../scripts/macro.lua)。

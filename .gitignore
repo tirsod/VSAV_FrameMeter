@@ -19,36 +19,9 @@
 # players: kept on this machine, out of the public tree (user, 2026-09-29).
 /docs/PLAYER_UX_REVIEW.*.md
 !/CLAUDE.md
-# Shipped in every release but authored upstream, so they were never in here -
-# the zip carried them forward from the previous zip instead. That chain broke
-# the moment the Downloads folder was cleared: the files existed nowhere else
-# and a rebuild would have quietly dropped them. Tracked now.
-!/handoff_VSAV_investigation.md
-# Handoff notes are authored here and are the first thing a new session
-# reads. Whitelisted by pattern so the next one does not have to remember
-# to add itself - the last one was only tracked because someone noticed.
-!/handoff_*.md
-# Design notes, same reasoning and the same trap: design_action_pattern_library.md
-# was written, committed with `git add -A`, and silently left untracked by the
-# /* rule above. The commit message said it was in; git ls-files said otherwise.
-# Whitelisted by pattern so the next one cannot repeat it.
-!/design_*.md
+# Development documents and release notes live under the tracked docs/ tree.
 !/run_vsav_training_flatpak.sh
 !/vsav_training_flatpak.desktop
-# Same story, found the hard way: these two are shipped in every zip but were
-# never whitelisted, so the folder overwrite took them and git had no copy.
-# Recovered from the v11.3.3 zip.
-!/VSAV_TRAINING_v11.3.2_CHANGES.md
-!/wakeup_reversal_behavior_v11.3.2.md
-# Release notes live in the repo as well as on the page. Both languages.
-!/RELEASE_NOTES.md
-!/RELEASE_NOTES.ja.md
-# The engine notes. The header above says these are authored here and belong in
-# the repo, and they never were - 36 KB of measurements (the camera and its
-# 16 px rule, the free-1 signature, $21 holding its value for one tick, the air
-# dash at +8) existed on disk only. Every edit made to this file since it was
-# created was never committed. Third time this class of miss has been found.
-!/VSAV_MEMORY_NOTES.md
 
 # Bulk data, at any depth. These stay on disk - reversal_logs_archive is the
 # evidence base and must never be deleted (see analysis/archive_logs.py) - but

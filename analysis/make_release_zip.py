@@ -35,8 +35,8 @@ DIST = os.path.join(os.path.dirname(os.path.dirname(ROOT)), "dist")
 ROOT_FILES = [
     "README.md",
     "README.ja.md",
-    "RELEASE_NOTES.md",
-    "RELEASE_NOTES.ja.md",
+    "docs/RELEASE_NOTES.md",
+    "docs/RELEASE_NOTES.ja.md",
     "docs/PLAYER_MANUAL.en.md",
     "docs/PLAYER_MANUAL.ja.md",
     "run_vsav_training.bat",
