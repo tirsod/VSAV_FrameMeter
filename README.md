@@ -76,23 +76,31 @@ Use a short path without spaces or Japanese characters. Before updating an exist
 
 ### Basic controls
 
-| FBNeo input entry | Function |
-|---|---|
-| `Lua Hotkey 1` | Open/close the training menu |
-| `Lua Hotkey 2` | Restore positions using a direction modifier |
-| `Lua Hotkey 3` | Toggle recording playback looping |
-| `Lua Hotkey 4` | Return to character select |
-| `Volume Up` | Start/stop standard recording |
-| `Volume Down` | Start/stop playback |
-| `P1 Coin` | Switch the controlled side in a match; choose a stage at character select |
+**Always assign `Lua Hotkey 1` and `P1 Coin`: neither has a menu equivalent.** The other shortcuts can be replaced by the menu operations below.
+
+| FBNeo input entry | Function | Menu alternative |
+|---|---|---|
+| `Lua Hotkey 1` | Open/close the training menu | No alternative — **required** |
+| `Lua Hotkey 2` | Restore positions using a direction modifier | In `Dummy > Position`, use Left/Right to choose a layout. LP restores it again; HP also closes the menu |
+| `Lua Hotkey 3` | Toggle recording playback looping | In `Recording > Looped Playback`, use Left/Right to switch between `yes` and `no` |
+| `Lua Hotkey 4` | Return to character select | Select `Game > Return to Character Select` and press Right or LP |
+| `Volume Up` | Start/stop standard recording | Open `Recording > Recording Wizard` with Right or LP, choose a slot and use automatic recording (see below) |
+| `Volume Down` | Start/stop playback | Select `Recording > Play Recording` and press Right or LP. Activate it again to stop |
+| `P1 Coin` | Switch the controlled side in a match; choose a stage at character select | No alternative — **required** |
+
+Open the menu with `Lua Hotkey 1`. At the tab names, use Left/Right to switch tabs, then Up/Down to select an item. LP means light punch. `>` means “tab > item.”
+
+**To record through the menu:** choose a slot in the wizard, release all inputs, then start moving to begin recording. Finish your action and release the controls. Recording ends automatically after about two seconds of no input while the dummy is free to act. Select save at confirmation and press LP. Use `Volume Up` if you want to start and stop recording manually.
+
+Recording's `Looped Playback` and Action Steps' `Loop Steps` are separate settings. See the [recording instructions](docs/PLAYER_MANUAL.en.md#05-recording) for details.
 
 `Volume Up / Down` are FBNeo input entries. You can assign them to arcade-stick or controller buttons.
 
 <a id="first-ag-drill"></a>
 
-## First drill: AG and GC against Sasquatch's short-dash LP
+## First drill: Practise AG and GC against Sasquatch
 
-Build one offensive sequence, practise defending against it, then save it for reuse.
+Make Sasquatch perform short-dash LP, then practise AG (Advancing Guard / Push Block) and GC (Guard Cancel) against it. Save the sequence so you can use it again next time.
 
 1. **Build it.** Choose Sasquatch as the dummy. With `Reversal - Action Steps`, define `Dash > Forward Cancel` (`Auto (Fastest)`) followed by LP (`Auto (8)`).
 2. **AG it.** Make the dummy block your attack to trigger its response, then AG the LP. Use PB Counter / PB Stats to check whether you delayed input while fitting six presses inside the window.
@@ -100,7 +108,7 @@ Build one offensive sequence, practise defending against it, then save it for re
 4. **Repeat it.** Set `Loop Steps = yes` and `Loop Wait = Auto (Landing)` to repeat short-dash LP from landing.
 5. **Save it.** Use `Add from current Steps` in Action Patterns to save it as `Short LP`. Add other offense later to practise against randomly selected sequences.
 
-Follow the **[complete walkthrough: setup, AG / GC feedback, looping and saving](docs/PLAYER_MANUAL.en.md#sasquatch-ag-tutorial)**. Begin with one response at a time; the guide also covers landing-wait conditions and restoring spacing after AG.
+Follow the **[complete walkthrough: setup, AG / GC feedback, looping and saving](docs/PLAYER_MANUAL.en.md#sasquatch-ag-tutorial)**. Start with one response at a time, then move on to repeated practice.
 
 ## Manual
 

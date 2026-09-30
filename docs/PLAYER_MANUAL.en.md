@@ -38,7 +38,7 @@ The distinction is **the precision of reproduced actions and the detail availabl
 ## Contents
 
 - [1. Choose what to practise](#01-purpose)
-- [Guided practice: AG and GC against Sasquatch’s short-dash LP](#sasquatch-ag-tutorial)
+- [Guided practice: AG and GC against Sasquatch](#sasquatch-ag-tutorial)
 - [2. Installation and first setup](#02-install)
 - [3. Controls and position shortcuts](#03-controls)
 - [4. Dummy defense, recovery and counter actions](#04-dummy)
@@ -68,12 +68,12 @@ The distinction is **the precision of reproduced actions and the detail availabl
 | Find why a GC failed | GC Command Trace, input history | [Section 9](#09-gc) |
 | Examine advantage, interrupts and landing situations | Tick Data, Air Guard Gaps | [Section 10](#10-data) |
 
-If you are new to the tool, start by repeatedly blocking a recorded attack. This makes the trainer readouts easier to observe.
+If you are new to the tool, follow the tutorial below to set up the dummy and practise AG and GC.
 
 <a id="sasquatch-ag-tutorial"></a>
-## Guided practice: AG and GC against Sasquatch's short-dash LP
+## Guided practice: AG and GC against Sasquatch
 
-**Build an action → practise individual AGs and GCs → repeat the offense → save it for reuse.** Follow this sequence to try the fork's features together. Complete [installation and input mapping](#02-install) first.
+Make Sasquatch perform short-dash LP, then practise AG (Advancing Guard / Push Block) and GC (Guard Cancel) against it. Follow these steps: **build the action → try AG and GC → repeat the offense → save it.** Complete [installation and input mapping](#02-install) first.
 
 ### 1. Prepare the counter action
 
@@ -100,7 +100,7 @@ Open `Reversal Action Steps` with Right or LP and create **only these two steps*
 
 For step one's Wait, open `Fixed Ticks` and select its minimum, `Auto (Fastest)`. Add step two with `+ Add Step`, then select `Fastest (8)` under Wait. The resulting display is `Auto (8)`. This is different from manually entering a fixed `8 Ticks` wait.
 
-The implementation's measured Auto value for an attack following Sasquatch's `Forward Cancel` is eight Ticks. Combining that dash cancel with LP creates short-dash LP. `Auto (8)` describes this pair's input timing; it does not mean LP has eight-Tick startup.
+`Auto (8)` is the wait from the dash to the LP input. It does not mean LP has eight-Tick startup.
 
 Return to the list and **`Save`**. Close the menu, make Sasquatch block a ground attack from P1, then immediately block his response. Confirm that short-dash LP comes out. This action type can also trigger after being hit or waking up; start with a blocked attack to keep the situation consistent.
 
@@ -128,7 +128,7 @@ See [Section 8](#08-pb) for the full readouts and counting rules.
 
 ### 4. GC the same LP
 
-Keep the same two dummy steps and leave `Loop Steps = no`. Now practise **GC (Guard Cancel)** instead of AG. You are practising P1's GC, not making the dummy GC, so keep `Guard Action Type = Reversal - Action Steps`.
+Keep the dummy settings unchanged and practise your character's GC against the same LP. Leave `Loop Steps = no` and enable these readouts:
 
 | Location | Setting |
 |---|---|
@@ -179,7 +179,7 @@ Import the action into Action Patterns for future use:
 
 This is a copy: editing the pattern later does not change the original Action Steps. Check Loop settings separately from these two steps.
 
-**With only `Short LP` selected, the dummy performs the same sequence every time.** Save other offensive sequences and mark several `[x]` to select one at random for each response opportunity. This takes the drill from AG against a known action to reacting to different offense.
+**With only `Short LP` selected, the dummy performs the same sequence every time.** Save other offensive sequences and mark several `[x]` to select one at random for each response opportunity. This takes the drill from AG and GC against a known action to reacting to different offense.
 
 <a id="02-install"></a>
 ## 2. Installation and first setup
@@ -211,15 +211,23 @@ Launch matches through your usual Fightcade installation and training through th
 
 For a fresh installation, use a short path without spaces or Japanese characters to avoid problems with the existing launcher and Lua file access. Before updating, follow the [backup instructions](#13-save).
 
-| FBNeo input entry | Purpose | Priority |
+**Always assign `Lua Hotkey 1` and `P1 Coin`: neither has a menu equivalent.** The other shortcuts can be replaced by the menu operations below.
+
+| FBNeo input entry | Function | Menu alternative |
 |---|---|---|
-| `Lua Hotkey 1` | Open/close the training menu | Required |
-| `Lua Hotkey 2` | Reposition both characters using a direction modifier | Recommended |
-| `Lua Hotkey 3` | Toggle recording playback looping | Optional |
-| `Lua Hotkey 4` | Return to character select | Recommended |
-| `Volume Up` | Start/stop standard recording | For standard recording |
-| `Volume Down` | Start/stop playback | Recommended |
-| `P1 Coin` | Switch controlled side in a match; select a stage at character select | Recommended |
+| `Lua Hotkey 1` | Open/close the training menu | No alternative — **required** |
+| `Lua Hotkey 2` | Restore positions using a direction modifier | In `Dummy > Position`, use Left/Right to choose a layout. LP restores it again; HP also closes the menu |
+| `Lua Hotkey 3` | Toggle recording playback looping | In `Recording > Looped Playback`, use Left/Right to switch between `yes` and `no` |
+| `Lua Hotkey 4` | Return to character select | Select `Game > Return to Character Select` and press Right or LP |
+| `Volume Up` | Start/stop standard recording | Open `Recording > Recording Wizard` with Right or LP, choose a slot and use automatic recording (see below) |
+| `Volume Down` | Start/stop playback | Select `Recording > Play Recording` and press Right or LP. Activate it again to stop |
+| `P1 Coin` | Switch the controlled side in a match; choose a stage at character select | No alternative — **required** |
+
+Open the menu with `Lua Hotkey 1`. At the tab names, use Left/Right to switch tabs, then Up/Down to select an item. LP means light punch. `>` means “tab > item.”
+
+**To record through the menu:** choose a slot in the wizard, release all inputs, then start moving to begin recording. Finish your action and release the controls. Recording ends automatically after about two seconds of no input while the dummy is free to act. Select save at confirmation and press LP. Use `Volume Up` if you want to start and stop recording manually.
+
+Recording's `Looped Playback` and Action Steps' `Loop Steps` are separate settings. See the [recording instructions](#05-recording) for details.
 
 `Volume Up / Down` are **entries in FBNeo's input mapping**, not instructions to change Windows audio volume.
 
