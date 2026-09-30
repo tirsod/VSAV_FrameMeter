@@ -4,7 +4,7 @@ See what the Warlord sees, and practice what the Warlord practices, in VSAV trai
 
 English | [日本語](README.ja.md)
 
-**A training mode for Fightcade 2 / FBNeo that reproduces opponent actions in internal frames (Ticks), helping you test offense and practise defense.** Detailed input and interaction readouts let you examine why an attempt succeeded or failed and adjust your timing.
+**A training mode for Fightcade 2 / FBNeo that reproduces opponent actions with internal-frame (Tick) precision, so you can test your offense and practice your defense.** Detailed displays of your inputs and their timing help you see why an attempt succeeded or failed and adjust your timing.
 
 This fork extends [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2). This README covers **v11.7.18**.
 
@@ -14,26 +14,26 @@ This fork extends [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Tr
 
 A Tick is an internal game frame.
 
-**Reproduce expert-level execution without having to perform it yourself.** Recording requires you to play the opponent's character and record the sequence by hand. With Action Steps, you can define difficult sequences such as an earliest-possible dash into its fastest attack, or crouching medium kick canceled into Tenraiha. Specify the actions and their timing, then practise AG, GC and interrupts against the dummy's execution.
+**Reproduce expert-level execution without having to perform it yourself.** To make a recording, you need to perform the sequence yourself using the opponent's character. With Action Steps, you can define difficult sequences such as a dash followed by an attack, both timed as early as possible, or crouching medium kick canceled into Tenraiha. Specify the actions and their timing, then practice AG, GC and interrupting those sequences.
 
 | Game speed | Displayed frames and internal frames |
 |---|---|
 | Normal | One displayed frame = one Tick |
 | Turbo 3 | Three displayed frames = four Ticks |
 
-This fork controls inputs on that internal clock, improving response timing that was limited in the original. On wake-up, after blocking and after landing, you can specify **light-normal or throw challenges, jumps and dashes**, as well as special-move reversals.
+This fork controls inputs on that internal clock, improving the precision of responses that were limited in the original. On wake-up, after blocking and after landing, you can specify **light attacks, throws, jumps and dashes**, as well as special-move reversals.
 
-**Reproduce an opponent's action → try your response → examine the readouts → adjust your timing and repeat.** Precise action control and detailed feedback work together to improve both offense and defense. See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions governing earliest inputs.
+**Reproduce an opponent's action → try your response → examine the readouts → adjust your timing and repeat.** Precise action control and detailed feedback work together to improve both offense and defense. See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions required to act at the earliest possible moment.
 
-## What you can test and practise
+## What you can test and practice
 
 | Goal | How to use the tool |
 |---|---|
 | **Test when your offense works** | Make the dummy respond with a light normal, throw, jump or dash, then test whether your pressure or wake-up setup beats it |
-| **Reproduce strings and combos precisely** | Define Tick-based actions with Action Steps; save, randomize and share them with Action Patterns. Definitions can even complete infinite combos for Bulleta (B.B. Hood) or Bishamon |
-| **Measure setup timing** | Use Action Timeline in Tick Data to examine time spent in wake-up setups, or the starting distance for a walk-up throw performed within 15 displayed frames (20 Ticks at Turbo 3) |
-| **Practise AG (Advancing Guard / Push Block)** | Delay input while fitting six valid presses inside the window. Inspect timing, simultaneous presses, inputs after the window closes, averages and success rate |
-| **Practise GC (Guard Cancel)** | Inspect accepted directions, buttons and their intervals to identify command expiry or late inputs |
+| **Reproduce strings and combos precisely** | Define Tick-based actions with Action Steps; save, randomize and share them with Action Patterns. You can even define sequences that complete infinite combos for Bulleta (B.B. Hood) or Bishamon |
+| **Measure setup timing** | Use Action Timeline in Tick Data to measure the time spent setting up wake-up pressure, or how far away you can start a walk-up throw and still perform it within 15 displayed frames (20 Ticks at Turbo 3) |
+| **Practice AG (Advancing Guard / Push Block)** | Delay input while fitting six valid presses inside the window. Inspect timing, simultaneous presses, inputs after the window closes, averages and success rate |
+| **Practice GC (Guard Cancel)** | Inspect accepted directions, buttons and their intervals to identify command expiry or late inputs |
 | **Examine situations after air guarding** | Find interruptible gaps in air chains, evaluate actual interrupt timing, see when you air-blocked and check landing advantage |
 
 **Tick Data** avoids the turbo-frame variation of the original display-frame measurements. Its counting conventions for startup, active time, recovery and frame advantage are aligned with those used by strategy sites. See [manual Section 10](docs/PLAYER_MANUAL.en.md#10-data) for measurement conditions and how to read Action Timeline.
@@ -42,11 +42,11 @@ This fork controls inputs on that internal clock, improving response timing that
 
 ![PB Counter and PB Stats showing AG input count, timing, simultaneous presses and practice results](docs/images/pb_counter_stats.png)
 
-Here, six presses on Ticks 5–13 of the window activated AG. Two Ticks contained simultaneous button presses, and no inputs fell after the window closed. **Check not only whether AG activated, but what to improve next.** The English UI calls AG Push Block / PB. See [AG practice](docs/PLAYER_MANUAL.en.md#08-pb) for the full readout guide.
+Here, six presses on Ticks 5–13 of the window activated AG. Two Ticks contained simultaneous button presses, and no inputs fell after the window closed. **See whether AG activated and what you can improve on your next attempt.** The English UI refers to AG as Push Block / PB. See [AG practice](docs/PLAYER_MANUAL.en.md#08-pb) for the full readout guide.
 
 ### Choose easy recording or precise action control
 
-Added in this fork, **Recording Wizard** makes it easy to capture an input sequence from start to finish. Recording starts on your first input and ends automatically after the action and your inputs finish. Review playback before saving, then use looped or random playback for repeated practice.
+Added in this fork, **Recording Wizard** makes it easy to capture an input sequence from start to finish. Recording starts with your first input and ends automatically after you finish the action and leave the controls released. Review playback before saving, then use looped or random playback for repeated practice.
 
 **Recording and playback operate in displayed frames. Use Action Steps for drills that require precise Tick-level input timing.**
 
@@ -86,16 +86,16 @@ Use a short path without spaces or Japanese characters. Before updating an exist
 | FBNeo input entry | Function | Menu alternative |
 |---|---|---|
 | `Lua Hotkey 1` | Open/close the training menu | No alternative — **required** |
-| `Lua Hotkey 2` | Restore positions using a direction modifier | In `Dummy > Position`, use Left/Right to choose a layout. LP restores it again; HP also closes the menu |
-| `Lua Hotkey 3` | Toggle recording playback looping | In `Recording > Looped Playback`, use Left/Right to switch between `yes` and `no` |
+| `Lua Hotkey 2` | Restore positions by holding a direction and pressing the hotkey | In `Dummy > Position`, use Left/Right to choose a layout. LP restores it again; HP also closes the menu |
+| `Lua Hotkey 3` | Toggle looping for recorded inputs | In `Recording > Looped Playback`, use Left/Right to switch between `yes` and `no` |
 | `Lua Hotkey 4` | Return to character select | Select `Game > Return to Character Select` and press Right or LP |
 | `Volume Up` | Start/stop standard recording | Open `Recording > Recording Wizard` with Right or LP, choose a slot and use automatic recording (see below) |
 | `Volume Down` | Start/stop playback | Select `Recording > Play Recording` and press Right or LP. Activate it again to stop |
-| `P1 Coin` | Switch the controlled side in a match; choose a stage at character select | No alternative — **required** |
+| `P1 Coin` | Switch which character you control during a match; choose a stage at character select | No alternative — **required** |
 
-Open the menu with `Lua Hotkey 1`. At the tab names, use Left/Right to switch tabs, then Up/Down to select an item. LP means light punch. `>` means “tab > item.”
+Open the menu with `Lua Hotkey 1`. With a tab name selected, use Left/Right to switch tabs, then Up/Down to select an item. LP means light punch. `>` means “tab > item.”
 
-**To record through the menu:** choose a slot in the wizard, release all inputs, then start moving to begin recording. Finish your action and release the controls. Recording ends automatically after about two seconds of no input while the dummy is free to act. Select save at confirmation and press LP. Use `Volume Up` if you want to start and stop recording manually.
+**To record through the menu:** choose a slot in the wizard, release all inputs, then start moving to begin recording. Finish your action and release the controls. Recording ends automatically after about two seconds of no input while the dummy is free to act. On the confirmation screen, select the save option and press LP. Use `Volume Up` if you want to start and stop recording manually.
 
 Recording's `Looped Playback` and Action Steps' `Loop Steps` are separate settings. See the [recording instructions](docs/PLAYER_MANUAL.en.md#05-recording) for details.
 
@@ -105,15 +105,15 @@ Recording's `Looped Playback` and Action Steps' `Loop Steps` are separate settin
 
 <a id="first-ag-drill"></a>
 
-## First drill: Practise AG and GC against Sasquatch
+## First drill: Practice AG and GC against Sasquatch
 
-Make Sasquatch perform short-dash LP, then practise AG (Advancing Guard / Push Block) and GC (Guard Cancel) against it. Save the sequence so you can use it again next time.
+Make Sasquatch perform short-dash LP, then practice AG (Advancing Guard / Push Block) and GC (Guard Cancel) against it. Save the sequence so you can use it again next time.
 
 1. **Build it.** Choose Sasquatch as the dummy. With `Reversal - Action Steps`, define `Dash > Forward Cancel` (`Auto (Fastest)`) followed by LP (`Auto (8)`).
-2. **Practise AG.** Make the dummy block your attack to trigger its response, then AG the LP. Use PB Counter / PB Stats to check whether you delayed input while fitting six presses inside the window.
-3. **Try GC too.** Enter your character’s GC against the same LP. Check the success indicator, accepted directions and buttons, and input intervals.
-4. **Repeat it.** Set `Loop Steps = yes` and `Loop Wait = Auto (Landing)` to repeat short-dash LP from landing.
-5. **Save it.** Use `Add from current Steps` in Action Patterns to save it as `Short LP`. Add other offense later to practise against randomly selected sequences.
+2. **Practice AG.** Make the dummy block your attack to trigger its response, then block the LP and perform AG. Use PB Counter / PB Stats to check whether you delayed input while fitting six presses inside the window.
+3. **Try GC too.** Block the same LP and enter your character’s GC command. Check the success indicator, accepted directions and buttons, and input intervals.
+4. **Repeat it.** Set `Loop Steps = yes` and `Loop Wait = Auto (Landing)` to repeat short-dash LP as soon as the dummy lands.
+5. **Save it.** Use `Add from current Steps` in Action Patterns to save it as `Short LP`. Save other attacks later to practice against randomly selected sequences.
 
 Follow the **[complete walkthrough: setup, AG / GC feedback, looping and saving](docs/PLAYER_MANUAL.en.md#sasquatch-ag-tutorial)**. Start with one response at a time, then move on to repeated practice.
 
@@ -144,7 +144,7 @@ Save your edits before closing FBNeo, then back up:
 | Settings, Action Steps and Action Patterns | `scripts/training_settings.json` |
 | Recordings | Entire `scripts/macro` folder |
 
-Update the separate training installation. A distribution may contain recordings, so avoid overwriting your own. Fully restart FBNeo afterward and confirm Run-ahead is OFF.
+Update the separate training installation. The downloaded files may include recordings, so take care not to overwrite your own. Fully restart FBNeo afterward and confirm Run-ahead is OFF.
 
 ## Release history and reports
 
@@ -152,7 +152,7 @@ Update the separate training installation. A distribution may contain recordings
 - [日本語リリースノート](docs/RELEASE_NOTES.ja.md)
 - [This fork's Issues](https://github.com/vampiresavior001/VSAV_Training/issues)
 
-When reporting a problem, include the version, P1/P2 characters, side arrangement, setting screenshots and reproduction steps. Confirm that Run-ahead is OFF in the training FBNeo.
+When reporting a problem, include the version, P1/P2 characters, which character is on each side, screenshots of your settings and steps to reproduce the problem. Confirm that Run-ahead is OFF in your training copy of FBNeo.
 
 ## Original project and credits
 
