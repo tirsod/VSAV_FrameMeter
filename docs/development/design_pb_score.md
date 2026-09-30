@@ -4,7 +4,7 @@
 > 現在の操作方法は[プレイヤーマニュアル](../PLAYER_MANUAL.ja.md)、現行実装は[ソース](../../scripts/)を確認してください。 / For current behavior, consult the [player manual](../PLAYER_MANUAL.en.md) and source.
 
 > **2026-09-28: 一部を実装した (`scripts/pbStats.lua`)。**本人の決めた形は次のとおりで、この
-> メモとは違うところがある。詳しくは handoff の「Show PB Stats を作り直す」。
+> メモとは違うところがある。詳しくは `scripts/pbStats.lua` の冒頭のコメント。
 > - 3 択は Pass / Fail / Guard Only。**被弾は独立の数でなく Fail に入れる** (本人)
 > - 平均はこのメモの「開始遅延・押下数」ではなく、**PB Count の行の値そのもの** (数、at: の頭と
 >   終わり、MultiPush、LateMash) を、押してガードした回で平均する

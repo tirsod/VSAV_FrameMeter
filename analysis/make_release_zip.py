@@ -112,8 +112,10 @@ def main():
     print("entries:", len(names))
     for must in ("scripts/pattern_file.ps1", "scripts/name_prompt.ps1"):
         print("contains %s:" % must, must in names)
+    # docs/development is for developers and lives on GitHub only; the zip is
+    # for players (user, 2026-09-30). Nothing walks it, and this says so.
     for must_not in ("scripts/training_settings.json", "scripts/reversal_logs",
-                     "scripts/action_pattern_trace.log"):
+                     "scripts/action_pattern_trace.log", "docs/development"):
         hit = [n for n in names if n.startswith(must_not)]
         print("excluded %s:" % must_not, not hit)
     print("wrote", out, os.path.getsize(out), "bytes")

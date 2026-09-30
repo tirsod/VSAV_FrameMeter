@@ -8,7 +8,8 @@ VSAV (Vampire Savior / CPS2 / 970519 Japan) の FBNeo 用トレーニングツ�
 `CLAUDE.md` なので、ルートには `@docs/development/CLAUDE.md` の 1 行だけを置く (手元専用、git 管理外。
 2026-09-30、本人: 引き継ぎ用の資料なので開発資料へ)。ルートの 1 行が無いと、この指示は読まれない。
 
-**最初に `docs/development/handoff_v11.5_action_steps.md` を読むこと。** 経緯・落とし穴・残件はそこ。
+**開発資料の一覧は `docs/development/README.md`。** 以前の引継ぎ文書 `handoff_v11.5_action_steps.md` は
+v11.7.19 の後に削除した (本人: 使っていない)。経緯を調べるときは git の履歴から出す (`git log --all -- '*handoff_v11.5*'`)。
 Action Pattern Library の仕様は `docs/development/design_action_pattern_library.md`。UI から設計し直す方針。
 着地予測の調査結果と実装案は `docs/development/design_landing_prediction.md`。
 PB 採点の再設計 (保留) は `docs/development/design_pb_score.md`。
@@ -31,6 +32,7 @@ PB 採点の再設計 (保留) は `docs/development/design_pb_score.md`。
 GitHub へ出すときは commit-tree に -p fc2-v11 を付ける (「GitHub への公開手順」)
 再テストを頼む前に reversal_logs を archive する (消さない)
 training_settings.json は絶対に配布物へ入れない
+docs/development/ (開発資料) は配布 zip に入れない。zip は配布用、開発資料は GitHub 上だけ
 リリース時は Analysis タブのトグルを全部 OFF にする (analysis/test_release_defaults.lua)
 ビルドした zip はリポジトリに置かない (../../dist)
 スクリーンショットは依頼の前に全行読む (測定値が既に写っていたことがある)
@@ -222,3 +224,7 @@ PowerShell では `master^{tree}` を**クオートする** (`'master^{tree}'`)�
 
 公開前に `git diff --stat 318d2ea fc2-v11` で**変わるファイルが想定どおりの
 本数か**見る。桁が違うなら親を付け忘れている。
+
+**公開ブランチには別の作業が直接コミットを積むことがある** (2026-09-30、文書整備の 12 コミット)。
+公開の前に `git fetch origin` し、`git rev-list --count fc2-v11..origin/fc2-v11` が 0 でなければ、
+先にそのコミットを master へ取り込む (cherry-pick)。手元で上書きしない。
