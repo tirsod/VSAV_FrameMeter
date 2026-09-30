@@ -24,6 +24,13 @@
 # 2026-09-30).
 # Development documents and release notes live under the tracked docs/ tree.
 !/run_vsav_training_flatpak.sh
+# The IPS patches ship in the release zip, so they are tracked too (user,
+# 2026-09-30): a clean clone builds the same zip. Only support/ips - the rest
+# of support/ is FBNeo's own install. The vsavj files are the upstream fc2
+# branch's, byte for byte; ssf2xjr1 came with them on this machine.
+!/support/
+/support/*
+!/support/ips/
 !/vsav_training_flatpak.desktop
 
 # Bulk data, at any depth. These stay on disk - reversal_logs_archive is the

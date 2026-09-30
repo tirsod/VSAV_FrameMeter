@@ -88,11 +88,11 @@ def main():
             names.append(f)
         else:
             missing.append(f)
-    # The IPS patches are not in the repository - they came with the upstream
-    # install and live only on the machine that has always built the zip - so
-    # a clean clone has no support/ips and walk() stopped the build there.
-    # Shipped when present, skipped with a note when not (user, 2026-09-30).
-    # The documents no longer describe them either way.
+    # The IPS patches ship in the zip (user, 2026-09-30) and are tracked in the
+    # repository since then, so a clean clone has them too. The existence test
+    # stays: before that they lived only on the machine that built the zip, and
+    # walk() stopped a clean clone's build on the missing folder. The documents
+    # do not describe the patches either way.
     if os.path.isdir(os.path.join(ROOT, "support", "ips")):
         walk("support/ips", names)
     else:
