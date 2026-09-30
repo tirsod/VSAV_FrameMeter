@@ -88,7 +88,15 @@ def main():
             names.append(f)
         else:
             missing.append(f)
-    walk("support/ips", names)
+    # The IPS patches are not in the repository - they came with the upstream
+    # install and live only on the machine that has always built the zip - so
+    # a clean clone has no support/ips and walk() stopped the build there.
+    # Shipped when present, skipped with a note when not (user, 2026-09-30).
+    # The documents no longer describe them either way.
+    if os.path.isdir(os.path.join(ROOT, "support", "ips")):
+        walk("support/ips", names)
+    else:
+        print("support/ips not found: IPS patches not included")
     walk("scripts", names)
     # The manuals' screenshots, beside the manuals that show them.
     if os.path.isdir(os.path.join(ROOT, "docs", "images")):
