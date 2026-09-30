@@ -4,73 +4,49 @@ See what the Warlord sees, and practice what the Warlord practices, in VSAV trai
 
 English | [日本語](README.ja.md)
 
-**A training mode for Fightcade 2 / FBNeo that uses internal-frame (Tick) control to reproduce opponent actions precisely, letting you practise GC, AG and interrupts after air guarding.**
+**A training mode for Fightcade 2 / FBNeo that reproduces opponent actions in internal frames (Ticks), helping you test offense and practise defense.** Detailed input and interaction readouts let you examine why an attempt succeeded or failed and adjust your timing.
 
-Detailed input and interaction timelines help you identify what went wrong and track your improvement.
+This fork extends [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2). This README covers **v11.7.18**.
 
-This v11 series builds on [VSAV_Training's original fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2), extending dummy control and training readouts. This README describes **v11.7.18**.
+**[Download](https://github.com/vampiresavior001/VSAV_Training/archive/refs/heads/fc2-v11.zip)** · [Installation](#windows-installation) · [First AG drill](#first-ag-drill) · [English manual](docs/PLAYER_MANUAL.en.md)
 
-**[English player manual](docs/PLAYER_MANUAL.en.md)** · [Release notes](RELEASE_NOTES.md) · [日本語リリースノート](RELEASE_NOTES.ja.md)
+## Reproduce, test and improve in Ticks
 
-## What this fork offers
-
-### Reproduce opponent actions in internal frames
-
-A Tick is an internal game frame in Vampire Savior.
+A Tick is an internal game frame.
 
 | Game speed | Displayed frames and internal frames |
 |---|---|
 | Normal | One displayed frame = one Tick |
 | Turbo 3 | Three displayed frames = four Ticks |
 
-This fork controls inputs on that internal clock, improving the response timing that was limited in the original. On wake-up, after blocking and after landing, you can make the dummy perform **light-normal or throw challenges, jumps and dashes**, as well as special-move reversals.
+This fork controls inputs on that internal clock, improving response timing that was limited in the original. On wake-up, after blocking and after landing, you can specify **light-normal or throw challenges, jumps and dashes**, as well as special-move reversals.
 
-Does your pressure beat the earliest challenge? Can the opponent escape your wake-up setup? Who acts first after landing? Specify the dummy's response and test the interaction directly.
+**Reproduce an opponent's action → try your response → examine the readouts → adjust your timing and repeat.** Precise action control and detailed feedback work together to improve both offense and defense. See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions governing earliest inputs.
 
-### Build strings and complex combos with Action Steps
+## What you can test and practise
 
-**Action Steps** lets you define “when” and “what” one action at a time, using internal-frame timing. Combine normals, specials, throws, jumps and dashes to reproduce anything from individual responses to complex sequences. Definitions can even complete infinite combos for Bulleta (B.B. Hood) or Bishamon.
-
-**Action Patterns** lets you save named sequences, randomly select among multiple candidates and share them as files.
-
-For actions after landing, you can choose how the sequence waits:
-
-- **After**: begins the command once the dummy can act. It does not enter the motion in advance, so a dash is delayed until its command is complete.
-- **Landing**: can begin the necessary command before touchdown so its final input arrives on the landing Tick.
-
-Landing does not always guarantee the earliest action, for example when touchdown cannot be predicted. See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for settings and conditions.
-
-### Practise defense against the reproduced offense
-
-| Practice | What the readouts show |
+| Goal | How to use the tool |
 |---|---|
-| **AG (Advancing Guard / Push Block)** | Whether you delayed input while fitting six valid presses inside the window; timing, simultaneous presses and presses after the window closes; averages and success rate in PB Stats |
-| **GC (Guard Cancel)** | Directions and buttons accepted by the game, their intervals, command/window expiry and contact during guard-pose persistence |
-| **Interrupts after air guarding** | Gaps in apparently continuous air chains, when you actually pressed and how long your response took to hit |
-| **Landing after air guarding** | When you air-blocked a jump or air-dash attack, and which player could act first after landing, in Ticks |
+| **Test when your offense works** | Make the dummy respond with a light normal, throw, jump or dash, then test whether your pressure or wake-up setup beats it |
+| **Reproduce strings and combos precisely** | Define Tick-based actions with Action Steps; save, randomize and share them with Action Patterns. Definitions can even complete infinite combos for Bulleta (B.B. Hood) or Bishamon |
+| **Measure setup timing** | Use Action Timeline in Tick Data to examine time spent in wake-up setups, or the starting distance for a walk-up throw performed within 15 displayed frames (20 Ticks at Turbo 3) |
+| **Practise AG (Advancing Guard / Push Block)** | Delay input while fitting six valid presses inside the window. Inspect timing, simultaneous presses, inputs after the window closes, averages and success rate |
+| **Practise GC (Guard Cancel)** | Inspect accepted directions, buttons and their intervals to identify command expiry or late inputs |
+| **Examine situations after air guarding** | Find interruptible gaps in air chains, evaluate actual interrupt timing, see when you air-blocked and check landing advantage |
 
-The AG counter **includes presses after AG activates**. This is intentional: you can practise completing six presses every time without stopping when an earlier press happens to activate AG. Distinguish these presses from `LateMash`, which counts inputs after the window closes.
+**Tick Data** avoids the turbo-frame variation of the original display-frame measurements. Its counting conventions for startup, active time, recovery and frame advantage are aligned with those used by strategy sites. See [manual Section 10](docs/PLAYER_MANUAL.en.md#10-data) for measurement conditions and how to read Action Timeline.
 
-The English UI calls AG **Push Block / PB**.
+### See what happened to your inputs
 
-### Measure move properties in internal frames
+![PB Counter and PB Stats showing AG input count, timing, simultaneous presses and practice results](docs/images/pb_counter_stats.png)
 
-The original Frame Data measured displayed frames, which made its results unstable at turbo speeds. This fork’s **Tick Data** measures internal frames to avoid variation caused by turbo frames. Its **counting conventions for startup, active time, recovery and frame advantage are aligned with those used by strategy sites**. This does not guarantee a match with every published value; check move conditions and counting conventions when comparing results.
+Here, six presses on Ticks 5–13 of the window activated AG. Two Ticks contained simultaneous button presses, and no inputs fell after the window closed. **Check not only whether AG activated, but what to improve next.** The English UI calls AG Push Block / PB. See [AG practice](docs/PLAYER_MANUAL.en.md#08-pb) for the full readout guide.
 
-**Action Timeline in Tick Data** displays a sequence of actions so you can examine the total time a setup takes in Ticks, as well as individual move data. This lets you inspect both move properties and the duration of a complete setup in internal frames.
+### Choose easy recording or precise action control
 
-For example, you can test **how many Ticks to spend before a wake-up attack reaches its intended timing**, or **how far away you can start a walk-up throw and still perform it within 15 displayed frames (20 Ticks at Turbo 3)**. Check the elapsed time in Action Timeline, vary the starting distance and compare the actual results to develop practical setups.
+Added in this fork, **Recording Wizard** makes it easy to capture an input sequence from start to finish. Recording starts on your first input and ends automatically after the action and your inputs finish. Review playback before saving, then use looped or random playback for repeated practice.
 
-### Measure and repeat
-
-- **Tick Data / Action Timeline**: inspect startup, active time, recovery, advantage and the sequence of an action in internal frames.
-- **Recording Wizard (added in this fork)**: easily capture an input sequence from start to finish. Recording starts on your first input and ends automatically after you finish. Review playback before saving.
-- **Looped and random recording playback**: practise against repeated or varied offense. Supported recordings can restore the recorded spacing on each pass.
-- **Position shortcuts**: quickly restore center, corner and side arrangements.
-
-Recording and playback operate in displayed frames, so they do not reproduce input timing with Tick-level precision. Use Action Steps for drills that require precise internal-frame timing, especially at turbo speeds.
-
-The original already includes recording, reversal settings, an AG counter and a GC-window display. This fork builds on them with **more precise action reproduction and more detailed feedback on inputs and interactions**. See the [manual introduction](docs/PLAYER_MANUAL.en.md) for a comparison.
+**Recording and playback operate in displayed frames. Use Action Steps for drills that require precise Tick-level input timing.**
 
 ## Before installing: turn Run-ahead OFF
 
@@ -112,27 +88,18 @@ Use a short path without spaces or Japanese characters. Before updating an exist
 
 `Volume Up / Down` are FBNeo input entries. You can assign them to arcade-stick or controller buttons.
 
-### First things to try
+<a id="first-ag-drill"></a>
 
-Choose characters, wait for the match to begin and open the menu with `Lua Hotkey 1`.
+## First drill: AG against a recorded attack
 
-- Make the dummy block: set `Dummy > Guard = All Guard` and `Random Guard % = 100%`.
-- Record offense: open `Recording > Recording Wizard` and follow the prompts to record, review and save.
-- Run counter actions or Action Steps: choose `Guard Action Type` and start with `Random Guard Action % = 100%`.
+1. **Record an attack.** Choose yourself as P1 and the attacking character as P2, and place them within range of a ground attack. Open the menu with `Lua Hotkey 1`, then choose an unused slot in `Recording > Recording Wizard`. Release all inputs; when `START MOVING TO RECORD!` appears, perform a single attack as P2. Release the controls and wait about two seconds after the action finishes for recording to end. Review playback, then choose save.
+2. **Repeat it.** Under `Recording`, set `Use Random Recording Slot = no`, choose the saved `Recording Slot`, and set `Looped Playback = yes` and `Reset Distance Each Loop = yes`. Start `Play Recording`.
+3. **Show the feedback and practise.** Set `Trainer > Show PB Counter = yes` and `Show PB Stats = yes`, then close the menu. As P1, block the attack and perform AG.
+4. **Review each attempt.** Green means AG activated. Check your first pressed Tick and press count. First make six valid presses inside the window consistently, then delay your starting input. Inspect `MultiPush` for simultaneous presses and `LateMash` for inputs after the window closes.
 
-If `Random Guard %` or `Random Guard Action %` is `0%`, that behavior will not run; the row turns orange as a reminder. These instructions use **the current UI labels**.
+**Keep pressing to complete six even if AG activates earlier. Counting presses after activation is intentional and supports this drill.** Stop playback with `Volume Down`. See [recording instructions](docs/PLAYER_MANUAL.en.md#05-recording) or [AG practice](docs/PLAYER_MANUAL.en.md#08-pb) for more detail.
 
-### Optional ROM patches
-
-The release zip includes IPS patches in `support/ips`. For `vsavj` they are `No-BGM`, `No-TechHit` and `Only-One-TechHit` to `Only-Six-TechHit`.
-
-1. Put the `support` folder in the copied fbneo folder and launch through the batch file.
-2. Press `F6` or choose `Game > Load Game...`.
-3. Select `Vampire Savior - the lord of vampire (970519 Japan)` and open `IPS Manager` at the bottom right.
-4. Check the patch you want and press `OK`.
-5. Check `Apply Patch` above the `IPS Manager` button and click `Play`.
-
-Close the emulator and launch it again to return to the unpatched game.
+Next, try [GC practice](docs/PLAYER_MANUAL.en.md#09-gc), [air-guard analysis](docs/PLAYER_MANUAL.en.md#10-data), or [precise action control with Action Steps](docs/PLAYER_MANUAL.en.md#06-steps).
 
 ## Manual
 
@@ -173,7 +140,7 @@ When reporting a problem, include the version, P1/P2 characters, side arrangemen
 
 ## Original project and credits
 
-This project is based on [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2). Thanks to the creators and contributors of the original training mode and its scripts, and to the VSAV community.
+This project is based on [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2). The original already includes recording, reversal settings, an AG counter and a GC-window display. This fork builds on them with more precise action reproduction and more detailed feedback; see the [feature comparison](docs/PLAYER_MANUAL.en.md). Thanks to the creators and contributors of the original training mode and its scripts, and to the VSAV community.
 
 <details>
 <summary>Credits from the original README</summary>

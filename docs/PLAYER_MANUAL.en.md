@@ -583,13 +583,15 @@ Keep these limits in mind:
 - Projectile active time does not represent all the time the projectile continues flying after the character's measurement ends.
 - Startup and active share the first hitbox Tick. For a basic single move, read `Total = Startup + Active + Recovery − 1`: startup 4, active 3 and recovery 7 give Total 13.
 
-### 10.3 Action History, Action Timeline and Step Wait Ticks
+### 10.3 Action Timeline and Step Wait Ticks
 
-**Action History in Tick Data** displays a sequence of actions so you can examine the total time a setup takes in Ticks, as well as individual move data. This lets you inspect both move properties and the duration of a complete setup in internal frames.
+**Action Timeline in Tick Data** displays a sequence of actions so you can examine the total time a setup takes in Ticks, as well as individual move data. This lets you inspect both move properties and the duration of a complete setup in internal frames.
 
-For example, you can test **how many Ticks to spend before a wake-up attack reaches its intended timing**, or **how far away you can start a walk-up throw and still perform it within 15 displayed frames (20 Ticks at Turbo 3)**. Check the elapsed time in Action History, vary the starting distance and compare the actual results to develop practical setups.
+For example, you can test **how many Ticks to spend before a wake-up attack reaches its intended timing**, or **how far away you can start a walk-up throw and still perform it within 15 displayed frames (20 Ticks at Turbo 3)**. Check the elapsed time in Action Timeline, vary the starting distance and compare the actual results to develop practical setups.
 
-> The Action History description is an addendum based on the developer’s feature description. Its display and controls have not been verified against this manual’s target commit, so specific operating steps are not included.
+Enable `Trainer > Tick Data` to show the green history below the move data. Timestamps start at 1t; subtract them to find the interval between events. In the screenshot, `20t Demon Cradle` to `23t Guard` is a three-Tick interval, or the fourth Tick when counting the move’s starting Tick. `Total 45t` measures the move, while `65t Free` marks when you could act again on the history’s clock; they cover different spans.
+
+The history is finalized when you remain actionable and neutral for ten Ticks after entering that state. Its ending `Free` timestamp marks the first actionable Tick, not the end of that wait. A long neutral pause can split a setup into separate histories, so check whether the whole setup remains in one history. Continuing to walk does not meet this ending condition.
 
 The green `ACTION TIMELINE` in Tick Data follows one action on a shared clock. For example, `1t PreJump > 4t Air > 10t MP` identifies the Ticks when prejump, airborne state and MP occurred. Do not add these timestamps together.
 
