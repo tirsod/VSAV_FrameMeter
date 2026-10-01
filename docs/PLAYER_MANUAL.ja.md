@@ -194,7 +194,11 @@ LP＝弱P、MP＝中P、HP＝強P、LK＝弱K、MK＝中K、HK＝強Kです。
 <a id="sasquatch-ag-tutorial"></a>
 ## 実践チュートリアル：サスカッチを相手にAG・GCを練習する
 
-サスカッチにショートダッシュ小Pをさせて、AG（アドバンシングガード）とGC（ガードキャンセル）を練習します。**動きを作る → AG・GCを試す → 連発させる → 保存する**の順に進めます。導入と操作設定がまだなら、先に[2章](#02-install)を済ませてください。
+サスカッチにショートダッシュ小Pをさせて、AG（アドバンシングガード）とGC（ガードキャンセル）を練習します。導入と操作設定がまだなら、先に[2章](#02-install)を済ませてください。
+
+- **まず一度試す：** ステップ1〜2で動きを作り、[AG（ステップ3）](#tutorial-ag)か[GC（ステップ4）](#tutorial-gc)を試します。ここまでで練習を始められます。
+- **慣れたら繰り返す：** [ステップ5](#tutorial-loop)で連発させます。
+- **次回も使う：** [ステップ6](#tutorial-save)で名前を付けて保存します。
 
 ### 1. 反撃の準備をする
 
@@ -223,26 +227,38 @@ LP＝弱P、MP＝中P、HP＝強P、LK＝弱K、MK＝中K、HK＝強Kです。
 | 1 | `Dash > Forward Cancel` | `Auto (Fastest)` | ダッシュを途中でキャンセルする動作 |
 | 2 | `Attack`、Buttonを`LP` | `Auto (8)` | Directionは`Neutral`（Holdの行は出ません） |
 
-1ステップ目の動作は`Action > Dash`の中にあります。
-
-![STEP 1 > Action > Dash。カーソルはForward Cancel](images/tut_action_dash_cancel.png)
-
-1ステップ目のWaitは、初期値の`Auto (Fastest)`（`Fixed Ticks`の最小値）のままにします。2ステップ目は`+ Add Step`で追加し、Waitの`Fastest (8)`を選びます。編集後の表示は`Auto (8)`です。数値の`8 Ticks`を手入力する設定とは区別してください。
-
-![2ステップ目のWait画面。カーソルはFastest (8)](images/tut_wait_fastest8.png)
-
-一覧の下には、カーソルを合わせた選択肢の説明が出ます。`Auto (8)`は、ダッシュから小Pを入力するまでの待ち時間です。小Pの発生が8 Tickという意味ではありません。
+1. 1ステップ目は`Action > Dash > Forward Cancel`を選びます。Waitは初期値の`Auto (Fastest)`のままにします。
+2. `+ Add Step`で2ステップ目を追加します。Waitでは**`Fastest (8)`を選択**してください。編集後は`Auto (8)`と表示されます。数値の`8 Ticks`を手入力する設定とは異なります。
+3. 次の一覧になったら、**`Save`**します。
 
 ![完成した一覧。1がAuto (Fastest) Dash : Forward Cancel、2がAuto (8) Attack : LP](images/tut_steps_list.png)
 
-一覧に戻り、**`Save`**します。メニューを閉じ、P1でサスカッチに地上の技をガードさせてから、すぐにガードしてください。設定したショートダッシュ小Pが反撃として出ることを確認します。このタイプは被弾後や起き上がりも反撃のきっかけになりますが、最初はガードさせて確かめると条件を揃えやすくなります。
+メニューを閉じ、P1でサスカッチに地上の技をガードさせてから、すぐにガードしてください。
+
+**確認：ショートダッシュ小Pで反撃してくれば準備完了です。次はAGかGCのどちらかを試してみましょう。**
+
+<details>
+<summary>選択途中の画面と保存後の表示を見る</summary>
+
+`Forward Cancel`は`Action > Dash`の中にあります。
+
+![STEP 1 > Action > Dash。カーソルはForward Cancel](images/tut_action_dash_cancel.png)
+
+Waitの一覧の下には、選択肢の説明が出ます。1ステップ目の`Auto (Fastest)`は`Fixed Ticks`の最小値です。2ステップ目では`Fastest (8)`を選びます。
+
+![2ステップ目のWait画面。カーソルはFastest (8)](images/tut_wait_fastest8.png)
+
+`Auto (8)`は、ダッシュから小Pを入力するまでの待ち時間です。小Pの発生が8 Tickという意味ではありません。
+
+保存すると、Dummyタブに`Reversal Action Steps : Sasquatch : 2 steps`と表示されます。
 
 ![Save後のDummyタブ。Reversal Action Steps : Sasquatch : 2 steps](images/tut_steps_saved.png)
 
-`Save`すると、Dummyタブの表示が`Reversal Action Steps : Sasquatch : 2 steps`になります。
+このタイプは被弾後や起き上がりも反撃のきっかけになります。最初はガードさせて確かめると条件を揃えやすくなります。
 
-**確認：技をガードさせると、ショートダッシュ小Pで反撃してくれば準備完了です。**
+</details>
 
+<a id="tutorial-ag"></a>
 ### 3. その小PにAGする
 
 メニューを開き、次の表示をONにします。
@@ -267,6 +283,7 @@ LP＝弱P、MP＝中P、HP＝強P、LK＝弱K、MK＝中K、HK＝強Kです。
 
 **確認：AG成立後も入力を続け、受付内に6回の有効入力を収められたか確認します。**
 
+<a id="tutorial-gc"></a>
 ### 4. 同じ小PにGCする
 
 ダミーの設定は変えず、今度は同じ小Pに自分のキャラクターでGCを出します。`Loop Steps = no`のまま、次の表示をONにしてください。
@@ -286,10 +303,18 @@ PB Counter／PB StatsはONのままで構いません。GC Command TraceはPB St
 
 ![デミトリがサスカッチの小PにGC。トレースはSuccess 14t、入力履歴はSUCCESS 14t](images/tut_gc_success.png)
 
-この例では、デミトリがサスカッチの小PをGCしています。トレースは→ 7t、↓ 4t、↘ 4t、ボタン0t（↘と同じTick）の後に`Success 14t`、入力履歴にも`SUCCESS 14t`が出ています。GCコマンドは自分のキャラクターに合わせます。オレンジの表示は入力の遅れを見る目印であり、それだけで失敗を意味しません。詳しい読み方は[9章](#09-gc)を参照してください。間合いが変わったら戻し、同じ条件で繰り返します。
+この例はデミトリのGC成功です。**オレンジの表示だけでは失敗を意味しません。** GCコマンドは自分のキャラクターに合わせてください。
+
+<details>
+<summary>このGC結果の数値を読む</summary>
+
+トレースは→ 7t、↓ 4t、↘ 4t、ボタン0t（↘と同じTick）の後に`Success 14t`、入力履歴にも`SUCCESS 14t`が出ています。オレンジは入力の遅れを見る目印です。詳しい読み方は[9章](#09-gc)を参照してください。
+
+</details>
 
 **確認：まず`Success`／`SUCCESS`でGC成立を確認します。相手に当たったかは別に確認します。**
 
+<a id="tutorial-loop"></a>
 ### 5. 連発させて、AG・GCを繰り返し練習する
 
 一回ずつ練習できたら、`Dummy`で次を変更します。
@@ -311,34 +336,44 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 
 止めるときはメニューを開き、`Loop Steps = no`にします。反撃自体も止めたい場合は`Guard Action Type = None`にします。
 
+<a id="tutorial-save"></a>
 ### 6. `Short LP`として保存する
 
 作った動きを今後も使えるよう、Action Patternsへ取り込みます。
 
 1. Action Stepsを`Save`済みであることを確認します。
 2. `Dummy > Guard Action Type = Reversal - Action Patterns`に切り替えます。
-
-   ![Guard Action Type : Reversal - Action Patterns。Reversal Action Patternsはまだ空](images/tut_patterns_type.png)
-
 3. `Reversal Action Patterns`を開き、**`Add from current Steps`**を選びます。
-
-   ![空のパターン一覧。カーソルはAdd from current Steps](images/tut_patterns_add.png)
-
-4. 名前を **`Short LP`** として確定します。保存済みの現在のStepsがコピーされます。名前は別に開くWindowsのウィンドウで入力し、閉じるまでゲームは止まります。エミュレーターの裏に隠れても自動で手前に戻るので、クリックして入力してください。FBNeoの古い形式の全画面ではこのウィンドウを表示できないので、全画面で遊ぶときは`Video > Blitter options > Windowed Fullscreen`にチェックを入れてください（[2章](#02-install)）。
-
-   ![Short LPと入力したPattern Nameのウィンドウ](images/tut_pattern_name.png)
-
+4. 別に開く名前入力ウィンドウで **`Short LP`** と入力して確定します。保存済みの現在のStepsがコピーされます。
 5. 一覧で`Short LP`が`[x]`になっていることを確認します。MPで使用チェックを切り替えられます。
-
-   ![パターン一覧に[x] 01 Short LPが並ぶ](images/tut_patterns_ticked.png)
-
 6. `Random Guard Action % = 100%`のまま、こちらの技をガードさせて動作を確認します。一回ずつなら`Loop Steps = no`、連続練習なら`yes`と`Auto (Landing)`を使います。
+
+![パターン一覧に[x] 01 Short LPが並ぶ](images/tut_patterns_ticked.png)
 
 **確認：`Short LP`を選び、保存したショートダッシュ小Pが出れば完了です。**
 
 コピーなので、後からパターンを編集しても元のAction Stepsは変わりません。Loopの設定はこの2ステップとは別に確認してください。
 
 **`Short LP`一つだけを選択した場合、毎回同じ動きが出ます。** 別の攻めもパターンとして登録して複数を`[x]`にすると、反撃の機会ごとに候補から一つをランダムに実行できます。固定の動きへのAG・GC練習から、異なる攻めを見て対応する練習へ発展させられます。
+
+<details>
+<summary>取り込み画面・名前入力で困ったとき</summary>
+
+`Guard Action Type`を切り替えます。
+
+![Guard Action Type : Reversal - Action Patterns。Reversal Action Patternsはまだ空](images/tut_patterns_type.png)
+
+`Add from current Steps`で取り込みます。
+
+![空のパターン一覧。カーソルはAdd from current Steps](images/tut_patterns_add.png)
+
+別ウィンドウに名前を入力します。閉じるまでゲームは止まります。
+
+![Short LPと入力したPattern Nameのウィンドウ](images/tut_pattern_name.png)
+
+名前入力がエミュレーターの裏に隠れても自動で手前に戻るので、クリックして入力してください。FBNeoの古い形式の全画面では表示できません。`Video > Blitter options > Windowed Fullscreen`にチェックを入れてください（[2章](#02-install)）。
+
+</details>
 
 <a id="04-dummy"></a>
 ## 4. ダミーのガード・受け身・反撃

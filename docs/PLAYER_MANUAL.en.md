@@ -194,7 +194,11 @@ You can also use `Dummy > Position`. In its diagram, `1` is you, `2` is the dumm
 <a id="sasquatch-ag-tutorial"></a>
 ## Guided practice: AG and GC against Sasquatch
 
-Make Sasquatch perform short-dash LP, then practice AG (Advancing Guard / Push Block) and GC (Guard Cancel) against it. Follow these steps: **build the action → try AG and GC → repeat the offense → save it.** Complete [installation and input mapping](#02-install) first.
+Make Sasquatch perform short-dash LP, then practice AG (Advancing Guard / Push Block) and GC (Guard Cancel) against it. Complete [installation and input mapping](#02-install) first.
+
+- **Try it once:** Build the action in steps 1–2, then try [AG (step 3)](#tutorial-ag) or [GC (step 4)](#tutorial-gc). You can start practicing at this point.
+- **Repeat when ready:** Enable looping in [step 5](#tutorial-loop).
+- **Keep it for next time:** Name and save the sequence in [step 6](#tutorial-save).
 
 ### 1. Prepare the counter action
 
@@ -223,26 +227,38 @@ Open `Reversal Action Steps` with Right or LP and create **only these two steps*
 | 1 | `Dash > Forward Cancel` | `Auto (Fastest)` | Cancels the forward dash |
 | 2 | `Attack`, with Button `LP` | `Auto (8)` | Direction `Neutral` (no Hold row appears) |
 
-Step one's action is under `Action > Dash`:
-
-![STEP 1 > Action > Dash with Forward Cancel under the cursor](images/tut_action_dash_cancel.png)
-
-Leave the first step's Wait at its default, `Auto (Fastest)` (the lowest value under `Fixed Ticks`). Add step two with `+ Add Step`, then select `Fastest (8)` under Wait. The resulting display is `Auto (8)`. This is different from manually entering a fixed `8 Ticks` wait.
-
-![Step two's Wait screen with Fastest (8) under the cursor](images/tut_wait_fastest8.png)
-
-The line under the list describes the choice under the cursor. `Auto (8)` is the wait from the dash to the LP input. It does not mean LP has eight-Tick startup.
+1. For step one, select `Action > Dash > Forward Cancel`. Leave Wait at its default, `Auto (Fastest)`.
+2. Use `+ Add Step` to add step two. Under Wait, **select `Fastest (8)`**. It will appear as `Auto (8)` after editing. This is different from manually entering a fixed `8 Ticks` wait.
+3. When your list matches the one below, select **`Save`**.
 
 ![The finished list: Auto (Fastest) Dash : Forward Cancel, then Auto (8) Attack : LP](images/tut_steps_list.png)
 
-Return to the list and **`Save`**. Close the menu, make Sasquatch block a ground attack from P1, then immediately block his response. Confirm that short-dash LP comes out. The dummy can also perform this response after being hit or waking up; start with a blocked attack to keep the situation consistent.
+Close the menu, make Sasquatch block a ground attack from P1, then immediately block his response.
+
+**Check: Setup is complete when the dummy responds with short-dash LP. Try either AG or GC next.**
+
+<details>
+<summary>Show selection screens and the saved result</summary>
+
+Find `Forward Cancel` under `Action > Dash`.
+
+![STEP 1 > Action > Dash with Forward Cancel under the cursor](images/tut_action_dash_cancel.png)
+
+The line below the Wait list describes the selected option. For step one, `Auto (Fastest)` is the lowest value under `Fixed Ticks`. For step two, select `Fastest (8)`.
+
+![Step two's Wait screen with Fastest (8) under the cursor](images/tut_wait_fastest8.png)
+
+`Auto (8)` is the wait from the dash to the LP input. It does not mean LP has eight-Tick startup.
+
+After saving, the Dummy tab shows `Reversal Action Steps : Sasquatch : 2 steps`.
 
 ![After Save, the Dummy tab reads Reversal Action Steps : Sasquatch : 2 steps](images/tut_steps_saved.png)
 
-After `Save`, the Dummy tab shows `Reversal Action Steps : Sasquatch : 2 steps`.
+This response can also trigger after the dummy is hit or wakes up. Start with a blocked attack to keep the situation consistent.
 
-**Check: Setup is complete when the dummy responds with short-dash LP after blocking your attack.**
+</details>
 
+<a id="tutorial-ag"></a>
 ### 3. Practice AG against the LP
 
 Open the menu and configure these readouts and practice settings:
@@ -267,6 +283,7 @@ See [Section 8](#08-pb) for the full readouts and counting rules.
 
 **Check: Complete six valid presses inside the window, even if AG activates before the sixth.**
 
+<a id="tutorial-gc"></a>
 ### 4. Practice GC against the same LP
 
 Keep the dummy settings unchanged and practice your character's GC against the same LP. Leave `Loop Steps = no` and enable these readouts:
@@ -286,10 +303,18 @@ You can leave PB Counter / PB Stats enabled. GC Command Trace sits to the right 
 
 ![Demitri guard-cancels Sasquatch's LP: the trace reads Success 14t and the input bar SUCCESS 14t](images/tut_gc_success.png)
 
-In this example Demitri guard-canceled Sasquatch's LP. The trace shows → 7t, ↓ 4t, ↘ 4t and the buttons 0t (on the same Tick as ↘), then `Success 14t`; the input bar shows `SUCCESS 14t` too. Use your own character's GC command. Orange highlights help identify slow inputs but do not by themselves mean failure. See [Section 9](#09-gc) for the full guide. Restore spacing when it changes and repeat under the same conditions.
+This example shows a successful GC with Demitri. **Orange highlights alone do not mean failure.** Use the GC command for your own character.
+
+<details>
+<summary>Read the timing values in this GC example</summary>
+
+The trace shows → 7t, ↓ 4t, ↘ 4t and the buttons 0t (on the same Tick as ↘), then `Success 14t`. The input bar also shows `SUCCESS 14t`. Orange highlights help identify slow inputs. See [Section 9](#09-gc) for the full guide.
+
+</details>
 
 **Check: `Success` / `SUCCESS` confirms that GC activated. Whether the move hit the opponent is a separate result.**
 
+<a id="tutorial-loop"></a>
 ### 5. Repeat short-dash LP and practice AG or GC
 
 After practicing one response at a time, change these `Dummy` settings:
@@ -311,34 +336,44 @@ You can practice GC against the same repeated offense. Choose AG or GC for each 
 
 To stop looping, open the menu and set `Loop Steps = no`. To disable counter actions too, set `Guard Action Type = None`.
 
+<a id="tutorial-save"></a>
 ### 6. Save it as `Short LP`
 
 Save the sequence in Action Patterns for future use:
 
 1. Make sure you have selected `Save` in Action Steps.
 2. Switch `Dummy > Guard Action Type` to `Reversal - Action Patterns`.
-
-   ![Guard Action Type : Reversal - Action Patterns, with Reversal Action Patterns still Empty](images/tut_patterns_type.png)
-
 3. Open `Reversal Action Patterns` and choose **`Add from current Steps`**.
-
-   ![The empty pattern list with Add from current Steps under the cursor](images/tut_patterns_add.png)
-
-4. Name it **`Short LP`** and confirm. This copies your currently saved Steps. The name is typed in a separate Windows window, and the game is stopped until you close it. If the emulator covers it, it comes back in front on its own; click it to type. This window cannot appear over FBNeo's older full-screen mode; to play in full screen, check `Video > Blitter options > Windowed Fullscreen` (see [installation](#02-install)).
-
-   ![The Pattern Name window with Short LP typed in](images/tut_pattern_name.png)
-
+4. Enter **`Short LP`** in the separate name window and confirm. This copies your currently saved Steps.
 5. Check that `Short LP` is marked `[x]` in the list. MP toggles whether a pattern is selected.
-
-   ![The pattern list showing [x] 01 Short LP](images/tut_patterns_ticked.png)
-
 6. Keep `Random Guard Action % = 100%` and make the dummy block your attack to test it. Use `Loop Steps = no` for individual responses, or `yes` with `Auto (Landing)` for repeated practice.
+
+![The pattern list showing [x] 01 Short LP](images/tut_patterns_ticked.png)
 
 **Check: Select `Short LP` and trigger a response. If the saved short-dash LP plays, you are done.**
 
 This is a copy: editing the pattern later does not change the original Action Steps. Check Loop settings separately from these two steps.
 
 **With only `Short LP` selected, the dummy performs the same sequence every time.** Save other offensive sequences and mark several `[x]` to select one at random for each time the dummy has an opportunity to respond. This takes the drill from AG and GC against a known action to reacting to different offense.
+
+<details>
+<summary>Show import screens and help with the name window</summary>
+
+Switch `Guard Action Type`.
+
+![Guard Action Type : Reversal - Action Patterns, with Reversal Action Patterns still Empty](images/tut_patterns_type.png)
+
+Choose `Add from current Steps`.
+
+![The empty pattern list with Add from current Steps under the cursor](images/tut_patterns_add.png)
+
+Enter the name in the separate window. The game pauses until you close it.
+
+![The Pattern Name window with Short LP typed in](images/tut_pattern_name.png)
+
+If the emulator covers the name window, it comes back in front automatically; click it to type. FBNeo's older full-screen mode cannot show it. Enable `Video > Blitter options > Windowed Fullscreen` (see [installation](#02-install)).
+
+</details>
 
 <a id="04-dummy"></a>
 ## 4. Dummy defense, recovery and counter actions

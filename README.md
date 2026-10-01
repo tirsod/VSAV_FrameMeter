@@ -14,7 +14,9 @@ This fork extends [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Tr
 
 A Tick is an internal game frame.
 
-**Reproduce expert-level execution without having to perform it yourself.** To make a recording, you need to perform the sequence yourself using the opponent's character. With Action Steps, you can define difficult sequences such as a dash followed by an attack, both timed as early as possible, or crouching medium kick canceled into Tenraiha. Specify the actions and their timing, then practice AG, GC and interrupting those sequences.
+**Reproduce expert-level execution by defining actions and timing in Action Steps.** Set up a dash followed by an attack, both timed as early as possible, or crouching medium kick canceled into Tenraiha—without having to perform the sequence yourself.
+
+**Reproduce the offense → try AG, GC or an interrupt → use the readouts to refine your inputs.** Repeat the same sequence to improve your response.
 
 | Game speed | Displayed frames and internal frames |
 |---|---|
@@ -23,7 +25,7 @@ A Tick is an internal game frame.
 
 This fork controls inputs on that internal clock, improving the precision of responses that were limited in the original. On wake-up, after blocking and after landing, you can specify **light attacks, throws, jumps and dashes**, as well as special-move reversals.
 
-**Reproduce an opponent's action → try your response → examine the readouts → adjust your timing and repeat.** Precise action control and detailed feedback work together to improve both offense and defense. See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions required to act at the earliest possible moment.
+See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions required to act at the earliest possible moment.
 
 ## What you can test and practice
 
@@ -46,9 +48,9 @@ Here, six presses on Ticks 5–13 of the window activated AG. Two Ticks containe
 
 ### Choose easy recording or precise action control
 
-Added in this fork, **Recording Wizard** makes it easy to capture an input sequence from start to finish. Recording starts with your first input and ends automatically after you finish the action and leave the controls released. Review playback before saving, then use looped or random playback for repeated practice.
+For actions you can perform yourself, **[Recording Wizard](docs/PLAYER_MANUAL.en.md#05-recording)** offers a quick way to record them. It automatically captures your inputs from start to finish, then lets you review and save the recording.
 
-**Recording and playback operate in displayed frames. Use Action Steps for drills that require precise Tick-level input timing.**
+**Recording and playback operate in displayed frames.** Use Action Steps for difficult execution or precise Tick-level timing.
 
 ## Before installing: turn Run-ahead OFF
 
@@ -110,6 +112,8 @@ Recording's `Looped Playback` and Action Steps' `Loop Steps` are separate settin
 ## First drill: Practice AG and GC against Sasquatch
 
 Make Sasquatch perform short-dash LP, then practice AG (Advancing Guard / Push Block) and GC (Guard Cancel) against it. Save the sequence so you can use it again next time.
+
+**Start by trying either AG or GC. Looping and saving can wait until you are comfortable with the drill.**
 
 1. **Build it.** Choose Sasquatch as the dummy. With `Reversal - Action Steps`, define `Dash > Forward Cancel` (`Auto (Fastest)`) followed by LP (`Auto (8)`).
 2. **Practice AG.** Make the dummy block your attack to trigger its response, then block the LP and perform AG. Use PB Counter / PB Stats to check whether you delayed input while fitting six presses inside the window.
