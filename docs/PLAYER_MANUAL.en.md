@@ -36,7 +36,7 @@ For AG, you can check whether you delayed your input while still fitting six pre
 | GC practice | GC window in the input viewer | Tracks accepted commands, input intervals, expiry and contact during guard-pose persistence |
 | Air-guard analysis | Frame Trap and Jump In readouts, among others | Dedicated Air Guard Gaps for gaps in air chains, actual interrupts, guard timing and landing advantage |
 
-The distinction is **the precision of reproduced actions and the detail available to review your responses**, rather than the mere presence of features the original already had. Run-ahead must be OFF. After does not enter motions in advance, and Landing's advance input depends on certain conditions; not every setting guarantees the earliest possible action in every situation. See [installation](#02-install) and [Action Steps](#06-steps).
+The distinction is **the precision of reproduced actions and the detail available to review your responses**, rather than the mere presence of features the original already had. `Runahead` must be set to `Disabled`. After does not enter motions in advance, and Landing's advance input depends on certain conditions; not every setting guarantees the earliest possible action in every situation. See [installation](#02-install) and [Action Steps](#06-steps).
 
 </details>
 
@@ -88,7 +88,7 @@ The launcher starts the Japanese `vsavj` set. First make sure the game runs in F
 
 ### 2.2 Create a separate FBNeo installation for training
 
-**Run-ahead must be OFF for this training mode. Leaving it ON causes the script to behave incorrectly.**
+**Select `Video > Runahead > Disabled` in FBNeo itself. Leaving Runahead enabled causes the script to behave incorrectly.**
 
 If you also play matches through Fightcade, **copy the entire `emulator/fbneo` folder and install the training mode in that copy** to avoid forgetting to switch settings. Copy everything under the FBNeo folder, not just the executable or scripts. Keep separate executables and settings for matches and training.
 
@@ -97,7 +97,7 @@ If you also play matches through Fightcade, **copy the entire `emulator/fbneo` f
 3. Download the target version from the [repository](https://github.com/vampiresavior001/VSAV_Training) and extract it.
 4. Put `run_vsav_training.bat` and `scripts` in the **copied fbneo folder**. The batch file must sit next to the copied `fcadefbneo.exe`.
 5. Double-click `run_vsav_training.bat` **in the copy**.
-6. In your training copy of FBNeo, select **`Video > Runahead > Disabled`** from the emulator menu. The original settings were copied too; copying the folder alone does not turn it off.
+6. In your training copy of FBNeo, select **`Video > Runahead > Disabled`** from the emulator menu. The original settings were copied too; copying the folder alone does not disable it.
 7. Fully close FBNeo, start it again through the copied batch file and confirm that `Disabled` is selected under `Video > Runahead`.
 8. Open `Input > Map Game Inputs` and assign game controls and the functions below.
 
@@ -133,7 +133,7 @@ Configure P2's game inputs as well as P1's; check these if input behavior is unu
 
 ### 2.3 First check
 
-Start the copied training installation and confirm Run-ahead is OFF before proceeding.
+Start the copied training installation and confirm that `Disabled` is selected under `Video > Runahead` before proceeding.
 
 1. Choose your character and the dummy, then wait for the match to begin. After P1 is selected, P1's controls can also select P2.
 2. Open the menu with `Lua Hotkey 1`.
@@ -974,7 +974,7 @@ To update:
 2. Close FBNeo.
 3. Copy `scripts/training_settings.json` and the entire `scripts/macro` folder elsewhere.
 4. Install the update in the separate training copy. The downloaded files may include recordings, so take care not to overwrite your own `.mis` files.
-5. Restart from the copied batch file and confirm that Run-ahead is OFF and your settings and recordings remain.
+5. Restart from the copied batch file and confirm that `Disabled` is selected under `Video > Runahead` and that your settings and recordings remain.
 
 When resetting settings for diagnosis, move the JSON aside instead of deleting it. It contains your Steps and Patterns too. To share patterns, use Export so you can send the patterns without sharing your entire settings file.
 
@@ -985,7 +985,7 @@ When resetting settings for diagnosis, move the JSON aside instead of deleting i
 |---|---|
 | Does not start | Whether FBNeo alone runs `vsavj`; batch/EXE placement; complete `scripts` folder; spaces or Japanese characters in the path; whether antivirus software is blocking `fcadefbneo.exe` |
 | `gd.dll` error | Fightcade installation; the original README suggests reinstalling Fightcade |
-| Dummy actions or readouts behave incorrectly | Whether you launched the separate training copy and Run-ahead is OFF |
+| Dummy actions or readouts behave incorrectly | Whether you launched the separate training copy and selected `Video > Runahead > Disabled` |
 | Menu will not open | Whether the match has started and `Lua Hotkey 1` is assigned; do not rely on Start to open the menu |
 | Dummy will not block | Check `Random Guard %` as well as `Guard`; an orange row means it is 0%. Set it to 100% |
 | Dummy will not respond | `Random Guard Action %` (an orange row means 0%), whether the required button is None, and whether a trigger occurred |
@@ -1003,7 +1003,7 @@ When resetting settings for diagnosis, move the JSON aside instead of deleting i
 | File operation appears frozen | A Windows dialog is waiting for you. If the emulator covers it, it comes back in front on its own; click it. It cannot appear over the older full-screen mode: check `Video > Blitter options > Windowed Fullscreen` |
 | Behavior did not change after updating | Fully close FBNeo and restart using the updated copy's batch file |
 
-For reports, include version, P1/P2 characters, which character is on each side, screenshots of your settings and steps to reproduce the problem. This manual assumes Run-ahead OFF. If an issue occurs with it ON, disable it in the training installation, fully restart and check again.
+For reports, include version, P1/P2 characters, which character is on each side, screenshots of your settings and steps to reproduce the problem. If an issue occurs with Runahead enabled, select `Video > Runahead > Disabled` in the training installation, fully restart and check again.
 
 <a id="15-reference"></a>
 ## 15. Glossary and reference version

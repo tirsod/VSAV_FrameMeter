@@ -72,7 +72,7 @@ The target game is **Vampire Savior - the lord of vampire (970519 Japan / `vsavj
 1. Close Fightcade and FBNeo.
 2. Copy Fightcade's entire `emulator/fbneo` folder to another location, for example `C:/VSAV_Training/fbneo`.
 3. Download and extract this project. Put `run_vsav_training.bat` and the entire `scripts` folder in the **copied fbneo folder**, with the batch file next to `fcadefbneo.exe`.
-4. Launch the copied batch file and select **`Video > Runahead > Disabled`** in FBNeo itself. Copying the folder also copies settings; it does not turn Run-ahead off by itself.
+4. Launch the copied batch file and select **`Video > Runahead > Disabled`** in FBNeo itself. Copying the folder also copies settings; it does not disable Runahead by itself.
 5. Fully close FBNeo, relaunch through the same batch file and confirm that `Disabled` is selected under `Video > Runahead`.
 6. Use `Input > Map Game Inputs` to configure game controls and the functions below. Configure P2 game inputs too.
 
@@ -150,7 +150,7 @@ Save your edits before closing FBNeo, then back up:
 | Settings, Action Steps and Action Patterns | `scripts/training_settings.json` |
 | Recordings | Entire `scripts/macro` folder |
 
-Update the separate training installation. The downloaded files may include recordings, so take care not to overwrite your own. Fully restart FBNeo afterward and confirm Run-ahead is OFF.
+Update the separate training installation. The downloaded files may include recordings, so take care not to overwrite your own. Fully restart FBNeo afterward and confirm that `Disabled` is selected under `Video > Runahead`.
 
 ## Release history and reports
 
@@ -158,7 +158,7 @@ Update the separate training installation. The downloaded files may include reco
 - [日本語リリースノート](docs/RELEASE_NOTES.ja.md)
 - [This fork's Issues](https://github.com/vampiresavior001/VSAV_Training/issues)
 
-When reporting a problem, include the version, P1/P2 characters, which character is on each side, screenshots of your settings and steps to reproduce the problem. Confirm that Run-ahead is OFF in your training copy of FBNeo.
+When reporting a problem, include the version, P1/P2 characters, which character is on each side, screenshots of your settings and steps to reproduce the problem. In your training copy of FBNeo, confirm that `Disabled` is selected under `Video > Runahead`.
 
 ## Original project and credits
 

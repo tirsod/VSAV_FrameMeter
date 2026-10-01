@@ -72,7 +72,7 @@ Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐた�
 1. FightcadeとFBNeoを終了します。
 2. Fightcadeの`emulator/fbneo`フォルダー全体を、別の場所へコピーします。例：`C:/VSAV_Training/fbneo`。
 3. 本プロジェクトをダウンロードして展開し、`run_vsav_training.bat`と`scripts`フォルダー全体を、**複製先のfbneoフォルダー**へ配置します。バッチファイルは`fcadefbneo.exe`と同じ階層に置きます。
-4. 複製先の`run_vsav_training.bat`を起動し、FBNeo本体の **`Video > Runahead > Disabled`** を選びます。元の設定もコピーされるため、複製するだけではOFFになりません。
+4. 複製先の`run_vsav_training.bat`を起動し、FBNeo本体の **`Video > Runahead > Disabled`** を選びます。元の設定もコピーされるため、複製するだけでは無効になりません。
 5. FBNeoを完全終了して同じバッチから再起動し、`Video > Runahead`で`Disabled`が選ばれていることを確認します。
 6. `Input > Map Game Inputs`でゲーム操作と下表の機能を割り当てます。P2側のゲーム入力も設定してください。
 
@@ -150,7 +150,7 @@ FBNeoを終了する前に編集内容を保存し、次のファイルをバッ
 | 設定・Action Steps・Action Patterns | `scripts/training_settings.json` |
 | 記録 | `scripts/macro`フォルダー全体 |
 
-更新はトレーニング専用の複製先へ行います。配布物に記録ファイルが含まれる場合があるため、自分の記録を不用意に上書きしないでください。更新後はFBNeoを完全に再起動し、Run-aheadがOFFであることも確認します。
+更新はトレーニング専用の複製先へ行います。配布物に記録ファイルが含まれる場合があるため、自分の記録を不用意に上書きしないでください。更新後はFBNeoを完全に再起動し、`Video > Runahead`で`Disabled`が選ばれていることも確認します。
 
 ## 変更履歴・不具合報告
 
@@ -158,7 +158,7 @@ FBNeoを終了する前に編集内容を保存し、次のファイルをバッ
 - [Release notes (English)](docs/RELEASE_NOTES.md)
 - [このフォークのIssues](https://github.com/vampiresavior001/VSAV_Training/issues)
 
-不具合を報告する際は、バージョン、P1／P2キャラクター、左右配置、設定画面、再現手順を添えてください。トレーニング用FBNeoのRun-aheadがOFFであることも確認してください。
+不具合を報告する際は、バージョン、P1／P2キャラクター、左右配置、設定画面、再現手順を添えてください。トレーニング用FBNeoの`Video > Runahead`で`Disabled`が選ばれていることも確認してください。
 
 ## フォーク元・クレジット
 

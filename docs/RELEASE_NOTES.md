@@ -1409,4 +1409,4 @@ Puts a gap between loops. The wait starts once the dummy can act again, so the g
 - The Dash Interval / Dash Time / Dash Attack Cancel / Attack Dash Gap / Jump In trainers still count displayed frames.
 - Jump In Trainer has a bug: landing without hitting anything can still record a gap.
 - The Recording Wizard does not capture a savestate. The check playback restores position and facing, but not health or meter.
-- Run-ahead is not supported. It stops the fastest actions from being reliable, so it is detected and warned about on screen.
+- Runahead is not supported. Select `Video > Runahead > Disabled` in FBNeo itself. Leaving it enabled makes the earliest actions unreliable, so the script detects it and displays a warning.
