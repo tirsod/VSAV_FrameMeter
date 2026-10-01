@@ -54,14 +54,9 @@ For actions you can perform yourself, **[Recording Wizard](docs/PLAYER_MANUAL.en
 
 ## Before installing: disable Runahead
 
-**Select `Video > Runahead > Disabled` in FBNeo itself. Leaving Runahead enabled causes the training script to behave incorrectly.**
+**Leaving Runahead enabled causes the training script to behave incorrectly.** If you also play matches through Fightcade, copy the entire FBNeo folder to create a separate training installation so you do not have to switch settings for every session.
 
-If you also play matches through Fightcade, **copy the entire `emulator/fbneo` folder to create a separate training installation**. Apply this setting in the copy and keep separate launch paths and settings, so you do not have to remember to switch them for every session.
-
-| Use | Launch method |
-|---|---|
-| Matches | Launch normally through Fightcade |
-| Training | Launch the copied `run_vsav_training.bat`; select `Video > Runahead > Disabled` |
+Launch matches through Fightcade and training through the copied batch file. Follow the installation steps below to create the copy and select `Video > Runahead > Disabled`.
 
 ## Windows installation
 
@@ -115,13 +110,13 @@ Make Sasquatch perform short-dash LP, then practice AG (Advancing Guard / Push B
 
 **Start by trying either AG or GC. Looping and saving can wait until you are comfortable with the drill.**
 
+**The steps below outline the drill. Follow the [illustrated tutorial](docs/PLAYER_MANUAL.en.md#sasquatch-ag-tutorial) for the settings and controls.**
+
 1. **Build it.** Choose Sasquatch as the dummy. With `Reversal - Action Steps`, define `Dash > Forward Cancel` (`Auto (Fastest)`) followed by LP (`Auto (8)`).
 2. **Practice AG.** Make the dummy block your attack to trigger short-dash LP, then perform AG against it. Use PB Counter / PB Stats to check, for example, whether you delayed AG while fitting six valid presses inside the window.
 3. **Try GC too.** Block the same LP and enter your character’s GC command. Check the success indicator, accepted directions and buttons, and input intervals.
 4. **Repeat it.** Set `Loop Steps = yes` and `Loop Wait = Auto (Landing)` to repeat short-dash LP as soon as the dummy lands.
 5. **Save it.** Use `Add from current Steps` in Action Patterns to save it as `Short LP`. Save other attacks later to practice against randomly selected sequences.
-
-Follow the **[complete walkthrough: setup, AG / GC feedback, looping and saving](docs/PLAYER_MANUAL.en.md#sasquatch-ag-tutorial)**. Start with one response at a time, then move on to repeated practice.
 
 ## Manual
 

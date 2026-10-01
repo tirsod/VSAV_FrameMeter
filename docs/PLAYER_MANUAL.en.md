@@ -427,6 +427,7 @@ Here the cursor is on `Guard Action Type`: the `Random Guard Action %` row below
 
 `Reversal` is also the name of a response mode in this tool. It does not mean the game will show `REVERSAL` for every normal attack performed at the earliest possible moment.
 
+<a id="dummy-normal-response"></a>
 ### 4.3 Make the dummy challenge with a normal
 
 1. Set `Guard = All Guard` and `Random Guard % = 100%`.
@@ -534,6 +535,7 @@ Edits do not take effect until `Save`. `Back Without Saving` discards changes. I
 
 `Clear All Steps` returns the list to one empty step and asks for confirmation.
 
+<a id="steps-wait"></a>
 ### 6.3 Read Wait settings
 
 | Display | Meaning |
@@ -587,7 +589,7 @@ This example shows how to build the sequence. Valid timing depends on the charac
 Set `Dummy > Loop Steps = yes` and configure `Loop Wait`.
 
 - `Auto (After)`: starts the next pass's command once the dummy can act. It does not enter the command in advance, so a dash is delayed by the input lead-in.
-- `Auto (Landing)`: can enter the command before touchdown so the next pass's first action comes out on the landing Tick. Useful for repeating jumps or air attacks after dashing as soon as the dummy lands. See the conditions in [6.3](#06-steps).
+- `Auto (Landing)`: can enter the command before touchdown so the next pass's first action comes out on the landing Tick. Useful for repeating jumps or air attacks after dashing as soon as the dummy lands. See the conditions in [6.3](#steps-wait).
 - A number: Ticks from the final step to the first step of the next pass.
 
 The first pass still requires a response trigger. Subsequent passes use `Loop Wait` at the boundary rather than simply reusing step one's Wait.
@@ -653,7 +655,7 @@ Start against a fixed attack to stabilize your execution, then use random offens
 
 ![PB Counter line at the top, the press list on the left and PB Stats](images/pb_counter_stats.png)
 
-In this example you pressed on six Ticks of the window: the bar shows 3, 1, 1, 1, 2 and 1 buttons on Ticks 5, 6, 9, 10, 11 and 13 (`at:5-13t`). Two of those Ticks had several buttons (`MultiPush: 2`). The green count means AG activated, and the list on the left shows it activated on the 6th press (`TECH HIT`). PB Stats is the box to the right; see [8.3](#08-pb).
+In this example you pressed on six Ticks of the window: the bar shows 3, 1, 1, 1, 2 and 1 buttons on Ticks 5, 6, 9, 10, 11 and 13 (`at:5-13t`). Two of those Ticks had several buttons (`MultiPush: 2`). The green count means AG activated, and the list on the left shows it activated on the 6th press (`TECH HIT`). PB Stats is the box to the right; see [8.3](#pb-stats).
 
 | Display | Meaning |
 |---|---|
@@ -677,6 +679,7 @@ To judge delay, look at the interval from `Guard` to the first press and whether
 
 `LateMash` means **inputs after the window closes, not inputs after AG activates**. Post-activation presses inside the window count toward the training total, not LateMash. If LateMash grows, check for excessive delay or extra presses. Inputs beyond the window can cause an unwanted normal when blockstun ends.
 
+<a id="pb-stats"></a>
 ### 8.3 Statistics and practice conditions
 
 `Show PB Stats` keeps the values of the PB Counter line and averages them. It appears in a dark box. Turn on `Show GC Command Trace` as well and the trace sits to its right, so you can practice AG and GC together.
@@ -719,7 +722,7 @@ Start with one attack, then move on to strings that keep you blocking.
 
 ![GC Command Trace of a guard cancel that succeeded](images/gc_trace.png)
 
-In this example the game accepted → 3 Ticks after the attack was blocked, ↓ 4 Ticks later, ↘ 6 Ticks later and the button 1 Tick after that. The dots represent buttons: punches on the top row and kicks below. In this example, all three punches were pressed. `Success 13t` is counted from the opening of the GC window (see [9.3](#09-gc)).
+In this example the game accepted → 3 Ticks after the attack was blocked, ↓ 4 Ticks later, ↘ 6 Ticks later and the button 1 Tick after that. The dots represent buttons: punches on the top row and kicks below. In this example, all three punches were pressed. `Success 13t` is counted from the opening of the GC window (see [9.3](#gc-timing)).
 
 The raw direction history and the sequence accepted by the game's command parser need not match exactly.
 
@@ -735,6 +738,7 @@ The raw direction history and the sequence accepted by the game's command parser
 
 An orange highlight does not necessarily mean the attempt failed. Successful results are gold. On a button row, the unpressed dots turn orange, while pressed dots keep their light/medium/heavy colors.
 
+<a id="gc-timing"></a>
 ### 9.3 `G / GP / GC` and the one-Tick difference
 
 The input bar places `G` or `GP n` on the contact column and `GC` on the window-opening column **one Tick later**.
@@ -780,7 +784,22 @@ Enable `Trainer > Tick Data` and select P1 or P2 under `Tick Data Side`. P2 is u
 
 ![Tick Data after Demitri's dash, then Demon Cradle, was blocked](images/tick_data.png)
 
-In this example, Demitri dashed into Demon Cradle, which Jedah blocked. The attack hitbox first appeared on the move's 4th Tick, with two active periods lasting 3 and 20 Ticks (`Active 3 / 20t`: a multi-hit move shows one number per active period), followed by 19 Ticks of recovery. `Total 45t` is 4 + 3 + 20 + 19 − 1, because startup and active time both include the first Tick with an attack hitbox. Demitri was at a disadvantage of 18 Ticks (`Advantage -18t`). The green Action Timeline uses a shared clock for all events: `16t Dash`, `20t Demon Cradle` and `23t Guard` mark the dash, the start of Demon Cradle and Jedah blocking on the move's 4th Tick.
+This example shows Jedah blocking Demitri's Demon Cradle after a dash. Start with these three values:
+
+- **Startup 4t:** the attack hitbox appears on the move's fourth Tick.
+- **Recovery 19t:** recovery after the attack hitbox ends.
+- **Advantage −18t:** Demitri is at a disadvantage of 18 Ticks after the move is blocked.
+
+<details>
+<summary>Read active periods and calculate Total</summary>
+
+`Active 3 / 20t` shows two active periods lasting 3 and 20 Ticks. Multi-hit moves show one number per active period.
+
+Here, `Total 45t` is 4 + 3 + 20 + 19 − 1. Startup and active time both include the first Tick with an attack hitbox, so subtract one.
+
+</details>
+
+The green history below is [Action Timeline](#action-timeline). The next section explains how to read it separately from the move data.
 
 | Field | Meaning |
 |---|---|
@@ -801,6 +820,7 @@ Keep these limits in mind:
 - Projectile active time does not represent all the time the projectile continues flying after the character's measurement ends.
 - Startup and active share the first hitbox Tick. For a basic single move, read `Total = Startup + Active + Recovery − 1`: startup 4, active 3 and recovery 7 give Total 13.
 
+<a id="action-timeline"></a>
 ### 10.3 Action Timeline and Step Wait Ticks
 
 **Action Timeline in Tick Data** displays a sequence of actions so you can examine the total time a setup takes in Ticks, as well as individual move data.
@@ -880,7 +900,7 @@ An Action Steps setting of `Auto (10)` can appear here as `Dash > 12t`. The scri
 ### B. Does your wake-up pressure beat the earliest challenge?
 
 1. Select `Guard Action Type = Reversal - Specified`, with `Random Guard Action % = 100%`.
-2. Configure the desired normal or special. See [4.3](#04-dummy) for a normal example.
+2. Configure the desired normal or special. See [4.3](#dummy-normal-response) for a normal example.
 3. Start with `Wakeup = None` to keep conditions fixed.
 4. Knock the dummy down and test your setup.
 5. Once consistent, vary wake-up movement and response probability.
@@ -984,7 +1004,7 @@ When resetting settings for diagnosis, move the JSON aside instead of deleting i
 | Symptom | Check first |
 |---|---|
 | Does not start | Whether FBNeo alone runs `vsavj`; batch/EXE placement; complete `scripts` folder; spaces or Japanese characters in the path; whether antivirus software is blocking `fcadefbneo.exe` |
-| `gd.dll` error | Fightcade installation; the original README suggests reinstalling Fightcade |
+| `gd.dll` error | Check that the entire FBNeo folder was copied. If the error persists, report the full message and the action that triggered it, such as launching the game or loading the script |
 | Dummy actions or readouts behave incorrectly | Whether you launched the separate training copy and selected `Video > Runahead > Disabled` |
 | Menu will not open | Whether the match has started and `Lua Hotkey 1` is assigned; do not rely on Start to open the menu |
 | Dummy will not block | Check `Random Guard %` as well as `Guard`; an orange row means it is 0%. Set it to 100% |
@@ -1028,7 +1048,7 @@ For reports, include version, P1/P2 characters, which character is on each side,
 
 > This manual was checked against the target version's source code and release notes. The procedures were not tested in an emulator during preparation of this document. Example drills do not guarantee success with every character or setup.
 
-- Document checked: 2026-09-29.
+- Documentation updated and checked for consistency: 2026-10-01. This does not include testing the procedures in an emulator.
 - Upstream comparison: [`fc2`, 92980a5](https://github.com/NBeing/VSAV_Training/tree/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6). Earliest-input limitations and existing trainers were checked in [upstream menu.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/menu.lua), and input delivery in [upstream controller.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/controller.lua).
 - The comparison covers source-level features and control methods. An emulator A/B comparison and execution of the infinite-combo definitions were not performed while preparing this manual. The infinite-combo examples reflect use cases supplied by the developer.
 - Fork version: v11.7.19; labels checked 2026-09-29. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).

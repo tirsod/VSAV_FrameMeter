@@ -54,14 +54,9 @@ Tickはゲームの内部フレームです。
 
 ## 導入前に：Runaheadを無効にする
 
-**FBNeo本体の `Video > Runahead > Disabled` を選んでください。Runaheadが有効なままでは、トレーニングスクリプトの挙動が不正になります。**
+**Runaheadが有効なままでは、トレーニングスクリプトの挙動が不正になります。** Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐため、FBNeoフォルダーを丸ごと複製してトレーニング専用にします。
 
-Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐため、**`emulator/fbneo`フォルダー以下を丸ごと複製し、トレーニング専用環境を作ってください。** 複製先でこの設定を行い、対戦用と練習用の起動先・設定を分けます。
-
-| 用途 | 起動方法 |
-|---|---|
-| 対戦 | 通常のFightcadeから起動 |
-| トレーニング | 複製先の`run_vsav_training.bat`から起動。`Video > Runahead > Disabled`を選択 |
+対戦は通常のFightcadeから、練習は複製先のバッチから起動します。複製と`Video > Runahead > Disabled`の設定は、次の導入手順に沿って行ってください。
 
 ## Windowsでの導入
 
@@ -115,13 +110,13 @@ Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐた�
 
 **最初はAGかGCのどちらかを試せれば十分です。連発と保存は、慣れてから進めてください。**
 
+**以下は練習の流れです。実際の設定は、[画像付きチュートリアル](docs/PLAYER_MANUAL.ja.md#sasquatch-ag-tutorial)に沿って進めてください。**
+
 1. **作る。** ダミーをサスカッチにし、`Reversal - Action Steps`で`Dash > Forward Cancel`（`Auto (Fastest)`）→LP（`Auto (8)`）を定義します。
 2. **AGする。** こちらの技をガードさせてショートダッシュ小Pを出させ、これにAGします。PB Counter／PB Statsで、例えば遅らせAGで受付内に6回入力できたか確認します。
 3. **GCも試す。** 同じ小Pに自キャラのGCを入力し、成功表示と、受け付けられた方向・ボタン・入力間隔を確認します。
 4. **連続で練習する。** `Loop Steps = yes`、`Loop Wait = Auto (Landing)`にして、着地からショートダッシュ小Pを繰り返させます。
 5. **保存する。** Action Patternsの`Add from current Steps`で`Short LP`として保存します。別の攻めも登録すれば、複数候補のランダム練習へ発展させられます。
-
-**[設定からAG・GC表示の読み方・ループ・保存までの手順](docs/PLAYER_MANUAL.ja.md#sasquatch-ag-tutorial)**に沿って進めてください。最初は一回ずつ試し、慣れたら連続で練習しましょう。
 
 ## マニュアル
 
