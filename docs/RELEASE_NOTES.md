@@ -12,8 +12,8 @@ Newest first. Older releases are kept below.
 
 - The English README is the entry point; the Japanese README and both player
   manuals now run from installation to basic controls to practice
-- **New guided practice: AG and GC against Sasquatch.** Build a short-dash LP,
-  try AG and GC against it, repeat it and save it in Action Patterns, with
+- **New guided practice: PB and GC against Sasquatch.** Build a short-dash LP,
+  try PB and GC against it, repeat it and save it in Action Patterns, with
   screenshots from the game
 - Development documents moved to `docs/development/`, release notes to `docs/`
 

@@ -4,15 +4,15 @@ English | [日本語](PLAYER_MANUAL.ja.md)
 
 Practice offense, defense and execution in Vampire Savior with repeatable dummy actions and detailed timing displays. Menu labels are reproduced as they appear in the tool so you can find the corresponding settings.
 
-This guide uses **AG (Advancing Guard)**. **Push Block / PB** in the English UI refers to the same mechanic. Actual option names such as `Show PB Counter` are kept unchanged.
+This guide uses **PB (Push Block)**, matching the English UI. Menu options are shown by their on-screen names, such as `Show PB Counter`.
 
 For **v11.7.19 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
 
-[Start with installation](#02-install) · [Already set up? Try the AG / GC drill](#sasquatch-ag-tutorial) · [Scope and verification](#verification-scope)
+[Start with installation](#02-install) · [Already set up? Try the PB / GC drill](#sasquatch-pb-tutorial) · [Scope and verification](#verification-scope)
 
 ## What this fork offers
 
-**Control at the internal-frame (Tick) level lets the dummy reproduce opponent actions precisely. Practice GC, AG and interrupting air strings after blocking in the air, then use the detailed input and timing displays to identify mistakes and track your improvement.**
+**Control at the internal-frame (Tick) level lets the dummy reproduce opponent actions precisely. Practice GC, PB and interrupting air strings after blocking in the air, then use the detailed input and timing displays to identify mistakes and track your improvement.**
 
 <details>
 <summary>Tick control and comparison with the original</summary>
@@ -23,7 +23,7 @@ Action Steps builds on this control to define actions in internal frames. It sup
 
 Recording and playback operate in displayed frames, so they do not reproduce input timing with Tick-level precision. Use Action Steps for drills that require precise internal-frame timing, especially at turbo speeds. Recording Wizard, added in this fork, makes it easy to capture an input sequence from start to finish.
 
-For AG, you can check whether you delayed your input while still fitting six presses inside the window. For GC, you can see which inputs the game accepted and where you were late. For air guarding, you can see whether an interruptible gap existed, whether your press was well timed and who could act first after landing. This fork combines accurate dummy actions with detailed feedback on your response.
+For PB, you can check whether you delayed your input while still fitting six presses inside the window. For GC, you can see which inputs the game accepted and where you were late. For air guarding, you can see whether an interruptible gap existed, whether your press was well timed and who could act first after landing. This fork combines accurate dummy actions with detailed feedback on your response.
 
 ### Compared with the original
 
@@ -32,7 +32,7 @@ For AG, you can check whether you delayed your input while still fitting six pre
 | Counter actions and reversals | Specified inputs and character-specific move activation, with limitations on earliest timing at turbo speed and delays from entering motions | Input control in internal frames, with improved wake-up, post-block and landing timing |
 | Move data | Frame Data uses displayed frames, giving unstable measurements at turbo speeds | Tick Data measures internal frames, with startup, active time, recovery and advantage conventions aligned with strategy sites |
 | Building dummy behavior | Recording playback and individual counter actions | Recording Wizard simplifies recording; Action Steps defines Tick-based sequences, and Action Patterns saves, selects and shares them |
-| AG practice | Input counter and success/failure statistics | Tick-by-Tick window history, simultaneous presses, late inputs and counts that include presses after activation; PB Stats shows averages and the success rate |
+| PB practice | Input counter and success/failure statistics | Tick-by-Tick window history, simultaneous presses, late inputs and counts that include presses after activation; PB Stats shows averages and the success rate |
 | GC practice | GC window in the input viewer | Tracks accepted commands, input intervals, expiry and contact during guard-pose persistence |
 | Air-guard analysis | Frame Trap and Jump In readouts, among others | Dedicated Air Guard Gaps for gaps in air chains, actual interrupts, guard timing and landing advantage |
 
@@ -45,12 +45,12 @@ The distinction is **the precision of reproduced actions and the detail availabl
 - [1. Choose what to practice](#01-purpose)
 - [2. Installation and first setup](#02-install)
 - [3. Controls and position shortcuts](#03-controls)
-- [Guided practice: AG and GC against Sasquatch](#sasquatch-ag-tutorial)
+- [Guided practice: PB and GC against Sasquatch](#sasquatch-pb-tutorial)
 - [4. Dummy defense, recovery and counter actions](#04-dummy)
 - [5. Record opponent actions](#05-recording)
 - [6. Build actions with Action Steps](#06-steps)
 - [7. Save, randomize and share Action Patterns](#07-patterns)
-- [8. Practice AG](#08-pb)
+- [8. Practice PB](#08-pb)
 - [9. Practice guard cancels](#09-gc)
 - [10. Read move data and gaps](#10-data)
 - [11. Practice recipes](#11-drills)
@@ -69,11 +69,11 @@ The distinction is **the precision of reproduced actions and the detail availabl
 | Repeat offense seen in matches | Recording and looping | `Recording > Recording Wizard` |
 | Specify a dash into an attack precisely | Action Steps | [Section 6](#06-steps) |
 | Randomize several offensive sequences | Recording slots, Action Patterns | [Section 5](#05-recording), [Section 7](#07-patterns) |
-| Improve AG execution | `Show PB Counter`, `Show PB Stats` | [Section 8](#08-pb) |
+| Improve PB execution | `Show PB Counter`, `Show PB Stats` | [Section 8](#08-pb) |
 | Find why a GC failed | GC Command Trace, input history | [Section 9](#09-gc) |
 | Examine advantage, interrupts and landing situations | Tick Data, Air Guard Gaps | [Section 10](#10-data) |
 
-Start with [installation](#02-install) and [basic controls](#03-controls), then [practice AG and GC against Sasquatch](#sasquatch-ag-tutorial).
+Start with [installation](#02-install) and [basic controls](#03-controls), then [practice PB and GC against Sasquatch](#sasquatch-pb-tutorial).
 
 <a id="02-install"></a>
 ## 2. Installation and first setup
@@ -167,7 +167,7 @@ Moving beyond either end of a list returns to the tab selection. MP has differen
 - During a match, `P1 Coin` switches the side you control.
 - You cannot switch sides during recording playback. Stop playback first.
 - Use `Lua Hotkey 4` or `Game > Return to Character Select` to choose characters again.
-- Returning to character select stops playback and clears the match's recording savestate, input history and previous AG/GC readouts.
+- Returning to character select stops playback and clears the match's recording savestate, input history and previous PB/GC readouts.
 
 ### 3.3 Quickly restore positions
 
@@ -192,11 +192,12 @@ You can also use `Dummy > Position`. In its diagram, `1` is you, `2` is the dumm
 - MP: reset to `Off`. `Off` leaves positions unchanged.
 
 <a id="sasquatch-ag-tutorial"></a>
-## Guided practice: AG and GC against Sasquatch
+<a id="sasquatch-pb-tutorial"></a>
+## Guided practice: PB and GC against Sasquatch
 
-Make Sasquatch perform short-dash LP, then practice AG (Advancing Guard / Push Block) and GC (Guard Cancel) against it. Complete [installation and input mapping](#02-install) first.
+Make Sasquatch perform short-dash LP, then practice PB (Push Block) and GC (Guard Cancel) against it. Complete [installation and input mapping](#02-install) first.
 
-- **Try it once:** Build the action in steps 1–2, then try [AG (step 3)](#tutorial-ag) or [GC (step 4)](#tutorial-gc). You can start practicing at this point.
+- **Try it once:** Build the action in steps 1–2, then try [PB (step 3)](#tutorial-pb) or [GC (step 4)](#tutorial-gc). You can start practicing at this point.
 - **Repeat when ready:** Enable looping in [step 5](#tutorial-loop).
 - **Keep it for next time:** Name and save the sequence in [step 6](#tutorial-save).
 
@@ -235,7 +236,7 @@ Open `Reversal Action Steps` with Right or LP and create **only these two steps*
 
 Close the menu, make Sasquatch block a ground attack from P1, then immediately block his response.
 
-**Check: Setup is complete when the dummy responds with short-dash LP. Try either AG or GC next.**
+**Check: Setup is complete when the dummy responds with short-dash LP. Try either PB or GC next.**
 
 <details>
 <summary>Show selection screens and the saved result</summary>
@@ -259,7 +260,8 @@ This response can also trigger after the dummy is hit or wakes up. Start with a 
 </details>
 
 <a id="tutorial-ag"></a>
-### 3. Practice AG against the LP
+<a id="tutorial-pb"></a>
+### 3. Practice PB against the LP
 
 Open the menu and configure these readouts and practice settings:
 
@@ -269,19 +271,19 @@ Open the menu and configure these readouts and practice settings:
 | `Trainer > Show PB Stats` | `yes` |
 | `Game > P1 Min PB Presses` | `Normal` (practice with ordinary activation rules) |
 
-Close the menu, make the dummy block your attack to trigger short-dash LP, then perform AG against it. Use PB Counter / PB Stats to check, for example, whether you delayed AG while fitting six valid presses inside the window. Push Block / PB in the UI means AG (Advancing Guard).
+Close the menu, make the dummy block your attack to trigger short-dash LP, then perform PB against it. Use PB Counter / PB Stats to check, for example, whether you delayed PB while fitting six valid presses inside the window.
 
-![PB Counter and PB Stats for reviewing AG timing and practice results](images/pb_counter_stats.png)
+![PB Counter and PB Stats for reviewing PB timing and practice results](images/pb_counter_stats.png)
 
-- First fit **six valid presses inside the window**. Pressing several buttons on the same Tick counts as a single AG input.
-- Green means AG activated. Keep pressing to complete six even if it activates earlier. Post-activation presses remain in the counter so you can check that you completed the sequence.
+- First fit **six valid presses inside the window**. Pressing several buttons on the same Tick counts as a single PB input.
+- Green means PB activated. Keep pressing to complete six even if it activates earlier. Post-activation presses remain in the counter so you can check that you completed the sequence.
 - Once consistent, delay your first press relative to `Guard`. Aim to **start as late as possible while fitting six presses into the 14-Tick window**.
 - `MultiPush` counts Ticks with simultaneous presses. `LateMash` counts inputs after the window closes, not post-activation inputs that are still inside it.
 - Use PB Stats' success rate and average input timing to track improvement under the same conditions.
 
 See [Section 8](#08-pb) for the full readouts and counting rules.
 
-**Check: Complete six valid presses inside the window, even if AG activates before the sixth.**
+**Check: Complete six valid presses inside the window, even if PB activates before the sixth.**
 
 <a id="tutorial-gc"></a>
 ### 4. Practice GC against the same LP
@@ -315,7 +317,7 @@ The trace shows → 7t, ↓ 4t, ↘ 4t and the buttons 0t (on the same Tick as �
 **Check: `Success` / `SUCCESS` confirms that GC activated. Whether the move hit the opponent is a separate result.**
 
 <a id="tutorial-loop"></a>
-### 5. Repeat short-dash LP and practice AG or GC
+### 5. Repeat short-dash LP and practice PB or GC
 
 After practicing one response at a time, change these `Dummy` settings:
 
@@ -330,9 +332,9 @@ Close the menu and make the dummy block another attack to start the first respon
 
 Landing wait enters the required directions before the dummy lands, timing the final dash input to coincide with landing. Use it to practice against repeated short-dash LPs starting as early as possible on landing. `Auto (After)` starts inputs only once the dummy can act and does not produce the same timing. See [Section 6](#06-steps) for conditions that can prevent landing prediction.
 
-Block the repeated LPs and perform consecutive AGs. Check whether you can maintain six presses and delayed timing across repeated attempts. After AG pushes the dummy away, it approaches again with short dashes, so keep responding to its offense.
+Block the repeated LPs and perform consecutive push blocks. Check whether you can maintain six presses and delayed timing across repeated attempts. After PB pushes the dummy away, it approaches again with short dashes, so keep responding to its offense.
 
-You can practice GC against the same repeated offense. Choose AG or GC for each attempt; when practicing GC, check `Success`. If a GC hit or another interaction changes the situation or spacing, reset the situation and trigger the response again.
+You can practice GC against the same repeated offense. Choose PB or GC for each attempt; when practicing GC, check `Success`. If a GC hit or another interaction changes the situation or spacing, reset the situation and trigger the response again.
 
 To stop looping, open the menu and set `Loop Steps = no`. To disable counter actions too, set `Guard Action Type = None`.
 
@@ -354,7 +356,7 @@ Save the sequence in Action Patterns for future use:
 
 This is a copy: editing the pattern later does not change the original Action Steps. Check Loop settings separately from these two steps.
 
-**With only `Short LP` selected, the dummy performs the same sequence every time.** Save other offensive sequences and mark several `[x]` to select one at random for each time the dummy has an opportunity to respond. This takes the drill from AG and GC against a known action to reacting to different offense.
+**With only `Short LP` selected, the dummy performs the same sequence every time.** Save other offensive sequences and mark several `[x]` to select one at random for each time the dummy has an opportunity to respond. This takes the drill from PB and GC against a known action to reacting to different offense.
 
 <details>
 <summary>Show import screens and help with the name window</summary>
@@ -396,9 +398,9 @@ If the emulator covers the name window, it comes back in front automatically; cl
 | `Stand Block` | Holds back when an attack approaches; does not automatically choose low blocking |
 | `All Guard` | Crouches for lows, stands for overheads/jump attacks and follows `Pose` for attacks blockable either way |
 | `Auto Guard` | Directly uses the game's guard flag, including in normally unblockable situations. Do not use it to validate unblockables |
-| `Push Block (All Light / Medium / Heavy)` | Blocks like `All Guard` and inputs AG at the selected strength |
+| `Push Block (All Light / Medium / Heavy)` | Blocks like `All Guard` and inputs PB at the selected strength |
 
-For consistent testing with `Stand Block`, `All Guard` or `Push Block (All …)`, set `Random Guard % = 100%`. AG selected under `Guard` can be combined with the counter-action settings below.
+For consistent testing with `Stand Block`, `All Guard` or `Push Block (All …)`, set `Random Guard % = 100%`. PB selected under `Guard` can be combined with the counter-action settings below.
 
 **A probability setting turns orange when 0% prevents the selected action from running.** While `Guard` is `Stand Block`, `All Guard` or `Push Block (All …)` and `Random Guard %` is `0%`, the `Random Guard %` row turns orange. With the cursor on `Guard` or `Random Guard %`, the right side of the bottom line reads `Random Guard % is 0%: the dummy never blocks.` The value is not changed for you, because 0% can be intentional.
 
@@ -414,12 +416,12 @@ Here the cursor is on `Guard Action Type`: the `Random Guard Action %` row below
 |---|---|
 | `None` | No counter action |
 | `Guard Cancel` | Inputs a GC command; choose a button and `GC Input Delay (Ticks)` |
-| `Push Block` | Inputs AG; choose `Push Block Type` |
+| `Push Block` | Inputs PB; choose `Push Block Type` |
 | `Reversal - Specified` | Specifies a motion and button after blocking, being hit or waking up |
 | `Counter Attack - Specified` | Specifies an action after blocking or being hit, excluding wake-up |
 | `Reversal - Recording` | Plays a recording after blocking, being hit or waking up |
 | `Counter Attack - Recording` | Plays a recording after blocking |
-| `PB Recording` | Plays a recording after AG |
+| `PB Recording` | Plays a recording after PB |
 | `Reversal - Action Steps` | Runs the edited sequence of steps |
 | `Reversal - Action Patterns` | Selects and runs a checked saved pattern |
 | `Reversal - Character Specific` | Activates a character-specific move through internal state changes, rather than normal command input |
@@ -503,7 +505,7 @@ To record without the wizard, select the destination in `Recording Slot`. Use `P
 <a id="06-steps"></a>
 ## 6. Build actions with Action Steps
 
-**Reproduce expert-level execution without having to perform it yourself.** To make a recording, you need to perform the sequence yourself using the opponent's character. With Action Steps, you can define difficult sequences such as a dash followed by an attack, both timed as early as possible, or crouching medium kick canceled into Tenraiha. Specify the actions and their timing, then practice AG, GC and interrupting those sequences.
+**Reproduce expert-level execution without having to perform it yourself.** To make a recording, you need to perform the sequence yourself using the opponent's character. With Action Steps, you can define difficult sequences such as a dash followed by an attack, both timed as early as possible, or crouching medium kick canceled into Tenraiha. Specify the actions and their timing, then practice PB, GC and interrupting those sequences.
 
 Action Steps defines a sequence by pairing “when” with “what” for each action. Saving does not immediately start the sequence; it begins at a response opportunity such as recovery from blocking, being hit or knockdown.
 
@@ -636,53 +638,53 @@ Import adds to the existing list without replacing it. Imported patterns start u
 Naming and file dialogs are implemented for Windows. These operations have not been verified on Linux or macOS for this manual.
 
 <a id="08-pb"></a>
-## 8. Practice AG
+## 8. Practice PB
 
 **First fit six valid presses inside the window. Once consistent, delay the start of your inputs.**
 
 ### 8.1 Set up the drill
 
-1. Prepare a repeatable attack using the [Sasquatch setup](#sasquatch-ag-tutorial) or a recording.
+1. Prepare a repeatable attack using the [Sasquatch setup](#sasquatch-pb-tutorial) or a recording.
 2. Set `Trainer > Show PB Counter = yes`.
 3. Optionally set `Show PB Stats = yes`.
-4. Block and perform AG yourself.
+4. Block and perform PB yourself.
 
-**This feature visualizes the goal of delaying AG as much as possible while fitting six valid presses inside its window.** You can check when you started and whether you completed all six presses, as well as whether AG activated.
+**This feature visualizes the goal of delaying PB as much as possible while fitting six valid presses inside its window.** You can check when you started and whether you completed all six presses, as well as whether PB activated.
 
 Start against a fixed attack to stabilize your execution, then use random offense to distinguish execution problems from reactions.
 
-### 8.2 Read the AG counter (PB Counter)
+### 8.2 Read PB Counter
 
 ![PB Counter line at the top, the press list on the left and PB Stats](images/pb_counter_stats.png)
 
-In this example you pressed on six Ticks of the window: the bar shows 3, 1, 1, 1, 2 and 1 buttons on Ticks 5, 6, 9, 10, 11 and 13 (`at:5-13t`). Two of those Ticks had several buttons (`MultiPush: 2`). The green count means AG activated, and the list on the left shows it activated on the 6th press (`TECH HIT`). PB Stats is the box to the right; see [8.3](#pb-stats).
+In this example you pressed on six Ticks of the window: the bar shows 3, 1, 1, 1, 2 and 1 buttons on Ticks 5, 6, 9, 10, 11 and 13 (`at:5-13t`). Two of those Ticks had several buttons (`MultiPush: 2`). The green count means PB activated, and the list on the left shows it activated on the 6th press (`TECH HIT`). PB Stats is the box to the right; see [8.3](#pb-stats).
 
 | Display | Meaning |
 |---|---|
-| Count | Game-counted AG inputs plus presses after activation; carries through a blocked string |
-| Green | AG has activated |
+| Count | Game-counted PB inputs plus presses after activation; carries through a blocked string |
+| Green | PB has activated |
 | Timeline from `Guard` to `\|` | History of the latest window in Ticks; `\|` marks its end |
 | Digits on the timeline | Number of buttons pressed that Tick; two or more are red simultaneous presses |
 | `MultiPush` | Number of Ticks on which multiple buttons were pressed simultaneously |
 | `LateMash` | Buttons pressed during the 14 Ticks after the 14-Tick window closes; `(+Nt)` shows lateness |
 | `P2` | The dummy's result |
 
-The AG window is 14 Ticks. **Six valid presses inside the window give a 100% activation rate, so make six presses your consistent practice target.** If AG activates on an earlier press, you do not need to react to that activation and stop pressing buttons.
+The PB window is 14 Ticks. **Six valid presses inside the window give a 100% activation rate, so make six presses your consistent practice target.** If PB activates on an earlier press, you do not need to react to that activation and stop pressing buttons.
 
-The game checks for activation on each press: presses 1–2 never activate AG, the 3rd, 4th and 5th activate it at 25%, 50% and 75%, and the 6th always does. This was confirmed by reading the game's probability table while it ran.
+The game checks for activation on each press: presses 1–2 never activate PB, the 3rd, 4th and 5th activate it at 25%, 50% and 75%, and the 6th always does. This was confirmed by reading the game's probability table while it ran.
 
 **Counting presses after activation is intentional.** If the count stopped at activation, an attempt that succeeded early would hide whether you completed six presses. Use green to check activation and the final count to check the full input sequence.
 
-Pressing multiple buttons on the same Tick gives only one game-counted AG press. If `MultiPush` is high, check whether your presses overlap on the same Tick.
+Pressing multiple buttons on the same Tick gives only one game-counted PB press. If `MultiPush` is high, check whether your presses overlap on the same Tick.
 
-To judge delay, look at the interval from `Guard` to the first press and whether all six presses fit before the closing `|`. The goal is **to start as late as possible while still fitting six presses into the window**, rather than stopping as soon as AG activates.
+To judge delay, look at the interval from `Guard` to the first press and whether all six presses fit before the closing `|`. The goal is **to start as late as possible while still fitting six presses into the window**, rather than stopping as soon as PB activates.
 
-`LateMash` means **inputs after the window closes, not inputs after AG activates**. Post-activation presses inside the window count toward the training total, not LateMash. If LateMash grows, check for excessive delay or extra presses. Inputs beyond the window can cause an unwanted normal when blockstun ends.
+`LateMash` means **inputs after the window closes, not inputs after PB activates**. Post-activation presses inside the window count toward the training total, not LateMash. If LateMash grows, check for excessive delay or extra presses. Inputs beyond the window can cause an unwanted normal when blockstun ends.
 
 <a id="pb-stats"></a>
 ### 8.3 Statistics and practice conditions
 
-`Show PB Stats` keeps the values of the PB Counter line and averages them. It appears in a dark box. Turn on `Show GC Command Trace` as well and the trace sits to its right, so you can practice AG and GC together.
+`Show PB Stats` keeps the values of the PB Counter line and averages them. It appears in a dark box. Turn on `Show GC Command Trace` as well and the trace sits to its right, so you can practice PB and GC together.
 
 ```
 Count Total 20
@@ -693,12 +695,12 @@ Avg   PB 4.22  at 5.89-11.50t
 ```
 
 - `Total` counts ground contacts in which you pressed a button. A continuous blockstring counts as one contact. Contacts without a press, and those you guard-canceled out of, are not counted.
-- `Pass`: you pressed and AG activated. `Fail`: it did not, or you were hit. `Success` is Pass divided by Total, to two decimals.
+- `Pass`: you pressed and PB activated. `Fail`: it did not, or you were hit. `Success` is Pass divided by Total, to two decimals.
 - `Avg`: the press count (`PB`), the first and last pressed Tick (`at`), `MultiPush` (`Multi`) and `LateMash` (`Late`), averaged over contacts during which you pressed buttons and continued blocking.
-- To the left of the box, each press in the latest window is listed with its buttons. The press that activated AG is marked `TECH HIT` in green.
+- To the left of the box, each press in the latest window is listed with its buttons. The press that activated PB is marked `TECH HIT` in green.
 - Counts stop at 99999. Toggle it OFF then ON to reset the statistics. Returning to character select also clears the previous match's totals.
 
-The `4 / 5 / 6` choices under `Game > P1 Min PB Presses` **modify game behavior for practice** by preventing AG from activating below the selected press count. Use `Normal` when practicing or comparing ordinary game behavior. This setting applies to P1; it does not change the dummy's required press count.
+The `4 / 5 / 6` choices under `Game > P1 Min PB Presses` **modify game behavior for practice** by preventing PB from activating below the selected press count. Use `Normal` when practicing or comparing ordinary game behavior. This setting applies to P1; it does not change the dummy's required press count.
 
 <a id="09-gc"></a>
 ## 9. Practice guard cancels
@@ -707,7 +709,7 @@ The `4 / 5 / 6` choices under `Game > P1 Min PB Presses` **modify game behavior 
 
 ### 9.1 Set up the drill
 
-1. Prepare a repeatable attack using the [Sasquatch setup](#sasquatch-ag-tutorial) or a recording.
+1. Prepare a repeatable attack using the [Sasquatch setup](#sasquatch-pb-tutorial) or a recording.
 2. Set `Display > Show Scrolling Input = yes`.
 3. Enable its child option, `Show GC Trainer`.
 4. Set `Trainer > Show GC Command Trace = yes`.
@@ -771,7 +773,7 @@ At Turbo 3, some displayed frames contain two Ticks of game processing. You cann
 |---|---|
 | Tick Data, Action Timeline | Recording/playback and recording `Loop Interval (Frames)` |
 | Action Steps Wait, Loop Wait | Show Jump In Trainer |
-| AG/GC windows and histories | Show Dashes Interval, Show Dash Time |
+| PB/GC windows and histories | Show Dashes Interval, Show Dash Time |
 | Air Guard Gaps, Frame Trap Trainer | Dash Attack Cancel / Attack Dash Gap Trainer |
 
 Match the measured side, game speed and units before comparing numbers.
@@ -911,10 +913,10 @@ Do not judge whether a normal came out as early as possible solely by whether th
 
 1. Set `Guard = Push Block (All Light)` and `Random Guard % = 100%`.
 2. Start with `Guard Action Type = None` and examine spacing and reach after pushback.
-3. Try the same sequence against medium and heavy AG.
+3. Try the same sequence against medium and heavy PB.
 4. Add a counter action and check whether your follow-up beats the dummy's response.
 
-Selecting AG under `Guard` leaves `Guard Action Type` available for the response.
+Selecting PB under `Guard` leaves `Guard Action Type` available for the response.
 
 ### D. Examine air-guard interrupts and landing situations
 
@@ -969,7 +971,7 @@ With Anakaris as the dummy, `Pit of Blame` offers `None / Normal / ES / Random`.
 
 ### 12.3 Use Analysis when needed
 
-`Analysis` provides internal timers for invulnerability, throw invulnerability, AG and other states. Leave these OFF for ordinary practice unless you need them.
+`Analysis` provides internal timers for invulnerability, throw invulnerability, PB and other states. Leave these OFF for ordinary practice unless you need them.
 
 `Random Guard Action % Check` checks how often `Random Guard Action %` allows the dummy to act. It shows the setting, the number of opportunities (`opp`) and how many passed the probability check (`roll+`). After eight chances it turns green when the measured rate is within five percentage points of the setting, and red otherwise. It was the GC Frequency Counter on the Trainer tab before v11.7.16.1.
 
@@ -1030,7 +1032,7 @@ For reports, include version, P1/P2 characters, which character is on each side,
 
 | Term | Meaning here |
 |---|---|
-| AG / Push Block / PB | Advancing Guard; the English UI uses Push Block / PB |
+| PB / Push Block | The defensive mechanic that pushes the opponent away while blocking |
 | GC / Guard Cancel | Guard cancel |
 | Tick / t | Internal frame: Normal has one Tick per displayed frame; Turbo 3 has four Ticks in three displayed frames |
 | Frame | Displayed/emulator frame in this guide; check the option's label and description |
@@ -1057,7 +1059,7 @@ For reports, include version, P1/P2 characters, which character is on each side,
 - Controls: [controller.lua](../scripts/controller.lua), [position.lua](../scripts/position.lua).
 - Recording: [recordingWizard.lua](../scripts/recordingWizard.lua), [macro.lua](../scripts/macro.lua).
 - Steps/patterns: [actionSequenceEditor.lua](../scripts/actionSequenceEditor.lua), [actionSequenceRunner.lua](../scripts/actionSequenceRunner.lua).
-- AG/GC displays: [hud.lua](../scripts/hud.lua), [guardCancel.lua](../scripts/guardCancel.lua), [inputHistory.lua](../scripts/inputHistory.lua).
+- PB/GC displays: [hud.lua](../scripts/hud.lua), [guardCancel.lua](../scripts/guardCancel.lua), [inputHistory.lua](../scripts/inputHistory.lua).
 - Measurements: [tickData.lua](../scripts/tickData.lua), [airGuardGap.lua](../scripts/airGuardGap.lua).
 
 When labels or behavior change in a later version, update the affected sections and reference version.

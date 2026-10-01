@@ -8,7 +8,7 @@ English | [日本語](README.ja.md)
 
 This fork extends [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2). This README covers **v11.7.19**.
 
-**[Download](https://github.com/vampiresavior001/VSAV_Training/archive/refs/heads/fc2-v11.zip)** · [Installation](#windows-installation) · [First AG / GC drill](#first-ag-drill) · [English manual](docs/PLAYER_MANUAL.en.md)
+**[Download](https://github.com/vampiresavior001/VSAV_Training/archive/refs/heads/fc2-v11.zip)** · [Installation](#windows-installation) · [First PB / GC drill](#first-pb-drill) · [English manual](docs/PLAYER_MANUAL.en.md)
 
 ## Reproduce, test and improve in Ticks
 
@@ -16,7 +16,7 @@ A Tick is an internal game frame.
 
 **Reproduce expert-level execution by defining actions and timing in Action Steps.** Set up a dash followed by an attack, both timed as early as possible, or crouching medium kick canceled into Tenraiha—without having to perform the sequence yourself.
 
-**Reproduce the offense → try AG, GC or an interrupt → use the readouts to refine your inputs.** Repeat the same sequence to improve your response.
+**Reproduce the offense → try PB, GC or an interrupt → use the readouts to refine your inputs.** Repeat the same sequence to improve your response.
 
 | Game speed | Displayed frames and internal frames |
 |---|---|
@@ -34,7 +34,7 @@ See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions require
 | **Test when your offense works** | Make the dummy respond with a light normal, throw, jump or dash, then test whether your pressure or wake-up setup beats it |
 | **Reproduce strings and combos precisely** | Define Tick-based actions with Action Steps; save, randomize and share them with Action Patterns. You can even define sequences that complete infinite combos for Bulleta (B.B. Hood) or Bishamon |
 | **Measure setup timing** | Use Action Timeline in Tick Data to measure the time spent setting up wake-up pressure, or how far away you can start a walk-up throw and still perform it within 15 displayed frames (20 Ticks at Turbo 3) |
-| **Practice AG (Advancing Guard / Push Block)** | Delay input while fitting six valid presses inside the window. Inspect timing, simultaneous presses, inputs after the window closes, averages and success rate |
+| **Practice PB (Push Block)** | Delay input while fitting six valid presses inside the window. Inspect timing, simultaneous presses, inputs after the window closes, averages and success rate |
 | **Practice GC (Guard Cancel)** | Inspect accepted directions, buttons and their intervals to identify command expiry or late inputs |
 | **Examine situations after air guarding** | Find interruptible gaps in air chains, evaluate actual interrupt timing, see when you air-blocked and check landing advantage |
 
@@ -42,9 +42,9 @@ See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions require
 
 ### See what happened to your inputs
 
-![PB Counter and PB Stats showing AG input count, timing, simultaneous presses and practice results](docs/images/pb_counter_stats.png)
+![PB Counter and PB Stats showing PB input count, timing, simultaneous presses and practice results](docs/images/pb_counter_stats.png)
 
-Here, six presses on Ticks 5–13 of the window activated AG. Two Ticks contained simultaneous button presses, and no inputs fell after the window closed. **See whether AG activated and what you can improve on your next attempt.** The English UI refers to AG as Push Block / PB. See [AG practice](docs/PLAYER_MANUAL.en.md#08-pb) for the full readout guide.
+Here, six presses on Ticks 5–13 of the window activated PB. Two Ticks contained simultaneous button presses, and no inputs fell after the window closed. **See whether PB activated and what you can improve on your next attempt.** See [PB practice](docs/PLAYER_MANUAL.en.md#08-pb) for the full readout guide.
 
 ### Choose easy recording or precise action control
 
@@ -103,17 +103,18 @@ Recording's `Looped Playback` and Action Steps' `Loop Steps` are separate settin
 </details>
 
 <a id="first-ag-drill"></a>
+<a id="first-pb-drill"></a>
 
-## First drill: Practice AG and GC against Sasquatch
+## First drill: Practice PB and GC against Sasquatch
 
-Make Sasquatch perform short-dash LP, then practice AG (Advancing Guard / Push Block) and GC (Guard Cancel) against it. Save the sequence so you can use it again next time.
+Make Sasquatch perform short-dash LP, then practice PB (Push Block) and GC (Guard Cancel) against it. Save the sequence so you can use it again next time.
 
-**Start by trying either AG or GC. Looping and saving can wait until you are comfortable with the drill.**
+**Start by trying either PB or GC. Looping and saving can wait until you are comfortable with the drill.**
 
-**The steps below outline the drill. Follow the [illustrated tutorial](docs/PLAYER_MANUAL.en.md#sasquatch-ag-tutorial) for the settings and controls.**
+**The steps below outline the drill. Follow the [illustrated tutorial](docs/PLAYER_MANUAL.en.md#sasquatch-pb-tutorial) for the settings and controls.**
 
 1. **Build it.** Choose Sasquatch as the dummy. With `Reversal - Action Steps`, define `Dash > Forward Cancel` (`Auto (Fastest)`) followed by LP (`Auto (8)`).
-2. **Practice AG.** Make the dummy block your attack to trigger short-dash LP, then perform AG against it. Use PB Counter / PB Stats to check, for example, whether you delayed AG while fitting six valid presses inside the window.
+2. **Practice PB.** Make the dummy block your attack to trigger short-dash LP, then perform PB against it. Use PB Counter / PB Stats to check, for example, whether you delayed PB while fitting six valid presses inside the window.
 3. **Try GC too.** Block the same LP and enter your character’s GC command. Check the success indicator, accepted directions and buttons, and input intervals.
 4. **Repeat it.** Set `Loop Steps = yes` and `Loop Wait = Auto (Landing)` to repeat short-dash LP as soon as the dummy lands.
 5. **Save it.** Use `Add from current Steps` in Action Patterns to save it as `Short LP`. Save other attacks later to practice against randomly selected sequences.
@@ -125,7 +126,7 @@ The **[English player manual](docs/PLAYER_MANUAL.en.md)** covers controls, setti
 - [Dummy defense, recovery and counter actions](docs/PLAYER_MANUAL.en.md#04-dummy)
 - [Recording and looping](docs/PLAYER_MANUAL.en.md#05-recording)
 - [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) / [Action Patterns](docs/PLAYER_MANUAL.en.md#07-patterns)
-- [AG practice](docs/PLAYER_MANUAL.en.md#08-pb) / [GC practice](docs/PLAYER_MANUAL.en.md#09-gc)
+- [PB practice](docs/PLAYER_MANUAL.en.md#08-pb) / [GC practice](docs/PLAYER_MANUAL.en.md#09-gc)
 - [Tick Data and air-guard analysis](docs/PLAYER_MANUAL.en.md#10-data)
 - [Practice recipes](docs/PLAYER_MANUAL.en.md#11-drills)
 - [Troubleshooting](docs/PLAYER_MANUAL.en.md#14-troubleshooting)
@@ -157,7 +158,7 @@ When reporting a problem, include the version, P1/P2 characters, which character
 
 ## Original project and credits
 
-This project is based on [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2). The original already includes recording, reversal settings, an AG counter and a GC-window display. This fork builds on them with more precise action reproduction and more detailed feedback; see the [feature comparison](docs/PLAYER_MANUAL.en.md). Thanks to the creators and contributors of the original training mode and its scripts, and to the VSAV community.
+This project is based on [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2). The original already includes recording, reversal settings, a PB counter and a GC-window display. This fork builds on them with more precise action reproduction and more detailed feedback; see the [feature comparison](docs/PLAYER_MANUAL.en.md). Thanks to the creators and contributors of the original training mode and its scripts, and to the VSAV community.
 
 <details>
 <summary>Credits from the original README</summary>
