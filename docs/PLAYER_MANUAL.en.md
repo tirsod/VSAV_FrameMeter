@@ -97,8 +97,8 @@ If you also play matches through Fightcade, **copy the entire `emulator/fbneo` f
 3. Download the target version from the [repository](https://github.com/vampiresavior001/VSAV_Training) and extract it.
 4. Put `run_vsav_training.bat` and `scripts` in the **copied fbneo folder**. The batch file must sit next to the copied `fcadefbneo.exe`.
 5. Double-click `run_vsav_training.bat` **in the copy**.
-6. Turn **Run-ahead OFF** in your training copy of FBNeo. The original settings were copied too; copying the folder alone does not turn it off.
-7. Fully close FBNeo, start it again through the copied batch file and confirm that Run-ahead remains OFF.
+6. In your training copy of FBNeo, select **`Video > Runahead > Disabled`** from the emulator menu. The original settings were copied too; copying the folder alone does not turn it off.
+7. Fully close FBNeo, start it again through the copied batch file and confirm that `Disabled` is selected under `Video > Runahead`.
 8. Open `Input > Map Game Inputs` and assign game controls and the functions below.
 
 **To play in full screen, check `Video > Blitter options > Windowed Fullscreen`**, then switch with `Video > Toggle fullscreen mode` (`Alt+Enter`). Without the check, FBNeo uses its older full-screen mode, and the Windows windows used to name patterns and to export or import them cannot appear over it.
@@ -269,7 +269,7 @@ Open the menu and configure these readouts and practice settings:
 | `Trainer > Show PB Stats` | `yes` |
 | `Game > P1 Min PB Presses` | `Normal` (practice with ordinary activation rules) |
 
-Close the menu and repeat: **make the dummy block your attack → block its LP response → perform AG**. Push Block / PB in the UI means AG (Advancing Guard).
+Close the menu, make the dummy block your attack to trigger short-dash LP, then perform AG against it. Use PB Counter / PB Stats to check, for example, whether you delayed AG while fitting six valid presses inside the window. Push Block / PB in the UI means AG (Advancing Guard).
 
 ![PB Counter and PB Stats for reviewing AG timing and practice results](images/pb_counter_stats.png)
 

@@ -46,11 +46,11 @@ Tickはゲームの内部フレームです。
 
 この例では、受付の5～13 Tick目に6回入力してAGが成立しています。同時押しがあったTickは2つ、受付終了後の入力は0です。**成立したかだけでなく、どこを改善するかまで確認できます。** 英語UIのPush Block／PBはAGを指します。詳しい読み方は[AG練習](docs/PLAYER_MANUAL.ja.md#08-pb)へ。
 
-### 手軽な録画と、精密な動作指定を使い分ける
+### 手軽な記録と、精密な動作指定を使い分ける
 
-自分で操作できる動きは、**[Recording Wizard](docs/PLAYER_MANUAL.ja.md#05-recording)**で手軽に録画できます。操作の開始から終了までを自動で記録し、確認して保存できます。
+自分で操作できる動きは、**[Recording Wizard](docs/PLAYER_MANUAL.ja.md#05-recording)**で手軽に記録できます。操作の開始から終了までを自動で記録し、確認して保存できます。
 
-**録画・再生は表示フレーム単位です。** 自分では難しい操作や、Tick単位の正確なタイミングはAction Stepsで定義してください。
+**記録・再生は表示フレーム単位です。** 自分では難しい操作や、Tick単位の正確なタイミングはAction Stepsで定義してください。
 
 ## 導入前に：Run-aheadは必ずOFF
 
@@ -72,8 +72,8 @@ Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐた�
 1. FightcadeとFBNeoを終了します。
 2. Fightcadeの`emulator/fbneo`フォルダー全体を、別の場所へコピーします。例：`C:/VSAV_Training/fbneo`。
 3. 本プロジェクトをダウンロードして展開し、`run_vsav_training.bat`と`scripts`フォルダー全体を、**複製先のfbneoフォルダー**へ配置します。バッチファイルは`fcadefbneo.exe`と同じ階層に置きます。
-4. 複製先の`run_vsav_training.bat`を起動し、**Run-aheadをOFF**にします。元の設定もコピーされるため、複製するだけではOFFになりません。
-5. FBNeoを完全終了して同じバッチから再起動し、Run-aheadがOFFのままであることを確認します。
+4. 複製先の`run_vsav_training.bat`を起動し、FBNeo本体の **`Video > Runahead > Disabled`** を選びます。元の設定もコピーされるため、複製するだけではOFFになりません。
+5. FBNeoを完全終了して同じバッチから再起動し、`Video > Runahead`で`Disabled`が選ばれていることを確認します。
 6. `Input > Map Game Inputs`でゲーム操作と下表の機能を割り当てます。P2側のゲーム入力も設定してください。
 
 全画面で遊ぶときは、先に`Video > Blitter options > Windowed Fullscreen`にチェックを入れてください。古い形式の全画面では、パターンの名前入力やExport・Importのウィンドウを表示できません。
@@ -91,17 +91,17 @@ Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐた�
 |---|---|---|
 | `Lua Hotkey 1` | トレーニングメニューを開閉 | 代用不可・**必須** |
 | `Lua Hotkey 2` | レバーとの組み合わせで位置を戻す | `Dummy > Position`で左右を押して配置を選ぶ。LPで同じ配置に戻す。HPなら戻してメニューも閉じる |
-| `Lua Hotkey 3` | 録画のループ再生を切り替える | `Recording > Looped Playback`を左右で`yes`／`no`に切り替える |
+| `Lua Hotkey 3` | 記録のループ再生を切り替える | `Recording > Looped Playback`を左右で`yes`／`no`に切り替える |
 | `Lua Hotkey 4` | キャラクター選択へ戻る | `Game > Return to Character Select`で右またはLP |
-| `Volume Up` | 通常録画の開始・終了 | `Recording > Recording Wizard`で右またはLP。スロットを選び、自動録画で代用する（下記参照） |
-| `Volume Down` | 録画の再生・停止 | `Recording > Play Recording`で右またはLP。もう一度実行すると停止 |
+| `Volume Up` | 入力記録の開始・終了（手動） | `Recording > Recording Wizard`で右またはLP。スロットを選び、自動記録で代用する（下記参照） |
+| `Volume Down` | 記録の再生・停止 | `Recording > Play Recording`で右またはLP。もう一度実行すると停止 |
 | `P1 Coin` | 試合中は操作側を切り替え。キャラ選択中はステージ選択 | 代用不可・**必須** |
 
 メニューは`Lua Hotkey 1`で開き、上端のタブ名で左右を押してタブを切り替え、上下で項目を選びます。LPは弱Pです。`>`は「タブ > 項目」の順を表します。
 
-**録画をメニューで代用する場合：** ウィザードでスロットを選び、いったん入力を離してから操作すると録画が始まります。操作を終えて入力を離し、ダミーが動ける状態で約2秒待つと自動終了します。確認画面で保存を選び、LPで決定してください。手動で開始・終了を指定したい場合は`Volume Up`を使います。
+**記録をメニューで代用する場合：** ウィザードでスロットを選び、いったん入力を離してから操作すると記録が始まります。操作を終えて入力を離し、ダミーが動ける状態で約2秒待つと自動終了します。確認画面で保存を選び、LPで決定してください。手動で開始・終了を指定したい場合は`Volume Up`を使います。
 
-録画の`Looped Playback`と、Action Stepsの`Loop Steps`は別の設定です。[録画の詳しい手順](docs/PLAYER_MANUAL.ja.md#05-recording)も参照してください。
+記録の`Looped Playback`と、Action Stepsの`Loop Steps`は別の設定です。[記録の詳しい手順](docs/PLAYER_MANUAL.ja.md#05-recording)も参照してください。
 
 `Volume Up / Down`はFBNeoの入力項目名です。アーケードコントローラーなどのボタンにも割り当てられます。
 
@@ -116,7 +116,7 @@ Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐた�
 **最初はAGかGCのどちらかを試せれば十分です。連発と保存は、慣れてから進めてください。**
 
 1. **作る。** ダミーをサスカッチにし、`Reversal - Action Steps`で`Dash > Forward Cancel`（`Auto (Fastest)`）→LP（`Auto (8)`）を定義します。
-2. **AGする。** こちらの技をガードさせて反撃を始め、その小PにAGします。PB Counter／PB Statsで、遅らせながら受付内に6回入力できたか確認します。
+2. **AGする。** こちらの技をガードさせてショートダッシュ小Pを出させ、これにAGします。PB Counter／PB Statsで、例えば遅らせAGで受付内に6回入力できたか確認します。
 3. **GCも試す。** 同じ小Pに自キャラのGCを入力し、成功表示と、受け付けられた方向・ボタン・入力間隔を確認します。
 4. **連続で練習する。** `Loop Steps = yes`、`Loop Wait = Auto (Landing)`にして、着地からショートダッシュ小Pを繰り返させます。
 5. **保存する。** Action Patternsの`Add from current Steps`で`Short LP`として保存します。別の攻めも登録すれば、複数候補のランダム練習へ発展させられます。
@@ -128,7 +128,7 @@ Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐた�
 **[日本語プレイヤーマニュアル](docs/PLAYER_MANUAL.ja.md)** に、操作・設定・表示の読み方をまとめています。
 
 - [ダミーのガード・受け身・反撃](docs/PLAYER_MANUAL.ja.md#04-dummy)
-- [録画とループ再生](docs/PLAYER_MANUAL.ja.md#05-recording)
+- [記録とループ再生](docs/PLAYER_MANUAL.ja.md#05-recording)
 - [Action Steps](docs/PLAYER_MANUAL.ja.md#06-steps)／[Action Patterns](docs/PLAYER_MANUAL.ja.md#07-patterns)
 - [AG練習](docs/PLAYER_MANUAL.ja.md#08-pb)／[GC練習](docs/PLAYER_MANUAL.ja.md#09-gc)
 - [Tick Data・空中ガードの分析](docs/PLAYER_MANUAL.ja.md#10-data)
@@ -148,9 +148,9 @@ FBNeoを終了する前に編集内容を保存し、次のファイルをバッ
 | 内容 | 保存先 |
 |---|---|
 | 設定・Action Steps・Action Patterns | `scripts/training_settings.json` |
-| 録画 | `scripts/macro`フォルダー全体 |
+| 記録 | `scripts/macro`フォルダー全体 |
 
-更新はトレーニング専用の複製先へ行います。配布物に録画ファイルが含まれる場合があるため、自分の録画を不用意に上書きしないでください。更新後はFBNeoを完全に再起動し、Run-aheadがOFFであることも確認します。
+更新はトレーニング専用の複製先へ行います。配布物に記録ファイルが含まれる場合があるため、自分の記録を不用意に上書きしないでください。更新後はFBNeoを完全に再起動し、Run-aheadがOFFであることも確認します。
 
 ## 変更履歴・不具合報告
 
@@ -162,7 +162,7 @@ FBNeoを終了する前に編集内容を保存し、次のファイルをバッ
 
 ## フォーク元・クレジット
 
-本プロジェクトは、[VSAV_Trainingのfc2ブランチ](https://github.com/NBeing/VSAV_Training/tree/fc2)を基にしています。フォーク元にも録画・反撃設定・AGカウンター・GC受付表示があります。本フォークはそれらを土台に、動作再現の精度と振り返りの詳しさを拡張しています。[機能比較](docs/PLAYER_MANUAL.ja.md)も参照してください。基盤となるトレーニングモードと、各スクリプトを作成・改善してきた貢献者、VSAVコミュニティに感謝します。
+本プロジェクトは、[VSAV_Trainingのfc2ブランチ](https://github.com/NBeing/VSAV_Training/tree/fc2)を基にしています。フォーク元にも記録・反撃設定・AGカウンター・GC受付表示があります。本フォークはそれらを土台に、動作再現の精度と振り返りの詳しさを拡張しています。[機能比較](docs/PLAYER_MANUAL.ja.md)も参照してください。基盤となるトレーニングモードと、各スクリプトを作成・改善してきた貢献者、VSAVコミュニティに感謝します。
 
 <details>
 <summary>フォーク元READMEのクレジット</summary>

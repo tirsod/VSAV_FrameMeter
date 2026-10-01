@@ -72,8 +72,8 @@ The target game is **Vampire Savior - the lord of vampire (970519 Japan / `vsavj
 1. Close Fightcade and FBNeo.
 2. Copy Fightcade's entire `emulator/fbneo` folder to another location, for example `C:/VSAV_Training/fbneo`.
 3. Download and extract this project. Put `run_vsav_training.bat` and the entire `scripts` folder in the **copied fbneo folder**, with the batch file next to `fcadefbneo.exe`.
-4. Launch the copied batch file and **turn Run-ahead OFF**. Copying the folder also copies settings; it does not turn Run-ahead off by itself.
-5. Fully close FBNeo, relaunch through the same batch file and confirm Run-ahead remains OFF.
+4. Launch the copied batch file and select **`Video > Runahead > Disabled`** in FBNeo itself. Copying the folder also copies settings; it does not turn Run-ahead off by itself.
+5. Fully close FBNeo, relaunch through the same batch file and confirm that `Disabled` is selected under `Video > Runahead`.
 6. Use `Input > Map Game Inputs` to configure game controls and the functions below. Configure P2 game inputs too.
 
 To play in full screen, check `Video > Blitter options > Windowed Fullscreen` first. The older full-screen mode cannot show the windows used to name, export and import patterns.
@@ -116,7 +116,7 @@ Make Sasquatch perform short-dash LP, then practice AG (Advancing Guard / Push B
 **Start by trying either AG or GC. Looping and saving can wait until you are comfortable with the drill.**
 
 1. **Build it.** Choose Sasquatch as the dummy. With `Reversal - Action Steps`, define `Dash > Forward Cancel` (`Auto (Fastest)`) followed by LP (`Auto (8)`).
-2. **Practice AG.** Make the dummy block your attack to trigger its response, then block the LP and perform AG. Use PB Counter / PB Stats to check whether you delayed input while fitting six presses inside the window.
+2. **Practice AG.** Make the dummy block your attack to trigger short-dash LP, then perform AG against it. Use PB Counter / PB Stats to check, for example, whether you delayed AG while fitting six valid presses inside the window.
 3. **Try GC too.** Block the same LP and enter your character’s GC command. Check the success indicator, accepted directions and buttons, and input intervals.
 4. **Repeat it.** Set `Loop Steps = yes` and `Loop Wait = Auto (Landing)` to repeat short-dash LP as soon as the dummy lands.
 5. **Save it.** Use `Add from current Steps` in Action Patterns to save it as `Short LP`. Save other attacks later to practice against randomly selected sequences.

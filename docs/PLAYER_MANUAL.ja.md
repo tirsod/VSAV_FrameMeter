@@ -21,7 +21,7 @@
 
 この制御を生かすAction Stepsでは、動作を内部フレーム単位で組み立てられます。単発の反撃だけでなく、連係や複雑なコンボも定義でき、バレッタやビシャモンの永久コンボを完遂するような定義も可能です。用意した動きを繰り返し再現させ、自分の対処を検証する、より高度なトレーニングに使えます。
 
-録画・再生は表示フレーム単位であり、Tick単位の入力タイミングを正確に再現するものではありません。特にターボ時の細かなタイミングを指定する練習には、Action Stepsを使ってください。 本フォークで追加したRecording Wizardは、操作開始から操作終了までを簡単に録画するための機能です。
+記録・再生は表示フレーム単位であり、Tick単位の入力タイミングを正確に再現するものではありません。特にターボ時の細かなタイミングを指定する練習には、Action Stepsを使ってください。 本フォークで追加したRecording Wizardは、操作開始から操作終了までを簡単に記録するための機能です。
 
 さらに、AGでは「なるべく遅らせて受付内に6回入力できたか」、GCでは「どの入力が受け付けられ、どこで遅れたか」、空中ガードでは「割り込める隙間があるか・押したタイミングはよかったか・着地後にどちらが有利か」を確認できます。正確な相手の動きと、詳しい振り返りの両方を揃えることが本フォークの狙いです。
 
@@ -31,7 +31,7 @@
 |---|---|---|
 | 反撃・リバーサル | 指定入力・キャラ別の技発動などを搭載。ただしターボ時の最速入力やコマンド入力の遅れに制約あり | 内部フレームで入力を制御し、起き上がり・ガード後・着地後のタイミング指定を改良 |
 | 技の性能測定 | Frame Dataは表示フレーム単位で、ターボ時に測定値が不安定 | Tick Dataで内部フレーム単位に測定。発生・持続・戻り・有利不利の数え方・考え方を攻略サイトに合わせる |
-| ダミーの動作作成 | 録画再生と単発の反撃指定 | Recording Wizardで録画を簡略化。Tick単位の動作はAction Stepsで構築し、Action Patternsで保存・選択・共有 |
+| ダミーの動作作成 | 記録の再生と単発の反撃指定 | Recording Wizardで記録を簡略化。Tick単位の動作はAction Stepsで構築し、Action Patternsで保存・選択・共有 |
 | AG練習 | 入力カウンター、成功・失敗集計 | 受付の内部フレーム履歴、同時押し、受付終了後の入力、成立後も含めた入力回数を確認。PB Statsで平均と成功率も確認 |
 | GC練習 | 入力ビューアにGC受付を表示 | ゲームが受け付けたコマンド、入力間隔、失効、ガード持続中の接触まで追跡 |
 | 空中ガードの分析 | Frame Trap／Jump Inなどの表示を搭載 | 専用のAir Guard Gapsで、空中チェーンの隙間、実際の割り込み、ガードのタイミング、着地有利不利を表示 |
@@ -47,7 +47,7 @@
 - [3. 基本操作と位置の戻し方](#03-controls)
 - [サスカッチを相手にAG・GCを練習する](#sasquatch-ag-tutorial)
 - [4. ダミーのガード・受け身・反撃](#04-dummy)
-- [5. 相手の動きを録画する](#05-recording)
+- [5. 相手の動きを記録する](#05-recording)
 - [6. Action Stepsで動きを組む](#06-steps)
 - [7. Action Patternsで保存・ランダム化・共有する](#07-patterns)
 - [8. AGを練習する](#08-pb)
@@ -66,9 +66,9 @@
 |---|---|---|
 | コンボや連係を試す | ダミーの姿勢・ガード、体力回復 | `Dummy`、`Gauge` |
 | 起き上がりやガード後に暴れさせる | 単発の反撃、Action Steps | `Dummy > Guard Action Type` |
-| 実戦で見かける攻めを繰り返させる | 録画とループ | `Recording > Recording Wizard` |
+| 実戦で見かける攻めを繰り返させる | 記録とループ | `Recording > Recording Wizard` |
 | ダッシュ→攻撃などを正確に指定する | Action Steps | [6章](#06-steps) |
-| 複数の攻めをランダムに出す | 録画スロット、Action Patterns | [5章](#05-recording)、[7章](#07-patterns) |
+| 複数の攻めをランダムに出す | 記録スロット、Action Patterns | [5章](#05-recording)、[7章](#07-patterns) |
 | AGの押し方を改善する | `Show PB Counter`、`Show PB Stats` | [8章](#08-pb) |
 | GCの失敗原因を調べる | GC Command Trace、入力履歴 | [9章](#09-gc) |
 | 有利不利、割り込み、着地の状況を調べる | Tick Data、Air Guard Gaps | [10章](#10-data) |
@@ -97,8 +97,8 @@ Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐた�
 3. [リポジトリ](https://github.com/vampiresavior001/VSAV_Training)から対象版をダウンロードし、展開します。
 4. `run_vsav_training.bat` と `scripts` を、**複製先のfbneoフォルダー**へ配置します。複製先の `fcadefbneo.exe` とバッチファイルが同じ階層になります。
 5. **複製先の** `run_vsav_training.bat` をダブルクリックして起動します。
-6. 起動したトレーニング用FBNeoで **Run-aheadをOFF** にします。元の設定もコピーされるため、複製しただけではOFFになりません。
-7. FBNeoを完全に終了して複製先のバッチから起動し直し、Run-aheadがOFFになっていることを確認します。
+6. 起動したトレーニング用FBNeo本体で **`Video > Runahead > Disabled`** を選びます。元の設定もコピーされるため、複製しただけではOFFになりません。
+7. FBNeoを完全に終了して複製先のバッチから起動し直し、`Video > Runahead`で`Disabled`が選ばれていることを確認します。
 8. FBNeoの `Input > Map Game Inputs` を開き、ゲーム操作と下表の機能を割り当てます。
 
 **全画面で遊ぶときは、`Video > Blitter options > Windowed Fullscreen` にチェックを入れてください。** 全画面の切り替えは `Video > Toggle fullscreen mode`（`Alt+Enter`）です。チェックがないと古い形式の全画面になり、パターンの名前入力やExport・Importで開くWindowsのウィンドウを表示できません。
@@ -115,17 +115,17 @@ Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐた�
 |---|---|---|
 | `Lua Hotkey 1` | トレーニングメニューを開閉 | 代用不可・**必須** |
 | `Lua Hotkey 2` | レバーとの組み合わせで位置を戻す | `Dummy > Position`で左右を押して配置を選ぶ。LPで同じ配置に戻す。HPなら戻してメニューも閉じる |
-| `Lua Hotkey 3` | 録画のループ再生を切り替える | `Recording > Looped Playback`を左右で`yes`／`no`に切り替える |
+| `Lua Hotkey 3` | 記録のループ再生を切り替える | `Recording > Looped Playback`を左右で`yes`／`no`に切り替える |
 | `Lua Hotkey 4` | キャラクター選択へ戻る | `Game > Return to Character Select`で右またはLP |
-| `Volume Up` | 通常録画の開始・終了 | `Recording > Recording Wizard`で右またはLP。スロットを選び、自動録画で代用する（下記参照） |
-| `Volume Down` | 録画の再生・停止 | `Recording > Play Recording`で右またはLP。もう一度実行すると停止 |
+| `Volume Up` | 入力記録の開始・終了（手動） | `Recording > Recording Wizard`で右またはLP。スロットを選び、自動記録で代用する（下記参照） |
+| `Volume Down` | 記録の再生・停止 | `Recording > Play Recording`で右またはLP。もう一度実行すると停止 |
 | `P1 Coin` | 試合中は操作側を切り替え。キャラ選択中はステージ選択 | 代用不可・**必須** |
 
 メニューは`Lua Hotkey 1`で開き、上端のタブ名で左右を押してタブを切り替え、上下で項目を選びます。LPは弱Pです。`>`は「タブ > 項目」の順を表します。
 
-**録画をメニューで代用する場合：** ウィザードでスロットを選び、いったん入力を離してから操作すると録画が始まります。操作を終えて入力を離し、ダミーが動ける状態で約2秒待つと自動終了します。確認画面で保存を選び、LPで決定してください。手動で開始・終了を指定したい場合は`Volume Up`を使います。
+**記録をメニューで代用する場合：** ウィザードでスロットを選び、いったん入力を離してから操作すると記録が始まります。操作を終えて入力を離し、ダミーが動ける状態で約2秒待つと自動終了します。確認画面で保存を選び、LPで決定してください。手動で開始・終了を指定したい場合は`Volume Up`を使います。
 
-録画の`Looped Playback`と、Action Stepsの`Loop Steps`は別の設定です。[録画の詳しい手順](#05-recording)も参照してください。
+記録の`Looped Playback`と、Action Stepsの`Loop Steps`は別の設定です。[記録の詳しい手順](#05-recording)も参照してください。
 
 ここでの `Volume Up / Down` は、**FBNeoの入力設定にある項目名**です。Windowsの音量操作そのものを指すわけではありません。
 
@@ -158,16 +158,16 @@ P1だけでなくP2側のゲーム入力も設定してください。入力が�
 
 LP＝弱P、MP＝中P、HP＝強P、LK＝弱K、MK＝中K、HK＝強Kです。
 
-一覧の端を越えて上下へ移動すると、タブ選択へ戻ります。MPの意味は画面ごとに異なり、Action Patternsでは使用チェックの切り替え、録画確認では録り直しになります。画面下の操作案内を優先してください。
+一覧の端を越えて上下へ移動すると、タブ選択へ戻ります。MPの意味は画面ごとに異なり、Action Patternsでは使用チェックの切り替え、記録確認では記録し直しになります。画面下の操作案内を優先してください。
 
 `Display`、`Trainer`、`Analysis` の `Reset This Tab` は、そのタブの設定をまとめて初期化します。確認画面が開き、初期選択は `Cancel` です。親設定がOFFで隠れている子項目も初期化されます。
 
 ### 3.2 操作側とキャラクター選択
 
 - 試合中の `P1 Coin` で、自分が操作する側を切り替えます。
-- 録画再生中は操作側を切り替えられません。先に再生を止めてください。
+- 記録の再生中は操作側を切り替えられません。先に再生を止めてください。
 - `Lua Hotkey 4` または `Game > Return to Character Select` でキャラクターを選び直します。
-- キャラクター選択へ戻ると再生が止まり、その試合用の録画ステートや入力履歴、AG・GCなどの前試合の表示がクリアされます。
+- キャラクター選択へ戻ると再生が止まり、その試合用の記録開始時のステートや入力履歴、AG・GCなどの前試合の表示がクリアされます。
 
 ### 3.3 位置を素早く戻す
 
@@ -269,7 +269,7 @@ Waitの一覧の下には、選択肢の説明が出ます。1ステップ目の
 | `Trainer > Show PB Stats` | `yes` |
 | `Game > P1 Min PB Presses` | `Normal`（通常の成立条件で練習） |
 
-メニューを閉じて、**こちらの技をガードさせる → 反撃の小Pをガード → AGを入力する**、を繰り返します。英語UIのPush Block／PBはAG（アドバンシングガード）です。
+メニューを閉じ、こちらの技をガードさせてショートダッシュ小Pを出させ、これにAGします。PB Counter／PB Statsで、例えば遅らせAGで受付内に6回入力できたか確認します。英語UIのPush Block／PBはAG（アドバンシングガード）です。
 
 ![AG入力のタイミングと練習結果を確認するPB Counter／PB Stats](images/pb_counter_stats.png)
 
@@ -417,9 +417,9 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 | `Push Block` | AG入力を行わせる。`Push Block Type` を指定 |
 | `Reversal - Specified` | ガード・被弾・起き上がり後の行動を、コマンドとボタンで指定 |
 | `Counter Attack - Specified` | ガード・被弾後の行動を指定。起き上がりを含めない |
-| `Reversal - Recording` | ガード・被弾・起き上がり後に録画を再生 |
-| `Counter Attack - Recording` | ガード後に録画を再生 |
-| `PB Recording` | AG後に録画を再生 |
+| `Reversal - Recording` | ガード・被弾・起き上がり後に記録を再生 |
+| `Counter Attack - Recording` | ガード後に記録を再生 |
+| `PB Recording` | AG後に記録を再生 |
 | `Reversal - Action Steps` | 編集した一連のステップを実行 |
 | `Reversal - Action Patterns` | 使用チェックを付けた保存パターンから選んで実行 |
 | `Reversal - Character Specific` | キャラクター別の技を内部操作で発動。通常のコマンド入力とは異なる |
@@ -444,33 +444,33 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 `Button Lever = As Is` はモーションの最後の方向を使い、`Neutral` はボタンを押すときに方向を離します。ダッシュキャンセルで方向を変えると、キャンセルに必要な逆方向を上書きすることがあります。
 
 <a id="05-recording"></a>
-## 5. 相手の動きを録画する
+## 5. 相手の動きを記録する
 
-録画とAction Stepsは、相手の動きを用意する方法が違います。
+記録とAction Stepsは、相手の動きを用意する方法が違います。
 
 | 方法 | 動きの用意のしかた | 向いている用途 |
 |---|---|---|
-| レコーディング | 相手キャラクターを自分で操作して録る | 自分でできる攻めを手軽に再現する |
+| レコーディング | 相手キャラクターを自分で操作して記録する | 自分でできる攻めを手軽に再現する |
 | Action Steps | 動作とタイミングを指定する | 自分では難しい操作や、最速行動を再現する |
 
-ここでの録画は動画ではなく、ゲームに再入力する操作の記録です。
+記録（Recording）は、レバーやボタンの入力を保存し、ダミーの操作として再生する機能です。
 
-録画・再生は表示フレーム単位であり、Tick単位の入力タイミングを正確に再現するものではありません。特にターボ時の細かなタイミングを指定する練習には、Action Stepsを使ってください。
+記録・再生は表示フレーム単位であり、Tick単位の入力タイミングを正確に再現するものではありません。特にターボ時の細かなタイミングを指定する練習には、Action Stepsを使ってください。
 
-### 5.1 Recording Wizardで録る
+### 5.1 Recording Wizardで記録する
 
-本フォークで追加したRecording Wizardは、操作開始から操作終了までを簡単に録画するための機能です。録画開始・終了の手間を減らすもので、録画をTick単位に高精度化する機能ではありません。
+本フォークで追加したRecording Wizardは、操作開始から操作終了までを簡単に記録するための機能です。記録開始・終了の手間を減らすもので、記録をTick単位に高精度化する機能ではありません。
 
-1. ダミーに使わせたいキャラクターをP2に選び、録画開始位置に置きます。
+1. ダミーに使わせたいキャラクターをP2に選び、記録開始位置に置きます。
 2. `Recording > Recording Wizard` を右またはLPで開きます。
-3. `Slot 1`～`Slot 5` を選びます。既存の録画を残す場合は別のスロットを選んでください。
+3. `Slot 1`～`Slot 5` を選びます。既存の記録を残す場合は別のスロットを選んでください。
 4. 操作がP2に移ったら、**一度すべての入力を離します**。
-5. `START MOVING TO RECORD!` を確認してから操作します。最初の入力で録画が始まります。
+5. `START MOVING TO RECORD!` を確認してから操作します。最初の入力で記録が始まります。
 6. 攻撃などを終え、入力を離して待ちます。ダミーが動作を終えて自由に動ける無入力状態で約2秒経つと、自動で終了します。
 7. 開始位置へ戻して一度再生されるので、内容を確認します。
-8. 確認画面で保存を選び、LPまたは右で決定します。MPは録り直し、LKは再確認の再生です。
+8. 確認画面で保存を選び、LPまたは右で決定します。MPは記録し直し、LKは再確認の再生です。
 
-保存するとスロット一覧へ戻り、続けて別の動きを録れます。途中で `Lua Hotkey 1` を押すと、今回の未保存録画を破棄して中止します。確認画面のLPは「現在選択中の項目の決定」なので、カーソルを動かした後は項目名を確認してください。
+保存するとスロット一覧へ戻り、続けて別の動きを記録できます。途中で `Lua Hotkey 1` を押すと、今回の未保存の記録を破棄して中止します。確認画面のLPは「現在選択中の項目の決定」なので、カーソルを動かした後は項目名を確認してください。
 
 ### 5.2 再生とループ
 
@@ -482,27 +482,27 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 
 `Loop Interval (Frames)` の `Before / After` で待ちを調整できます。`After` は前の再生と動作終了の後、位置を戻す前の待ち、`Before` は位置を戻した後、次の再生を始めるまでの待ちです。単位は**表示フレーム**で、Action Stepsのティックとは異なります。
 
-`Reset Distance Each Loop = yes` は、各ループで録画時の間合いへ戻します。対応する距離情報が入ったv11.4.1以降の録画で使えます。左右が入れ替わったときの再生方向も補正されますが、間合いや状況まで自動的に同一になるとは限りません。
+`Reset Distance Each Loop = yes` は、各ループで記録時の間合いへ戻します。対応する距離情報が入ったv11.4.1以降の記録で使えます。左右が入れ替わったときの再生方向も補正されますが、間合いや状況まで自動的に同一になるとは限りません。
 
-### 5.3 複数の録画をランダムに出す
+### 5.3 複数の記録をランダムに出す
 
 1. 複数のスロットに、異なる行動を保存します。
 2. `Use Random Recording Slot = yes`。
 3. 再生候補の `Enable Slot 1`～`Enable Slot 5` を `yes`。
 4. `Looped Playback = yes` にして再生します。
 
-使用するスロットは少なくとも一つ有効にし、録画が入っていることを確認してください。`Use Character Specific Slots = yes` では、スロットはダミーのキャラクターごとに分かれます。キャラ変更後に別の録画が見えるのはこのためです。
+使用するスロットは少なくとも一つ有効にし、記録が入っていることを確認してください。`Use Character Specific Slots = yes` では、スロットはダミーのキャラクターごとに分かれます。キャラ変更後に別の記録が見えるのはこのためです。
 
-### 5.4 通常録画とステート利用
+### 5.4 通常の記録とステート利用
 
-ウィザードを使わず録る場合は、まず `Recording Slot` で保存先を選びます。次に `P1 Coin` でP2を操作し、`Volume Up` で録画開始、再度押して終了します。録画後はP1操作に戻して再生します。
+ウィザードを使わず記録する場合は、まず `Recording Slot` で保存先を選びます。次に `P1 Coin` でP2を操作し、`Volume Up` で記録開始、再度押して終了します。記録後はP1操作に戻して再生します。
 
-`Use Savestate Upon Recording` は、通常録画開始時の状態を保存し、再生時に復元する実験的な機能です。距離以外も含めて同じ状況から試したいときに使います。`Reset Distance Each Loop` よりステート復元が優先されます。キャラクター選択に戻ると、その試合の録画ステートは破棄されます。
+`Use Savestate Upon Recording` は、通常の記録開始時の状態を保存し、再生時に復元する実験的な機能です。距離以外も含めて同じ状況から試したいときに使います。`Reset Distance Each Loop` よりステート復元が優先されます。キャラクター選択に戻ると、その試合の記録開始時のステートは破棄されます。
 
 <a id="06-steps"></a>
 ## 6. Action Stepsで動きを組む
 
-**自分では難しい操作も、定義するだけでダミーに再現させられます。** レコーディングでは、相手キャラクターの動きを自分で操作して録る必要があります。Action Stepsなら、「最速ダッシュからの最速攻撃」「中足払いキャンセル天雷破」といった難しい行動も、動作とタイミングを指定して再現できます。達人の動きを練習相手にして、AG・GCや割り込みを繰り返し練習できます。
+**自分では難しい操作も、定義するだけでダミーに再現させられます。** レコーディングでは、相手キャラクターの動きを自分で操作して記録する必要があります。Action Stepsなら、「最速ダッシュからの最速攻撃」「中足払いキャンセル天雷破」といった難しい行動も、動作とタイミングを指定して再現できます。達人の動きを練習相手にして、AG・GCや割り込みを繰り返し練習できます。
 
 Action Stepsは「いつ」「何をするか」を一つずつ並べ、ダミーの動きを作る機能です。保存しただけで即座に動き出す機能ではなく、ガード・被弾・起き上がり後などの反撃機会から始まります。
 
@@ -597,7 +597,7 @@ Waitの選択画面では `After / Landing / Rapid / Chain / Cancel / Late Cance
 <a id="07-patterns"></a>
 ## 7. Action Patternsで保存・ランダム化・共有する
 
-Action Stepsが一つの動作一覧なのに対し、Action Patternsは名前を付けた一覧を複数持つ機能です。録画の5スロットとは別の保存場所です。
+Action Stepsが一つの動作一覧なのに対し、Action Patternsは名前を付けた一覧を複数持つ機能です。記録の5スロットとは別の保存場所です。
 
 ### 7.1 パターンを登録して使う
 
@@ -640,7 +640,7 @@ Action Stepsが一つの動作一覧なのに対し、Action Patternsは名前�
 
 ### 8.1 練習の準備
 
-1. [サスカッチの設定例](#sasquatch-ag-tutorial)や録画で、繰り返し練習する攻撃を用意します。
+1. [サスカッチの設定例](#sasquatch-ag-tutorial)や記録で、繰り返し練習する攻撃を用意します。
 2. `Trainer > Show PB Counter = yes`。
 3. 必要なら `Show PB Stats = yes`。
 4. 自分でガードしてAGを入力します。
@@ -704,7 +704,7 @@ Avg   PB 4.22  at 5.89-11.50t
 
 ### 9.1 練習の準備
 
-1. [サスカッチの設定例](#sasquatch-ag-tutorial)や録画で、繰り返し練習する攻撃を用意します。
+1. [サスカッチの設定例](#sasquatch-ag-tutorial)や記録で、繰り返し練習する攻撃を用意します。
 2. `Display > Show Scrolling Input = yes`。
 3. その子項目 `Show GC Trainer = yes`。
 4. `Trainer > Show GC Command Trace = yes`。
@@ -765,7 +765,7 @@ Avg   PB 4.22  at 5.89-11.50t
 
 | ティックで見るもの | 表示フレームで見るもの |
 |---|---|
-| Tick Data、Action Timeline | 録画・再生、録画の `Loop Interval (Frames)` |
+| Tick Data、Action Timeline | 記録・再生、記録の `Loop Interval (Frames)` |
 | Action StepsのWait、Loop Wait | Show Jump In Trainer |
 | AG／GCの受付と履歴 | Show Dashes Interval、Show Dash Time |
 | Air Guard Gaps、Frame Trap Trainer | Dash Attack Cancel／Attack Dash Gap Trainer |
@@ -776,7 +776,7 @@ Avg   PB 4.22  at 5.89-11.50t
 
 従来のFrame Dataは表示フレーム単位の測定だったため、ターボ時には測定値が安定しませんでした。本フォークの**Tick Data**は内部フレーム単位で測定し、ターボフレームによる数値の揺れを抑えています。さらに、**発生・持続・戻り・有利不利の数え方・考え方を攻略サイトのフレームデータに合わせています**。個々の掲載値との一致を保証するものではなく、比較時には技の条件や数え方も確認してください。
 
-`Trainer > Tick Data = yes` にし、`Tick Data Side` でP1かP2を選びます。P2は録画やAction Stepsでダミーに出させた技を確認するときに便利です。
+`Trainer > Tick Data = yes` にし、`Tick Data Side` でP1かP2を選びます。P2は記録やAction Stepsでダミーに出させた技を確認するときに便利です。
 
 ![デミトリのダッシュ、デモンクレイドルがガードされたときのTick Data](images/tick_data.png)
 
@@ -898,7 +898,7 @@ AGを `Guard` 側で設定することで、`Guard Action Type` を反撃用に�
 
 ### D. 空中ガード後の割り込みと着地の状況を調べる
 
-1. 録画またはAction Stepsで、ダミーの空中連係を用意します。
+1. 記録またはAction Stepsで、ダミーの空中連係を用意します。
 2. `Show Air Guard Gaps = yes`。
 3. 自分でジャンプしてガードし、まずボタンを押さずにGapを観察します。
 4. 使用技を一つに絞って割り込みます。
@@ -908,10 +908,10 @@ AGを `Guard` 側で設定することで、`Guard Action Type` を反撃用に�
 
 ### E. 二択・複数の攻めを見て守る
 
-1. 録画の複数スロット、またはAction Patternsに異なる攻めを保存します。
+1. 記録の複数スロット、またはAction Patternsに異なる攻めを保存します。
 2. 一つずつ再生し、意図した技が出ているか確認します。
 3. 候補を複数有効にしてランダム再生します。
-4. 同じ間合いで試すなら、録画は `Reset Distance Each Loop` を使います。Stepsは位置や周回後の状況を別途確認します。
+4. 同じ間合いで試すなら、記録は `Reset Distance Each Loop` を使います。Stepsは位置や周回後の状況を別途確認します。
 
 <a id="12-options"></a>
 ## 12. 表示とゲーム設定を調整する
@@ -928,7 +928,7 @@ AGを `Guard` 側で設定することで、`Guard Action Type` を反撃用に�
 | `Display Pushbox X Center` | 押し合い判定の中心表示。HitboxesをONにすると選べる |
 | `Show Pushbox Distance` | 二人の距離。横方向のみ／縦横・三角形の表示 |
 | `Show Damage Calc (on P2)` | P2が受けたダメージの表示 |
-| `Recording GUI` | 録画状態の表示 |
+| `Recording GUI` | 記録状態の表示 |
 | `Show Scrolling Input` | 画面下の自分の入力履歴 |
 | `Scrolling Input History` | 過去の入力を見る位置。0が最新。ゲームを停止する設定ではない |
 | `Show Button Releases` | ボタンを離した印を表示 |
@@ -961,9 +961,9 @@ AGを `Guard` 側で設定することで、`Guard Action Type` を反撃用に�
 | 残したいもの | 保存先・方法 |
 |---|---|
 | 通常設定、Action Steps、Action Patterns | `scripts/training_settings.json` |
-| キャラ別の録画 | `scripts/macro/<キャラクター名>/slot_1.mis`～`slot_5.mis` |
-| 共通の録画 | `scripts/macro/slot_1.mis`～`slot_5.mis` |
-| 直近録画など | `scripts/macro` 配下。安全のためフォルダー全体をバックアップ |
+| キャラ別の記録 | `scripts/macro/<キャラクター名>/slot_1.mis`～`slot_5.mis` |
+| 共通の記録 | `scripts/macro/slot_1.mis`～`slot_5.mis` |
+| 直近の記録など | `scripts/macro` 配下。安全のためフォルダー全体をバックアップ |
 | 他の人に渡すパターン | Action PatternsのExportで作成したファイル |
 
 通常設定はメニューを閉じると保存されます。Action Stepsの編集中データは別で、**Saveを選ばないと保存対象になりません**。
@@ -973,8 +973,8 @@ AGを `Guard` 側で設定することで、`Guard Action Type` を反撃用に�
 1. Stepsなどの編集を保存し、通常メニューも閉じます。
 2. FBNeoを終了します。
 3. `scripts/training_settings.json` と `scripts/macro` 全体を別の場所へコピーします。
-4. 新版のファイルをトレーニング専用の複製先へ配置します。配布物に録画ファイルが含まれる場合があるため、自分の `.mis` を不用意に上書きしないでください。
-5. 複製先のバッチからFBNeoを起動し直し、Run-aheadがOFFであること、設定と録画が残っていることを確認します。
+4. 新版のファイルをトレーニング専用の複製先へ配置します。配布物に記録ファイルが含まれる場合があるため、自分の `.mis` を不用意に上書きしないでください。
+5. 複製先のバッチからFBNeoを起動し直し、Run-aheadがOFFであること、設定と記録が残っていることを確認します。
 
 設定を初期化して切り分けたいときも、JSONを削除せず退避してから行ってください。このファイルには自分で作ったSteps・Patternsも入っています。共有用途では個人設定ファイル全体を配るより、パターンのExportを使う方が範囲を限定できます。
 
@@ -994,10 +994,10 @@ AGを `Guard` 側で設定することで、`Guard Action Type` を反撃用に�
 | しゃがむ時間が意図と違う | 自分のWaitは開始までの待ち。保持はHoldと次のステップのWaitで指定 |
 | ループ2周目のダッシュが出ない | 前のHoldが同じ方向を保持していないか |
 | Autoで期待した技が出ない | `Not Measured`、方向・ボタン、タメ、空中技の条件。ゲームが拒否した入力をStepsが成功扱いに変えるわけではない |
-| 録画が始まらない | ウィザードで全入力を一度離したか。`Ready` と `Held` の表示、P2入力設定 |
-| 録画が終わらない | 無入力かつ動作終了状態になっているか。約2秒の無入力待ちが必要 |
-| 録画した内容が見つからない | キャラ別スロットのON/OFF、選択キャラ、Recording Slot、ランダム再生の候補 |
-| CoinでP2を操作できない | 録画再生中なら先に停止 |
+| 記録が始まらない | ウィザードで全入力を一度離したか。`Ready` と `Held` の表示、P2入力設定 |
+| 記録が終わらない | 無入力かつ動作終了状態になっているか。約2秒の無入力待ちが必要 |
+| 記録した内容が見つからない | キャラ別スロットのON/OFF、選択キャラ、Recording Slot、ランダム再生の候補 |
+| CoinでP2を操作できない | 記録の再生中なら先に停止 |
 | 設定項目が見えない | 親設定、Guard Action Type、選択キャラクターによって非表示になる |
 | 数値が攻略情報と違う | ティック／表示フレーム、速度、単発／チェーン、測定側、暗転、飛び道具の測定範囲 |
 | ファイル操作で止まったように見える | Windowsダイアログが入力を待っています。エミュレーターの裏に隠れても自動で手前に戻るので、クリックして操作。古い形式の全画面では表示できないので、`Video > Blitter options > Windowed Fullscreen`にチェックを入れる |
@@ -1035,7 +1035,7 @@ AGを `Guard` 側で設定することで、`Guard Action Type` を反撃用に�
 - [README](../README.ja.md)／[日本語リリースノート](RELEASE_NOTES.ja.md)。
 - メニュー・設定：[menu.lua](../scripts/menu.lua)、[config.lua](../scripts/config.lua)。
 - 基本操作：[controller.lua](../scripts/controller.lua)、[position.lua](../scripts/position.lua)。
-- 録画：[recordingWizard.lua](../scripts/recordingWizard.lua)、[macro.lua](../scripts/macro.lua)。
+- 記録：[recordingWizard.lua](../scripts/recordingWizard.lua)、[macro.lua](../scripts/macro.lua)。
 - ステップ・パターン：[actionSequenceEditor.lua](../scripts/actionSequenceEditor.lua)、[actionSequenceRunner.lua](../scripts/actionSequenceRunner.lua)。
 - AG／GC表示：[hud.lua](../scripts/hud.lua)、[guardCancel.lua](../scripts/guardCancel.lua)、[inputHistory.lua](../scripts/inputHistory.lua)。
 - 測定：[tickData.lua](../scripts/tickData.lua)、[airGuardGap.lua](../scripts/airGuardGap.lua)。
