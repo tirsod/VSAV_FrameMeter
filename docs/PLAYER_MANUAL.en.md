@@ -286,7 +286,7 @@ You can leave PB Counter / PB Stats enabled. GC Command Trace sits to the right 
 
 ![Demitri guard-cancels Sasquatch's LP: the trace reads Success 14t and the input bar SUCCESS 14t](images/tut_gc_success.png)
 
-In this example Demitri guard-cancelled Sasquatch's LP. The trace shows → 7t, ↓ 4t, ↘ 4t and the buttons 0t (on the same Tick as ↘), then `Success 14t`; the input bar shows `SUCCESS 14t` too. Use your own character's GC command. Orange highlights help identify slow inputs but do not by themselves mean failure. See [Section 9](#09-gc) for the full guide. Restore spacing when it changes and repeat under the same conditions.
+In this example Demitri guard-canceled Sasquatch's LP. The trace shows → 7t, ↓ 4t, ↘ 4t and the buttons 0t (on the same Tick as ↘), then `Success 14t`; the input bar shows `SUCCESS 14t` too. Use your own character's GC command. Orange highlights help identify slow inputs but do not by themselves mean failure. See [Section 9](#09-gc) for the full guide. Restore spacing when it changes and repeat under the same conditions.
 
 **Check: `Success` / `SUCCESS` confirms that GC activated. Whether the move hit the opponent is a separate result.**
 
@@ -331,6 +331,7 @@ Save the sequence in Action Patterns for future use:
 5. Check that `Short LP` is marked `[x]` in the list. MP toggles whether a pattern is selected.
 
    ![The pattern list showing [x] 01 Short LP](images/tut_patterns_ticked.png)
+
 6. Keep `Random Guard Action % = 100%` and make the dummy block your attack to test it. Use `Loop Steps = no` for individual responses, or `yes` with `Auto (Landing)` for repeated practice.
 
 **Check: Select `Short LP` and trigger a response. If the saved short-dash LP plays, you are done.**
@@ -572,6 +573,7 @@ Action Steps holds one action list; Action Patterns holds multiple named lists. 
 5. Press MP on the list to mark a pattern `[x]`, or set `Use in Random = Yes` in its individual screen.
 
    ![A pattern's own screen with Use in Random : Yes](images/patterns_use_in_random.png)
+
 6. Set `Random Guard Action % = 100%` and create a response opportunity.
 
 ![The Action Patterns list](images/action_patterns.png)

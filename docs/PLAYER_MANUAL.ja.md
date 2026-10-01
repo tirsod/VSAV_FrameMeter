@@ -331,6 +331,7 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 5. 一覧で`Short LP`が`[x]`になっていることを確認します。MPで使用チェックを切り替えられます。
 
    ![パターン一覧に[x] 01 Short LPが並ぶ](images/tut_patterns_ticked.png)
+
 6. `Random Guard Action % = 100%`のまま、こちらの技をガードさせて動作を確認します。一回ずつなら`Loop Steps = no`、連続練習なら`yes`と`Auto (Landing)`を使います。
 
 **確認：`Short LP`を選び、保存したショートダッシュ小Pが出れば完了です。**
@@ -572,6 +573,7 @@ Action Stepsが一つの動作一覧なのに対し、Action Patternsは名前�
 5. 一覧でMPを押して、使用するパターンを `[x]` にします。個別画面の `Use in Random = Yes` でも指定できます。
 
    ![パターンの個別画面。Use in Random : Yes](images/patterns_use_in_random.png)
+
 6. `Random Guard Action % = 100%` にして、反撃のきっかけを作ります。
 
 ![Action Patternsの一覧](images/action_patterns.png)
