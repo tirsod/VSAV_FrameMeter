@@ -6,7 +6,7 @@ Practice offense, defense and execution in Vampire Savior with repeatable dummy 
 
 This guide uses **PB (Push Block)**, matching the English UI. Menu options are shown by their on-screen names, such as `Show PB Counter`.
 
-For **v11.7.20 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
+For **v11.7.20.1 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
 
 [Start with installation](#02-install) · [Already set up? Try the PB / GC drill](#sasquatch-pb-tutorial) · [Scope and verification](#verification-scope)
 
@@ -760,11 +760,11 @@ After a failure, check whether you blocked, whether the necessary directions wer
 <a id="gc-stats"></a>
 ### 9.4 Track your success rate with GC Stats
 
-`Trainer > Show GC Stats = yes` shows your GC tries and success rate, split into the 1P side and the 2P side. It appears without a title in a dark box at the bottom right, just above the input bar.
+`Trainer > Show GC Stats = yes` shows your GC tries and success rate, split into the 1P side and the 2P side. It appears without a title in a dark box. When `PB Stats`, `Tick Data`, `Air Guard Gaps` and `Recording GUI` are all OFF, it sits at the top left, left of the GC Command Trace; when any of them is ON, it sits at the bottom right, just above the input bar. The settings decide the position, so the box does not move during practice.
 
-![GC Stats (bottom right) and the GC Command Trace (top) after a GC on the right, the 2P side](images/gc_stats.png)
+![GC Stats at the top left, shown while PB Stats and the other top-left displays are off, beside the GC Command Trace](images/gc_stats.png)
 
-In this example Demitri blocks Sasquatch's attack on the right side of the screen, the 2P side, and guard-cancels with ← ↓ ↙ and the buttons. `Success 13t` in the trace and `SUCCESS 13t` in the input bar are the same number: this GC's `GC t`. Its `Input t` is the 3 + 4 + 1 = 8 Ticks from the first ← to the buttons. The `2P` row of GC Stats shows that 52 of the 62 tries on the 2P side succeeded (83.87%).
+In this example PB Stats and the other top-left displays are off, so GC Stats appears at the top left. Demitri is on the right side of the screen, the 2P side. The `2P` row shows that 42 of the 51 tries on the 2P side succeeded (82.35%). Below the table, the step averages for the 2P side are 3.81 Ticks from ← to ↓, 3.38 from ↓ to ↙ and 0.38 from ↙ to the buttons; together they make the 7.57 shown as `Input t`. The trace on the right is the latest try: the GC window closed on the Tick the game accepted ↙ (`GC Expired 0t`), so no GC came out.
 
 The notation is the same as PB Stats: `Total`, `Pass`, `Fail` and `Success`, two decimals, and `-` where there is no value yet.
 
@@ -777,6 +777,8 @@ The notation is the same as PB Stats: `Total`, `Pass`, `Fail` and `Success`, two
 | `Success` | Pass divided by Total |
 | `GC t` | Ticks from the opening of the GC window to the GC. The same number as `SUCCESS Nt` in the input bar and `Success` in the trace |
 | `Input t` | Ticks from the first direction the game accepted, in the command that produced the GC, to the GC |
+
+The two rows under the table average each step of the command over `Pass` tries. They use the GC Command Trace's arrows: → ↓ ↘ on the 1P side and ← ↓ ↙ on the 2P side. Beside the second and third directions and the buttons is the average number of Ticks since the previous input. These are the trace's row numbers averaged, and the three add up to `Input t`. The first direction has no number because `Input t` starts there. Use them to see where the time goes.
 
 - **One try is one blocked string.** It becomes a try once the game accepts a direction of your GC command during the string. A command you began before blocking counts if the game was still accepting it when you blocked. Blocking alone, or being hit, does not count.
 - `Cmd Expired` and `GC Expired` partway through do not decide anything while the string continues. If you enter the command again and GC a later attack, that string is one `Pass`.
@@ -1086,7 +1088,7 @@ For reports, include version, P1/P2 characters, which character is on each side,
 - Documentation updated and checked for consistency: 2026-10-01. This does not include testing the procedures in an emulator.
 - Upstream comparison: [`fc2`, 92980a5](https://github.com/NBeing/VSAV_Training/tree/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6). Earliest-input limitations and existing trainers were checked in [upstream menu.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/menu.lua), and input delivery in [upstream controller.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/controller.lua).
 - The comparison covers source-level features and control methods. An emulator A/B comparison and execution of the infinite-combo definitions were not performed while preparing this manual. The infinite-combo examples reflect use cases supplied by the developer.
-- Fork version: v11.7.20; labels checked 2026-10-01. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
+- Fork version: v11.7.20.1; labels checked 2026-10-01. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
 - [English README](../README.md) / [English release notes](RELEASE_NOTES.md).
 - Menus/settings: [menu.lua](../scripts/menu.lua), [config.lua](../scripts/config.lua).
 - Controls: [controller.lua](../scripts/controller.lua), [position.lua](../scripts/position.lua).

@@ -490,23 +490,45 @@ local function draw_pb_stats()
 	tech_hit_inputs(PB_STATS_Y)
 end
 
--- SHOW GC STATS (gcStats.lua). AT THE BOTTOM RIGHT, OVER THE P2 SPECIAL
--- GAUGE'S CORNER OF THE SCREEN (user, 2026-10-01: P2 のスペシャルゲージ付近、
--- 暗い枠で覆ってよい). It stays above the input bar, whose box starts at 203
+-- SHOW GC STATS (gcStats.lua). TWO PLACES, CHOSEN BY THE SETTINGS.
+--
+-- AT THE TOP LEFT while PB Stats, Tick Data, Air Guard Gaps and the Recording
+-- GUI are all off (user, 2026-10-01: PB Statsを出していない場合は左上に) -
+-- those four draw there. From x 6, so the box ends at 205 at its widest and
+-- clears the GC Command Trace's, which starts at 208; from blocks_top(), level
+-- with the trace. PB Stats' button list goes with PB Stats, so nothing else is
+-- left in that corner. Decided by the settings rather than by what is drawn,
+-- so the box never jumps mid-practice when an air guard puts lines up.
+--
+-- OTHERWISE AT THE BOTTOM RIGHT, over the P2 special gauge's corner (user,
+-- 2026-10-01: P2 のスペシャルゲージ付近、暗い枠で覆ってよい), right aligned on
+-- its own right edge. It stays above the input bar, whose box starts at 203
 -- (inputHistory.lua: screen height - 21) and whose G / GC / SUCCESS 13t labels
 -- sit at 196 over whichever column they belong to - anywhere along it. So the
--- box ends at 193. The GC Command Trace above ends by 150 at its longest (nine
--- rows of 11 from blocks_top()). Right aligned on its own right edge, so a
--- wider column never pushes it off the screen. On the same dark box as PB Stats.
-local GC_STATS_RIGHT, GC_STATS_Y, GC_STATS_ROW = 380, 166, 9
+-- box ends at 193 and grows upwards. With the step rows it starts at 143: clear
+-- of the GC Command Trace, which ends by 138 at its longest (nine rows of 11
+-- from 38). Only the Random Guard Action % Check, a diagnostic that ships off,
+-- moves the trace down 12, and then a full trace can touch the box's top.
+--
+-- The step rows under the table use the trace's own arrows and button dots
+-- (user, 2026-10-01: トレースと同じ矢印で), 11 high like the trace's rows: the
+-- first direction carries no number, being where Input t starts, and each one
+-- after it is the average gap from the one before, as the trace counts a row.
+-- On the same dark box as PB Stats.
+local GCS = { RIGHT = 380, BOTTOM = 193, LEFT = 6, ROW = 9, STEP_ROW = 11,
+	-- The arrows by side, as the trace draws them (numpad, screen directions).
+	DIRS = { { 6, 2, 3 }, { 4, 2, 1 } } }
 local function draw_gc_stats()
-	if globals.options.display_gc_stats ~= true then return end
+	local _o = globals.options
+	if _o.display_gc_stats ~= true then return end
 	local CH = 4.2
 	local _lines = gcStatsModule.lines()
+	local _steps = gcStatsModule.steps()
 	-- The count runs inside guardCancel.lua's hook, which keeps the first error
 	-- it threw. Numbers that stopped counting must not look like numbers.
 	if globals.gc_stats_error ~= nil then
 		_lines = { { { "GC Stats stopped: error", "#FF0000" } } }
+		_steps = {}
 	end
 	local _w = 0
 	for _, _l in ipairs(_lines) do
@@ -514,22 +536,54 @@ local function draw_gc_stats()
 		for _, _c in ipairs(_l) do _n = _n + #_c[1] end
 		if _n > _w then _w = _n end
 	end
-	local _x0 = GC_STATS_RIGHT - 2 - _w * CH
-	gui.box(_x0 - 2, GC_STATS_Y - 1, GC_STATS_RIGHT,
-		GC_STATS_Y + #_lines * GC_STATS_ROW, "#00000099", "#00000055")
+	local _h = #_lines * GCS.ROW + #_steps * GCS.STEP_ROW
+	local _x0, _y0
+	if _o.display_pb_stats ~= true and _o.mo_enable_frame_data ~= true
+	   and _o.display_air_guard_gap ~= true and _o.display_recording_gui ~= true then
+		_x0, _y0 = GCS.LEFT, blocks_top()
+	else
+		_x0, _y0 = GCS.RIGHT - 2 - _w * CH, GCS.BOTTOM - _h
+	end
+	gui.box(_x0 - 2, _y0 - 1, _x0 + _w * CH + 2, _y0 + _h,
+		"#00000099", "#00000055")
+	-- A text cell is right aligned by its leading spaces. It is drawn from its
+	-- first glyph, placed by the same arithmetic as the cell, so a column's
+	-- digits end in the same place on every line.
+	local function cell(_x, _y, _s, _c)
+		local _lead = #(_s:match("^ *"))
+		if _lead < #_s then
+			gui.text(math.floor(_x + _lead * CH + 0.5), _y, _s:sub(_lead + 1), _c)
+		end
+	end
 	for _i, _l in ipairs(_lines) do
-		local _x, _y = _x0, GC_STATS_Y + (_i - 1) * GC_STATS_ROW
+		local _x, _y = _x0, _y0 + (_i - 1) * GCS.ROW
 		for _, _c in ipairs(_l) do
-			-- A cell is right aligned by its leading spaces. It is drawn from its
-			-- first glyph, placed by the same arithmetic as the cell, so a
-			-- column's digits end in the same place on every line.
-			local _lead = #(_c[1]:match("^ *"))
-			if _lead < #_c[1] then
-				gui.text(math.floor(_x + _lead * CH + 0.5), _y,
-					_c[1]:sub(_lead + 1), _c[2])
-			end
+			cell(_x, _y, _c[1], _c[2])
 			_x = _x + #_c[1] * CH
 		end
+	end
+	-- Columns in characters: the side, the first arrow at 4, the second at 9
+	-- with its number ending at 20, the third at 23 ending at 34, the button
+	-- dots at 37 ending at 47 - the table's own right edge.
+	for _i, _st in ipairs(_steps) do
+		local _y = _y0 + #_lines * GCS.ROW + (_i - 1) * GCS.STEP_ROW
+		local _d = GCS.DIRS[_i]
+		cell(_x0, _y + 2, (_i == 1) and "1P" or "2P", "#FFFFFF")
+		if img_dir ~= nil then
+			gui.image(math.floor(_x0 + 4 * CH + 0.5), _y, img_dir[_d[1]])
+			gui.image(math.floor(_x0 + 9 * CH + 0.5), _y, img_dir[_d[2]])
+			gui.image(math.floor(_x0 + 23 * CH + 0.5), _y, img_dir[_d[3]])
+		end
+		if img_no_button ~= nil then
+			local _bx = math.floor(_x0 + 37 * CH + 0.5)
+			for _k = 0, 2 do
+				gui.image(_bx + _k * 5, _y, img_no_button)
+				gui.image(_bx + _k * 5, _y + 5, img_no_button)
+			end
+		end
+		cell(_x0 + 15 * CH, _y + 2, string.rep(" ", 5 - #_st[1]) .. _st[1], "#FFFFFF")
+		cell(_x0 + 29 * CH, _y + 2, string.rep(" ", 5 - #_st[2]) .. _st[2], "#FFFFFF")
+		cell(_x0 + 42 * CH, _y + 2, string.rep(" ", 5 - #_st[3]) .. _st[3], "#FFFFFF")
 	end
 end
 

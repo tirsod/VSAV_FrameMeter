@@ -187,11 +187,18 @@ do
 	local first = d1()   -- ガードの 3 ティック前に 6
 	idle(2)
 	local open = block()
-	d2()
+	local second = d2()
 	idle(1)
-	d3()
+	local third = d3()
 	local ok = cancel()
 	want("Input t = 最初の方向から成立まで", n(1, "sum_in"), ok - first)
+	-- 方向ごと: 1 個目 -> 2 個目、2 個目 -> 3 個目、3 個目 -> ボタン。トレースの
+	-- 各行の数字と同じ数え方で、足すと Input t (本人、2026-10-01)
+	local sp = M.steps()[1]
+	want("方向ごとの平均", table.concat(sp, " "), string.format("%.2f %.2f %.2f",
+		second - first, third - second, ok - third))
+	want("足すと Input t", (second - first) + (third - second) + (ok - third), ok - first)
+	want("2P 側はまだ -", table.concat(M.steps()[2], " "), "- - -")
 	want("GC t = 受付開始から (SUCCESS Nt と同じ)", n(1, "sum_gc"), ok - open)
 	want("表示は小数 2 桁 (PB Stats と同じ)", row(1), "1P          1     1     0 100.00% "
 		.. string.format("%5.2f", ok - open) .. " " .. string.format("%7.2f", ok - first))
@@ -204,6 +211,9 @@ do
 	want("2 回とも Pass", n(1, "pass"), 2)
 	want("Input t の合計", n(1, "sum_in"), (ok - first) + (ok2 - f2))
 	want("平均は Pass の回だけ", n(1, "n_in"), 2)
+	-- 最後の方向とボタンが同じティックなら、ボタンまでの間隔は 0
+	want("方向ごとも 2 回ぶん", n(1, "n_st"), 2)
+	want("ボタンまでの合計 (1 回目 + 0)", M.state()[1].sum_st[3], ok - third)
 	-- Fail を足しても平均は動かない
 	local before = row(1):sub(-14)
 	block() d1() expire() run_out() tick({ s05 = 0 })
@@ -290,6 +300,7 @@ do
 	want("起点の無い成功も Pass", n(1, "pass"), 2)
 	want("Input t の平均には入れない", n(1, "n_in"), 1)
 	want("入れなかった数を残す", M.state().no_in_t, 1)
+	want("方向ごとの平均にも入れない", n(1, "n_st") .. "/" .. M.state().no_steps, "1/1")
 	-- ラウンドが終わる (試合中でなくなる)
 	block() d1()
 	RUN = false
@@ -399,8 +410,14 @@ do
 	-- hud.lua と同じ表を見るため、このテストの M を渡す。
 	package.preload["./scripts/gcStats"] = function() return M end
 	local saved = globals
-	globals = { options = { display_gc_stats = true }, controlling_p1 = true,
-	            match_running = function() return RUN end }
+	images = {}
+	gui.image = function(x, y, img) images[#images + 1] = { x = x, y = y, img = img } end
+	img_dir = {}
+	for i = 1, 9 do img_dir[i] = "dir" .. i end
+	img_no_button = "nb"
+	-- 右下: PB Stats を出しているとき (左上の 4 つのどれかが ON)
+	globals = { options = { display_gc_stats = true, display_pb_stats = true },
+	            controlling_p1 = true, match_running = function() return RUN end }
 	local hud = dofile("hud.lua")
 	want("描画が外に出ている", type(hud.draw_gc_stats), "function")
 	-- 最大桁のまま描く
@@ -413,13 +430,18 @@ do
 	local label_y = (224 - back) + 2 - 9
 	want("帯のラベルは y 196 (帯 203 + 2 - 9)", label_y, 196)
 	want("箱の下端がラベルより上", b.y2 < label_y, true)
-	-- GC Command Trace: blocks_top() は最大 50、行は TRACE_ROWS + 結果の 1 行
+	-- GC Command Trace: blocks_top() は 38、行は TRACE_ROWS + 結果の 1 行。
+	-- 診断用の Random Guard Action % Check (配布時 OFF) を出すと 50 から。
 	local hsrc = io.open("hud.lua"):read("*a")
 	local row_h = tonumber(hsrc:match("local GCT_ROW_H = (%d+)"))
 	local rows = tonumber(src:match("local TRACE_ROWS = (%d+)"))
-	local trace_bottom = 50 + (rows + 1) * row_h + 1
-	want("トレースの最大の下端は 150", trace_bottom, 150)
+	local trace_bottom = 38 + (rows + 1) * row_h + 1
+	want("トレースの最大の下端は 138", trace_bottom, 138)
 	want("箱の上端がトレースより下", b.y1 > trace_bottom, true)
+	want("方向の行が 2 行ぶん (矢印 6 個 + ボタンの点 12 個)", #images, 18)
+	want("1P は → ↓ ↘、2P は ← ↓ ↙ (トレースと同じ絵)",
+		images[1].img .. images[2].img .. images[3].img .. images[10].img .. images[11].img .. images[12].img,
+		"dir6dir2dir3dir4dir2dir1")
 	want("画面の中 (左)", b.x1 >= 0, true)
 	want("画面の中 (右)", b.x2 <= 384, true)
 	local out, colour_bad = {}, 0
@@ -440,7 +462,34 @@ do
 	for _, c in pairs(last) do ends[#ends + 1] = c.x + #c.s * 4.2 end
 	local spread = 0
 	for _, e in ipairs(ends) do spread = math.max(spread, math.abs(e - ends[1])) end
-	want("Input t の列は右で揃う (" .. #ends .. " 行)", #ends == 3 and spread <= 1.5, true)
+	want("Input t の列と方向の行の最後の数は右で揃う (" .. #ends .. " 行)",
+		#ends == 5 and spread <= 1.5, true)
+	-- 左上: PB Stats・Tick Data・Air Guard Gaps・Recording GUI がすべて OFF
+	-- (本人、2026-10-01: PB Statsを出していない場合は左上に)
+	calls, boxes, images = {}, {}, {}
+	globals.options.display_pb_stats = false
+	hud.draw_gc_stats()
+	local t = boxes[1] or { x1 = 0, y1 = 0, x2 = 999, y2 = 0 }
+	local trace_x = tonumber(hsrc:match("local _x, _y = (%d+), blocks_top%(%)" .. NL
+		.. "\tlocal _t0 = _t.rows%[1%]%.t"))
+	want("左上: 画面の左端から", t.x1 >= 0 and t.x1 <= 6, true)
+	want("左上: GC Command Trace の箱 (" .. tostring(trace_x and trace_x - 2) .. ") より左で終わる",
+		trace_x ~= nil and t.x2 < trace_x - 2, true)
+	want("左上: PB Count の行の下 (blocks_top)", t.y1, 37)
+	local out2 = {}
+	for _, c in ipairs(calls) do
+		if c.x < t.x1 or c.x + #c.s * 4.2 > t.x2 + 0.5 or c.y < t.y1 or c.y + 7 > t.y2 + 1 then
+			out2[#out2 + 1] = c.s
+		end
+	end
+	want("左上: 文字は全部箱の中", table.concat(out2, ","), "")
+	for _, k in ipairs({ "mo_enable_frame_data", "display_air_guard_gap", "display_recording_gui" }) do
+		boxes = {}
+		globals.options[k] = true
+		hud.draw_gc_stats()
+		want(k .. " が ON なら右下", boxes[1] ~= nil and boxes[1].x2 == 380, true)
+		globals.options[k] = nil
+	end
 	-- OFF: 描かない。数えるのは続く ([12] で配線を見る)
 	calls, boxes = {}, {}
 	globals.options.display_gc_stats = false

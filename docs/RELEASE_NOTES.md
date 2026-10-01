@@ -6,6 +6,23 @@ Newest first. Older releases are kept below.
 
 ---
 
+## v11.7.20.1
+
+### GC Stats: step averages, and the top left when it is free
+
+- Under the table, one row per side averages each step of the command over
+  `Pass` tries. With the GC Command Trace's arrows, the second and third
+  directions and the buttons each show the average number of Ticks since the
+  previous input. These are the trace's row numbers averaged, and the three
+  add up to `Input t`
+- When `PB Stats`, `Tick Data`, `Air Guard Gaps` and `Recording GUI` are all
+  OFF, GC Stats sits at the top left, left of the GC Command Trace. When any of
+  them is ON, it stays at the bottom right. The settings decide the position,
+  so the box does not move during practice
+- The screenshot in Section 9.4 of the manual shows the new display
+
+---
+
 ## v11.7.20
 
 ### GC Stats

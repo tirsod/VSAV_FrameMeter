@@ -2,12 +2,15 @@
 --
 -- SHOW GC STATS (user, 2026-10-01). Guard cancels, kept over every blocked
 -- string you tried one in and split by the side you were on, so a session of
--- practice reads as two lines. Drawn by hud.lua at the bottom right, above the
--- input bar:
+-- practice reads as two lines, and each step of the motion as two more. Drawn
+-- by hud.lua - at the top left while nothing else of its kind is up there,
+-- otherwise at the bottom right above the input bar:
 --
 --   GC Side Total  Pass  Fail Success  GC t Input t
 --   1P         12     9     3  75.00%  7.30   18.20
 --   2P          4     1     3  25.00%  9.00       -
+--   1P  ->    v  6.10    v> 10.20    [btn]  1.90      (the trace's arrows)
+--   2P  <-    v     -    <v     -    [btn]     -
 --
 -- IN PB STATS' WORDS (user, 2026-10-01: 表記がPBとぶれてる). Total, Pass, Fail
 -- and Success, two decimal places, - where there is nothing yet, and Pass and
@@ -81,6 +84,14 @@
 -- load, the position shortcut and the round ending throw away the string in
 -- progress without counting it. Nothing is saved.
 --
+-- EACH STEP OF THE MOTION, AVERAGED (user, 2026-10-01: コマンドの各方向の平均).
+-- Over the Passes, the gaps the GC Command Trace draws row by row: first
+-- direction to second, second to third, third to the button. The three add up
+-- to Input t, so they say where that time went. A Pass whose motion was not
+-- seen from its first direction, or that took other than three directions,
+-- is left out of them (no_steps says how many). hud.lua draws them with the
+-- trace's own arrows.
+--
 -- COUNTS STOP AT 99999, as PB Stats' do (user, 2026-10-01: PBにあわせて). The
 -- design drew 9999+ and went on counting; a side whose Total has reached the
 -- limit now takes nothing more, so its line holds still.
@@ -98,7 +109,8 @@ local TRIAL_MIN_STEPS = 1
 local C_HEAD, C_TEXT, C_PASS, C_FAIL = "#AAAAAA", "#FFFFFF", "#00FF00", "#FF0000"
 
 local function new_side()
-	return { total = 0, pass = 0, fail = 0, n_gc = 0, sum_gc = 0, n_in = 0, sum_in = 0 }
+	return { total = 0, pass = 0, fail = 0, n_gc = 0, sum_gc = 0, n_in = 0, sum_in = 0,
+	         n_st = 0, sum_st = { 0, 0, 0 } }
 end
 
 local st
@@ -106,12 +118,13 @@ local st
 -- discarded string is not counted; the first tick after only learns.
 local function forget()
 	st.cur, st.w05, st.prog, st.step, st.m0, st.taken = nil, nil, nil, nil, nil, 0
+	st.tk = nil
 end
 local function reset()
 	st = {
 		[1] = new_side(), [2] = new_side(),
 		-- Passes left out of an average because their origin was never seen.
-		no_gc_t = 0, no_in_t = 0,
+		no_gc_t = 0, no_in_t = 0, no_steps = 0,
 	}
 	forget()
 end
@@ -179,23 +192,29 @@ local function on_tick(seq, gc, gct, prog, step, s05, b120)
 	-- m0 is the tick the live motion took its first direction: nil with no
 	-- motion alive, false with one alive that began before the first tick seen
 	-- (the script starting, a load). That one's later directions must not stand
-	-- in for its start, so it keeps false until it ends.
+	-- in for its start, so it keeps false until it ends. tk is the same
+	-- motion's direction ticks in order, false likewise when its start was
+	-- not seen.
 	local p0, s0 = st.prog, st.step
 	st.prog, st.step = prog, step
 	local dropped = false
 	if prog == nil then
-		st.m0, st.taken = nil, 0
+		st.m0, st.taken, st.tk = nil, 0, nil
 	elseif p0 == nil then
 		-- Not "(prog ~= 0) and false or nil": and/or cannot yield false.
-		st.m0, st.taken = nil, 0
-		if prog ~= 0 then st.m0 = false end
+		st.m0, st.taken, st.tk = nil, 0, nil
+		if prog ~= 0 then st.m0, st.tk = false, false end
 	else
 		local took = prog > p0 or step > s0
 		dropped = p0 ~= 0 and prog == 0
-		if p0 == 0 and prog ~= 0 then st.m0, st.taken = nil, 0 end
+		if p0 == 0 and prog ~= 0 then st.m0, st.taken, st.tk = nil, 0, nil end
 		if took then
 			if st.m0 == nil then st.m0 = seq end
 			st.taken = st.taken + 1
+			if st.tk ~= false then
+				st.tk = st.tk or {}
+				st.tk[#st.tk + 1] = seq
+			end
 		end
 	end
 	-- A motion alive since before the first tick seen has taken at least one.
@@ -233,6 +252,15 @@ local function on_tick(seq, gc, gct, prog, step, s05, b120)
 				else
 					st.no_in_t = st.no_in_t + 1
 				end
+				local tk = st.tk
+				if type(tk) == "table" and #tk == 3 then
+					s.n_st = s.n_st + 1
+					s.sum_st[1] = s.sum_st[1] + (tk[2] - tk[1])
+					s.sum_st[2] = s.sum_st[2] + (tk[3] - tk[2])
+					s.sum_st[3] = s.sum_st[3] + (seq - tk[3])
+				else
+					st.no_steps = st.no_steps + 1
+				end
 			end
 			-- Counted. The rest of this string, if any, is not a second try.
 			c.done = true
@@ -243,7 +271,7 @@ local function on_tick(seq, gc, gct, prog, step, s05, b120)
 		st.cur = nil
 	end
 	-- After the success above has read where the motion began.
-	if dropped then st.m0, st.taken = nil, 0 end
+	if dropped then st.m0, st.taken, st.tk = nil, 0, nil end
 end
 
 local function avg(sum, n)
@@ -286,6 +314,18 @@ local function lines()
 	return out
 end
 
+-- The step averages for hud.lua to draw beside the arrows: per side, the gap
+-- into the second direction, into the third, and into the button.
+local function steps()
+	local out = {}
+	for i = 1, 2 do
+		local s = st[i]
+		out[i] = { avg(s.sum_st[1], s.n_st), avg(s.sum_st[2], s.n_st),
+		           avg(s.sum_st[3], s.n_st) }
+	end
+	return out
+end
+
 local function text()
 	local out = {}
 	for i, l in ipairs(lines()) do
@@ -299,6 +339,7 @@ end
 return {
 	["on_tick"] = on_tick,
 	["lines"] = lines,
+	["steps"] = steps,
 	["text"] = text,
 	-- A character select.
 	["clear"] = reset,
