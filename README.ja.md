@@ -52,16 +52,16 @@ Tickはゲームの内部フレームです。
 
 **記録・再生は表示フレーム単位です。** 自分では難しい操作や、Tick単位の正確なタイミングはAction Stepsで定義してください。
 
-## 導入前に：Run-aheadは必ずOFF
+## 導入前に：Runaheadを無効にする
 
-**Run-aheadがONのままでは、トレーニングスクリプトの挙動が不正になります。**
+**FBNeo本体の `Video > Runahead > Disabled` を選んでください。Runaheadが有効なままでは、トレーニングスクリプトの挙動が不正になります。**
 
-Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐため、**`emulator/fbneo`フォルダー以下を丸ごと複製し、トレーニング専用環境を作ってください。** 複製先でRun-aheadをOFFにし、対戦用と練習用の起動先・設定を分けます。
+Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐため、**`emulator/fbneo`フォルダー以下を丸ごと複製し、トレーニング専用環境を作ってください。** 複製先でこの設定を行い、対戦用と練習用の起動先・設定を分けます。
 
 | 用途 | 起動方法 |
 |---|---|
 | 対戦 | 通常のFightcadeから起動 |
-| トレーニング | 複製先の`run_vsav_training.bat`から起動。Run-aheadはOFF |
+| トレーニング | 複製先の`run_vsav_training.bat`から起動。`Video > Runahead > Disabled`を選択 |
 
 ## Windowsでの導入
 

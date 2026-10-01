@@ -52,16 +52,16 @@ For actions you can perform yourself, **[Recording Wizard](docs/PLAYER_MANUAL.en
 
 **Recording and playback operate in displayed frames.** Use Action Steps for difficult execution or precise Tick-level timing.
 
-## Before installing: turn Run-ahead OFF
+## Before installing: disable Runahead
 
-**Leaving Run-ahead ON causes the training script to behave incorrectly.**
+**Select `Video > Runahead > Disabled` in FBNeo itself. Leaving Runahead enabled causes the training script to behave incorrectly.**
 
-If you also play matches through Fightcade, **copy the entire `emulator/fbneo` folder to create a separate training installation**. Turn Run-ahead OFF in the copy and keep separate launch paths and settings, so you do not have to remember to switch them for every session.
+If you also play matches through Fightcade, **copy the entire `emulator/fbneo` folder to create a separate training installation**. Apply this setting in the copy and keep separate launch paths and settings, so you do not have to remember to switch them for every session.
 
 | Use | Launch method |
 |---|---|
 | Matches | Launch normally through Fightcade |
-| Training | Launch the copied `run_vsav_training.bat`; keep Run-ahead OFF |
+| Training | Launch the copied `run_vsav_training.bat`; select `Video > Runahead > Disabled` |
 
 ## Windows installation
 
