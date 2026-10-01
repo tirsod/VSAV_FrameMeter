@@ -8,7 +8,7 @@ Newest first. Older releases are kept below.
 
 ## v11.7.19
 
-### Reorganized manuals and a guided practice against Sasquatch
+### Reorganized manuals and a guided practice session against Sasquatch
 
 - The English README is the entry point; the Japanese README and both player
   manuals now run from installation to basic controls to practice
@@ -58,7 +58,7 @@ The images are in `docs/images` and ship in the release zip.
 
 - `Random Guard %` / `Random Guard Action %`: the row is orange **when the
   cursor is on another row**. The row under the cursor shows the cursor
-  colour, and the description now says so
+  color, and the description now says so
 - `Guard Action Type` set to `Reversal - Action Patterns` has its own
   description (it showed a generic line)
 - `Reversal Action Patterns`: no longer calls the Action Steps row "below" -
@@ -160,7 +160,7 @@ Avg   PB 4.22  at 5.89-11.50t
 ### GC Command Trace sits beside PB Stats
 
 No title, a dark background and a little further left, so it can be shown with
-PB Stats and push block and guard cancel practised together.
+PB Stats and push block and guard cancel practiced together.
 
 ### GC Frequency Counter moved to the Analysis tab
 
@@ -205,7 +205,7 @@ Landing Advantage P2 +15t
 - **The last line is the advantage on landing.** `Landing Advantage P2 +15t`:
   after the last contact, they could act 15 ticks before you. Blocked, hit or
   traded, it is counted the way Tick Data counts Advantage
-- Button letters and move names are in their strength's colour (light, medium,
+- Button letters and move names are in their strength's color (light, medium,
   heavy). Every tick count carries its `t`
 - A move made by an Action Steps `Auto (N)` shows as `N + 2` on the first line:
   Action Steps counts the tick the input is sent from 0, and the game takes it
@@ -277,7 +277,7 @@ from that.
 
 On a button row with a gap of `12t` or more, only the number at the far end
 turned orange, and a late button was easy to miss. Like the arrows, **the empty
-dots now turn orange**; the pressed ones keep their strength colour.
+dots now turn orange**; the pressed ones keep their strength color.
 
 ### Action Steps read the way they run
 
@@ -682,7 +682,7 @@ A number there means this tool delivered a simultaneous press - a bug.
 
 ### The tab is called Dummy
 
-Everything on the Player tab is the DUMMY's behaviour. It is now called
+Everything on the Player tab is the DUMMY's behavior. It is now called
 **Dummy**.
 
 ---## v11.7.8
@@ -703,7 +703,7 @@ back. With the cursor on the Position row:
 ### The tab is called Dummy
 
 Everything on the Player tab — Position, Pose, Guard, Guard Action Type,
-Action Steps — is the DUMMY's behaviour. It is now called **Dummy**.
+Action Steps — is the DUMMY's behavior. It is now called **Dummy**.
 
 ---
 
@@ -942,7 +942,7 @@ way depending on where the overlap fell.** All three are fixed.
 ### Known, not fixed
 
 **Gallon and Felicia cannot cancel their landing motion with a dash**, so the setup
-above is not the fastest for them either. That is the game's own behaviour - **a human
+above is not the fastest for them either. That is the game's own behavior - **a human
 playing them hits the same wall.**
 
 ---
@@ -981,7 +981,7 @@ nothing new.
 
 ## v11.7.1
 
-### The menu has been reorganised
+### The menu has been reorganized
 
 **The tabs have changed.** The 38 rows that were crammed into `Display` and
 `Etc` are now split four ways by what they are for.
@@ -991,7 +991,7 @@ Recording / Gauge / Player / Display / Trainer / Game / Analysis
 ```
 
 - **Display** — things you leave on screen
-- **Trainer** — things you practise against and read a number off (Tick Data,
+- **Trainer** — things you practice against and read a number off (Tick Data,
   the dash trainers, PB stats)
 - **Game** — the game's own settings (Game Speed, BGM, the minimum push block
   press count) and going back to character select
@@ -1022,7 +1022,7 @@ disagreed, the worst reading `1` while the game counted `4`. It follows the
 game's own count now, so it is right after a savestate load too.
 
 **`PB Count: 0` was sometimes drawn green** - granted with no presses, which
-cannot happen. The count and the colour come from one place now.
+cannot happen. The count and the color come from one place now.
 
 **`Use Character Specific Slots` wrote nowhere.** Its arguments were in the
 wrong order, so it **read "no" while the feature was on**.
@@ -1214,7 +1214,7 @@ The join between steps is a choice, not a wait you have to tune by hand.
 A tick count can be given instead, and the list can loop.
 
 **Specials are entered as commands, not poked in as cheats**, so the odd
-behaviour the cheat route produced does not happen.
+behavior the cheat route produced does not happen.
 
 **Hold** keeps a direction held across a step, so charge moves can be built.
 
@@ -1275,7 +1275,7 @@ Single playbacks are unaffected.
 
 A recording ends when the inputs stop, but the character is still committed to
 whatever the last one started. Replaying from there **restarts against a dummy
-that cannot act**, and reproduces nothing. The row is greyed out and reads
+that cannot act**, and reproduces nothing. The row is grayed out and reads
 `(still moving)` until it can be taken.
 
 **It is the only choice that waits.** `Save to this slot` and `Record again`
@@ -1316,7 +1316,7 @@ off** and lose the saved loop interval.
 
 **Reversals and counter-action specials now come out after a multi-hit guard.**
 
-Blocking the second hit of a chain-cancelled light attack left the input
+Blocking the second hit of a chain-canceled light attack left the input
 un-queued, and nothing came out.
 
 **Turning `Knockdown Logger` off now stops the diagnostic recording
@@ -1335,10 +1335,10 @@ The Recording Wizard from v11.4, with everything that turned up once it was actu
 
 - Renamed to **Super Jump**. v11.4 called it High Jump. The order and the indices are unchanged, so your settings are unaffected.
 - **Saving returns you to the wizard's slot list.** The result stays up for a second first, and then you can record the next slot straight away. The characters go back to the distance the take started from as the list comes back.
-- **`Back to menu` added to the slot list.** Cancelling with `Lua Hotkey 1` now reopens the menu too.
+- **`Back to menu` added to the slot list.** Canceling with `Lua Hotkey 1` now reopens the menu too.
 - **The stick alone drives it.** Slot selection and the save prompt are both lists: up and down to move, LP or Right to take it. The save prompt reads Save / Record again / Play again down the screen. The buttons still work as direct shortcuts.
 - **Right also enters Play Recording and Recording Wizard.** Right is how you go into things elsewhere in the menu, so it does here as well.
-- **Reset Distance Each Loop** added. Puts both characters back to the distance the recording was made from at the start of every loop. Without it the two drift apart over the passes and the setup you were practising stops happening. Works on recordings made from v11.4.1 on — the distance is stored in the recording itself.
+- **Reset Distance Each Loop** added. Puts both characters back to the distance the recording was made from at the start of every loop. Without it the two drift apart over the passes and the setup you were practicing stops happening. Works on recordings made from v11.4.1 on — the distance is stored in the recording itself.
 - The wizard's headings are heavier, and the slot list has more room and lines up properly.
 
 ### Fixed

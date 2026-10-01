@@ -101,7 +101,7 @@ If you also play matches through Fightcade, **copy the entire `emulator/fbneo` f
 7. Fully close FBNeo, start it again through the copied batch file and confirm that `Disabled` is selected under `Video > Runahead`.
 8. Open `Input > Map Game Inputs` and assign game controls and the functions below.
 
-**To play in full screen, check `Video > Blitter options > Windowed Fullscreen`**, then switch with `Video > Toggle fullscreen mode` (`Alt+Enter`). Without the check, FBNeo uses its older full-screen mode, and the Windows windows used to name patterns and to export or import them cannot appear over it.
+**To play in full screen, check `Video > Blitter options > Windowed Fullscreen`**, then switch with `Video > Toggle fullscreen mode` (`Alt+Enter`). Without the check, FBNeo uses its older full-screen mode, and the Windows dialogs used to name, export and import patterns cannot appear over it.
 
 ![FBNeo's Video menu: Blitter options > Windowed Fullscreen checked, and Toggle fullscreen mode (Alt+Enter)](images/fbneo_windowed_fullscreen.png)
 
@@ -271,7 +271,7 @@ Open the menu and configure these readouts and practice settings:
 | `Trainer > Show PB Stats` | `yes` |
 | `Game > P1 Min PB Presses` | `Normal` (practice with ordinary activation rules) |
 
-Close the menu, make the dummy block your attack to trigger short-dash LP, then perform PB against it. Use PB Counter / PB Stats to check, for example, whether you delayed PB while fitting six valid presses inside the window.
+Close the menu, make the dummy block your attack to trigger short-dash LP, then use PB against it. Use PB Counter and PB Stats to check, for example, whether you delayed your first press and still fit six valid presses within the window.
 
 ![PB Counter and PB Stats for reviewing PB timing and practice results](images/pb_counter_stats.png)
 
@@ -356,7 +356,7 @@ Save the sequence in Action Patterns for future use:
 
 This is a copy: editing the pattern later does not change the original Action Steps. Check Loop settings separately from these two steps.
 
-**With only `Short LP` selected, the dummy performs the same sequence every time.** Save other offensive sequences and mark several `[x]` to select one at random for each time the dummy has an opportunity to respond. This takes the drill from PB and GC against a known action to reacting to different offense.
+**With only `Short LP` selected, the dummy performs the same sequence every time.** Save other offensive sequences and mark several `[x]` to select one at random for each time the dummy has an opportunity to respond. This takes the drill from PB and GC against a known action to reacting to different attack sequences.
 
 <details>
 <summary>Show import screens and help with the name window</summary>
@@ -398,7 +398,7 @@ If the emulator covers the name window, it comes back in front automatically; cl
 | `Stand Block` | Holds back when an attack approaches; does not automatically choose low blocking |
 | `All Guard` | Crouches for lows, stands for overheads/jump attacks and follows `Pose` for attacks blockable either way |
 | `Auto Guard` | Directly uses the game's guard flag, including in normally unblockable situations. Do not use it to validate unblockables |
-| `Push Block (All Light / Medium / Heavy)` | Blocks like `All Guard` and inputs PB at the selected strength |
+| `Push Block (All Light / Medium / Heavy)` | Blocks like `All Guard` and performs a push block of the selected strength |
 
 For consistent testing with `Stand Block`, `All Guard` or `Push Block (All …)`, set `Random Guard % = 100%`. PB selected under `Guard` can be combined with the counter-action settings below.
 
@@ -416,7 +416,7 @@ Here the cursor is on `Guard Action Type`: the `Random Guard Action %` row below
 |---|---|
 | `None` | No counter action |
 | `Guard Cancel` | Inputs a GC command; choose a button and `GC Input Delay (Ticks)` |
-| `Push Block` | Inputs PB; choose `Push Block Type` |
+| `Push Block` | Enters the inputs for a push block; choose `Push Block Type` |
 | `Reversal - Specified` | Specifies a motion and button after blocking, being hit or waking up |
 | `Counter Attack - Specified` | Specifies an action after blocking or being hit, excluding wake-up |
 | `Reversal - Recording` | Plays a recording after blocking, being hit or waking up |
@@ -647,7 +647,7 @@ Naming and file dialogs are implemented for Windows. These operations have not b
 1. Prepare a repeatable attack using the [Sasquatch setup](#sasquatch-pb-tutorial) or a recording.
 2. Set `Trainer > Show PB Counter = yes`.
 3. Optionally set `Show PB Stats = yes`.
-4. Block and perform PB yourself.
+4. Block and use PB yourself.
 
 **This feature visualizes the goal of delaying PB as much as possible while fitting six valid presses inside its window.** You can check when you started and whether you completed all six presses, as well as whether PB activated.
 
@@ -696,7 +696,7 @@ Avg   PB 4.22  at 5.89-11.50t
 
 - `Total` counts ground contacts in which you pressed a button. A continuous blockstring counts as one contact. Contacts without a press, and those you guard-canceled out of, are not counted.
 - `Pass`: you pressed and PB activated. `Fail`: it did not, or you were hit. `Success` is Pass divided by Total, to two decimals.
-- `Avg`: the press count (`PB`), the first and last pressed Tick (`at`), `MultiPush` (`Multi`) and `LateMash` (`Late`), averaged over contacts during which you pressed buttons and continued blocking.
+- `Avg`: the press count (`PB`), the timing of the first and last presses (`at`), `MultiPush` (`Multi`) and `LateMash` (`Late`), averaged over contacts during which you pressed buttons and continued blocking.
 - To the left of the box, each press in the latest window is listed with its buttons. The press that activated PB is marked `TECH HIT` in green.
 - Counts stop at 99999. Toggle it OFF then ON to reset the statistics. Returning to character select also clears the previous match's totals.
 
@@ -899,7 +899,7 @@ An Action Steps setting of `Auto (10)` can appear here as `Dash > 12t`. The scri
 3. Repeat the same starter, continue the combo on hit and stop on block.
 4. Then set a light normal under `Reversal - Specified` to check the gaps you leave after being blocked.
 
-### B. Does your wake-up pressure beat the earliest challenge?
+### B. Can your wake-up pressure beat the opponent’s fastest response?
 
 1. Select `Guard Action Type = Reversal - Specified`, with `Random Guard Action % = 100%`.
 2. Configure the desired normal or special. See [4.3](#dummy-normal-response) for a normal example.
