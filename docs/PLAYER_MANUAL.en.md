@@ -6,7 +6,7 @@ Practice offense, defense and execution in Vampire Savior with repeatable dummy 
 
 This guide uses **PB (Push Block)**, matching the English UI. Menu options are shown by their on-screen names, such as `Show PB Counter`.
 
-For **v11.7.19 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
+For **v11.7.20 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
 
 [Start with installation](#02-install) · [Already set up? Try the PB / GC drill](#sasquatch-pb-tutorial) · [Scope and verification](#verification-scope)
 
@@ -71,6 +71,7 @@ The distinction is **the precision of reproduced actions and the detail availabl
 | Randomize several offensive sequences | Recording slots, Action Patterns | [Section 5](#05-recording), [Section 7](#07-patterns) |
 | Improve PB execution | `Show PB Counter`, `Show PB Stats` | [Section 8](#08-pb) |
 | Find why a GC failed | GC Command Trace, input history | [Section 9](#09-gc) |
+| Track your GC success rate on the 1P and 2P sides | `Show GC Stats` | [Section 9.4](#gc-stats) |
 | Examine advantage, interrupts and landing situations | Tick Data, Air Guard Gaps | [Section 10](#10-data) |
 
 Start with [installation](#02-install) and [basic controls](#03-controls), then [practice PB and GC against Sasquatch](#sasquatch-pb-tutorial).
@@ -713,7 +714,8 @@ The `4 / 5 / 6` choices under `Game > P1 Min PB Presses` **modify game behavior 
 2. Set `Display > Show Scrolling Input = yes`.
 3. Enable its child option, `Show GC Trainer`.
 4. Set `Trainer > Show GC Command Trace = yes`.
-5. Block and enter your character's GC command.
+5. To track your success rate as well, set `Trainer > Show GC Stats = yes` ([9.4](#gc-stats)).
+6. Block and enter your character's GC command.
 
 Start with one attack, then move on to strings that keep you blocking.
 
@@ -754,6 +756,36 @@ The input bar places `G` or `GP n` on the contact column and `GC` on the window-
 The trace's Guard row refers to contact; the Success number refers to the window opening. Adding the intervals after Guard can therefore differ from Success by one Tick. In the example above, the intervals from the guard add up to 3 + 4 + 6 + 1 = 14, and Success reads 13t from the window opening.
 
 After a failure, check whether you blocked, whether the necessary directions were accepted, whether the command expired and whether the button arrived in time. Do not always read the number beside `GC Expired` as the full window length from the block. Some result intervals are measured from the last input.
+
+<a id="gc-stats"></a>
+### 9.4 Track your success rate with GC Stats
+
+`Trainer > Show GC Stats = yes` shows your GC tries and success rate, split into the 1P side and the 2P side. It appears without a title in a dark box at the bottom right, just above the input bar.
+
+![GC Stats (bottom right) and the GC Command Trace (top) after a GC on the right, the 2P side](images/gc_stats.png)
+
+In this example Demitri blocks Sasquatch's attack on the right side of the screen, the 2P side, and guard-cancels with ← ↓ ↙ and the buttons. `Success 13t` in the trace and `SUCCESS 13t` in the input bar are the same number: this GC's `GC t`. Its `Input t` is the 3 + 4 + 1 = 8 Ticks from the first ← to the buttons. The `2P` row of GC Stats shows that 52 of the 62 tries on the 2P side succeeded (83.87%).
+
+The notation is the same as PB Stats: `Total`, `Pass`, `Fail` and `Success`, two decimals, and `-` where there is no value yet.
+
+| Column | Meaning |
+|---|---|
+| `GC Side` | The side your character was on when the try began: `1P` on the left (facing right), `2P` on the right (facing left) |
+| `Total` | The number of tries (`Pass` + `Fail`) |
+| `Pass` | Blocked strings in which a GC came out |
+| `Fail` | Blocked strings that ended without a GC |
+| `Success` | Pass divided by Total |
+| `GC t` | Ticks from the opening of the GC window to the GC. The same number as `SUCCESS Nt` in the input bar and `Success` in the trace |
+| `Input t` | Ticks from the first direction the game accepted, in the command that produced the GC, to the GC |
+
+- **One try is one blocked string.** It becomes a try once the game accepts a direction of your GC command during the string. A command you began before blocking counts if the game was still accepting it when you blocked. Blocking alone, or being hit, does not count.
+- `Cmd Expired` and `GC Expired` partway through do not decide anything while the string continues. If you enter the command again and GC a later attack, that string is one `Pass`.
+- **`GC t` and `Input t` are averaged over `Pass` tries only.** Neither is a score where smaller is better. After an expired command, `Input t` counts from the command you entered last.
+- Only P1 is measured. Nothing is counted while `P1 Coin` has switched your control to P2, or while a recording is controlling P1. Counting resumes when you control P1 again.
+- Nothing is counted while `Show GC Stats = no`. Switching the side you control, including during a Recording Wizard take, does not clear the counts. Loading a state, resetting positions and the end of a round discard the string in progress without counting it as `Fail`. Nothing is saved to the settings file.
+- Counts stop at 99999. Toggle it OFF then ON to reset the statistics. Returning to character select also clears them. Both work as in PB Stats.
+
+**A blocked string you walked forward into also counts as a try.** While you hold forward, the game keeps accepting the first direction of the GC command again. If you then block, the string starts with the GC command one step in, so it ends as `Fail` unless you GC. When you practice GC, do not mix in situations where you walk forward and then block.
 
 <a id="10-data"></a>
 ## 10. Read move data and gaps
@@ -1037,6 +1069,7 @@ For reports, include version, P1/P2 characters, which character is on each side,
 | Tick / t | Internal frame: Normal has one Tick per displayed frame; Turbo 3 has four Ticks in three displayed frames |
 | Frame | Displayed/emulator frame in this guide; check the option's label and description |
 | Forward / Back | Relative to the character's facing, unlike screen-left/right position shortcuts |
+| 1P side / 2P side | Screen left / right. Your character is on the 1P side on the left (facing right) and on the 2P side on the right (facing left). Not the same as players P1 / P2 |
 | QCF / QCB | Quarter-circle forward / back |
 | DPF / DPB | Dragon-punch motion forward / back |
 | HCF / HCB | Half-circle forward / back |
@@ -1053,13 +1086,13 @@ For reports, include version, P1/P2 characters, which character is on each side,
 - Documentation updated and checked for consistency: 2026-10-01. This does not include testing the procedures in an emulator.
 - Upstream comparison: [`fc2`, 92980a5](https://github.com/NBeing/VSAV_Training/tree/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6). Earliest-input limitations and existing trainers were checked in [upstream menu.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/menu.lua), and input delivery in [upstream controller.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/controller.lua).
 - The comparison covers source-level features and control methods. An emulator A/B comparison and execution of the infinite-combo definitions were not performed while preparing this manual. The infinite-combo examples reflect use cases supplied by the developer.
-- Fork version: v11.7.19; labels checked 2026-09-29. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
+- Fork version: v11.7.20; labels checked 2026-10-01. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
 - [English README](../README.md) / [English release notes](RELEASE_NOTES.md).
 - Menus/settings: [menu.lua](../scripts/menu.lua), [config.lua](../scripts/config.lua).
 - Controls: [controller.lua](../scripts/controller.lua), [position.lua](../scripts/position.lua).
 - Recording: [recordingWizard.lua](../scripts/recordingWizard.lua), [macro.lua](../scripts/macro.lua).
 - Steps/patterns: [actionSequenceEditor.lua](../scripts/actionSequenceEditor.lua), [actionSequenceRunner.lua](../scripts/actionSequenceRunner.lua).
-- PB/GC displays: [hud.lua](../scripts/hud.lua), [guardCancel.lua](../scripts/guardCancel.lua), [inputHistory.lua](../scripts/inputHistory.lua).
+- PB/GC displays: [hud.lua](../scripts/hud.lua), [guardCancel.lua](../scripts/guardCancel.lua), [inputHistory.lua](../scripts/inputHistory.lua), [gcStats.lua](../scripts/gcStats.lua).
 - Measurements: [tickData.lua](../scripts/tickData.lua), [airGuardGap.lua](../scripts/airGuardGap.lua).
 
 When labels or behavior change in a later version, update the affected sections and reference version.

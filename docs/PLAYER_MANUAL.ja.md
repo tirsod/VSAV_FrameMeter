@@ -6,7 +6,7 @@
 
 本書では **AG（アドバンシングガード）** と表記します。英語UIの **Push Block／PB** は同じ機能を指します。設定を探せるよう、`Show PB Counter` などの実際の項目名は変更せず記載します。
 
-対象：**v11.7.19／Fightcade 2 の FBNeo／日本版 `vsavj`（970519 Japan）**。導入手順は Windows 向けです。基本は自分が P1、ダミーが P2 の状態で説明します。
+対象：**v11.7.20／Fightcade 2 の FBNeo／日本版 `vsavj`（970519 Japan）**。導入手順は Windows 向けです。基本は自分が P1、ダミーが P2 の状態で説明します。
 
 [初めて使う方は導入から](#02-install) · [設定済みならAG・GCの実践へ](#sasquatch-ag-tutorial) · [対象環境・確認範囲](#verification-scope)
 
@@ -71,6 +71,7 @@
 | 複数の攻めをランダムに出す | 記録スロット、Action Patterns | [5章](#05-recording)、[7章](#07-patterns) |
 | AGの押し方を改善する | `Show PB Counter`、`Show PB Stats` | [8章](#08-pb) |
 | GCの失敗原因を調べる | GC Command Trace、入力履歴 | [9章](#09-gc) |
+| GCの成功率を1P側・2P側に分けて集計する | `Show GC Stats` | [9.4](#gc-stats) |
 | 有利不利、割り込み、着地の状況を調べる | Tick Data、Air Guard Gaps | [10章](#10-data) |
 
 初めてなら、[導入](#02-install)と[基本操作](#03-controls)を確認してから、[サスカッチでAG・GCを練習](#sasquatch-ag-tutorial)してみてください。
@@ -711,7 +712,8 @@ Avg   PB 4.22  at 5.89-11.50t
 2. `Display > Show Scrolling Input = yes`。
 3. その子項目 `Show GC Trainer = yes`。
 4. `Trainer > Show GC Command Trace = yes`。
-5. 自分でガードし、使用キャラクターのGCコマンドを入力します。
+5. 成功率も集計するなら `Trainer > Show GC Stats = yes`（[9.4](#gc-stats)）。
+6. 自分でガードし、使用キャラクターのGCコマンドを入力します。
 
 単発攻撃から始め、慣れたら連続ガードになる攻めで試します。
 
@@ -752,6 +754,36 @@ Avg   PB 4.22  at 5.89-11.50t
 トレースのGuard行は接触時点、Successの数値は受付開始時点が基準です。このため、Guardからの行の間隔を足した値とSuccessが1ティック違うことがあります。上の例では、ガードからの間隔の合計は3 + 4 + 6 + 1 = 14、Successは受付開始から13tです。
 
 失敗したら、「ガード自体が成立したか」「必要な方向が受け取られたか」「途中でコマンドが切れたか」「ボタンが受付に間に合ったか」の順に確認してください。`GC Expired` の数値を、常にガードからの受付全長と読むのは誤りです。最後の入力を基準にする結果表示もあります。
+
+<a id="gc-stats"></a>
+### 9.4 GC Statsで成功率を集計する
+
+`Trainer > Show GC Stats = yes` にすると、GCの試行回数と成功率を、1P側・2P側に分けて表示します。見出しのない暗い枠で、画面右下、入力履歴の帯のすぐ上に出ます。
+
+![右側（2P側）でGCが成立したときのGC Stats（右下）とGC Command Trace（上）](images/gc_stats.png)
+
+この例では、デミトリが画面の右側（2P側）でサスカッチの攻撃をガードし、← ↓ ↙ とボタンでGCしています。トレースの `Success 13t` と帯の `SUCCESS 13t` は同じ値で、このGCの `GC t` です。`Input t` は最初の ← からボタンまでの 3 + 4 + 1 = 8 ティックです。GC Statsの `2P` の行は、2P側で試した62回のうち52回が成立（83.87%）したことを示しています。
+
+表記はPB Statsと同じです（`Total`／`Pass`／`Fail`／`Success`、小数点以下2桁、まだ値が無い欄は `-`）。
+
+| 列 | 意味 |
+|---|---|
+| `GC Side` | 試行が始まったとき、自分のキャラクターがいた側。画面の左（右向き）なら `1P`、右（左向き）なら `2P` |
+| `Total` | 試行の回数（`Pass` + `Fail`） |
+| `Pass` | 連続ガードの途中でGCが成立した回数 |
+| `Fail` | GCが成立しないまま連続ガードが終わった回数 |
+| `Success` | Pass÷Total |
+| `GC t` | GC受付開始から成立までのティック数。入力履歴の `SUCCESS Nt`、トレースの `Success` と同じ値 |
+| `Input t` | 成立したコマンドで、ゲームが最初に受け取った方向から成立までのティック数 |
+
+- **1回の試行は1本の連続ガードです。** 連続ガードの途中で、ゲームがGCコマンドの方向を1つでも受け取ると試行になります。ガード前に入れ始めて、ガードした時点でまだ受け付けられているコマンドも含みます。ガードしただけ、食らっただけでは数えません。
+- 途中で `Cmd Expired` や `GC Expired` になっても、連続ガードが続いている間は確定しません。次の攻撃で入れ直してGCすれば、その連続ガードは `Pass` 1回です。
+- **`GC t` と `Input t` は `Pass` の回だけの平均です。** 小さいほど良いという点数ではありません。`Input t` は、失効した後に入れ直したときは最後に入れたコマンドから数えます。
+- 測るのはP1だけです。`P1 Coin` で操作側をP2にしている間と、記録の再生がP1を操作している間は数えません。P1に戻すと続きから数えます。
+- `Show GC Stats = no` の間は数えません。操作側の切り替え（Recording Wizardでの記録を含む）では消えません。ステートのロード、位置の戻し、ラウンドの終了では、途中の連続ガードを `Fail` にせず捨てます。設定ファイルには保存しません。
+- 各数は99999で止まります。OFF→ONで集計をリセットできます。キャラクター選択へ戻ったときもクリアされます。いずれもPB Statsと同じです。
+
+**前に歩いてからガードした連続ガードも試行に数えます。** 前を入れ続けている間、ゲームはGCコマンドの最初の方向を受け取り直し続けます。そのままガードするとGCコマンドが1段進んだ状態で始まるため、GCしなければ `Fail` になります。GCの練習では、前に歩いてからガードする場面を混ぜないでください。
 
 <a id="10-data"></a>
 ## 10. 技の性能と攻防の隙間を読む
@@ -1035,6 +1067,7 @@ AGを `Guard` 側で設定することで、`Guard Action Type` を反撃用に�
 | Tick／t | 内部フレーム。ノーマルでは表示1フレーム＝1 Tick、ターボ3では表示3フレーム＝4 Tick |
 | Frame | ここでは表示・エミュレーター側のフレーム。項目名と説明で単位を確認 |
 | Forward／Back | キャラクターの向きを基準にした前／後ろ。位置ショートカットの左右とは別 |
+| 1P側／2P側 | 画面の左／右。自分のキャラクターが左（右向き）なら1P側、右（左向き）なら2P側。操作するプレイヤーのP1／P2とは別 |
 | QCF／QCB | 前／後ろ方向の波動コマンド |
 | DPF／DPB | 前／後ろ方向の昇竜コマンド |
 | HCF／HCB | 前／後ろ方向の半回転コマンド |
@@ -1051,13 +1084,13 @@ AGを `Guard` 側で設定することで、`Guard Action Type` を反撃用に�
 - 文書更新・整合性確認日：2026-10-01（エミュレーター上の操作確認は含みません）。
 - 比較対象のフォーク元：[`fc2`、92980a5](https://github.com/NBeing/VSAV_Training/tree/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6)。最速入力の制約と既存トレーナーは[元のmenu.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/menu.lua)、入力列の処理は[元のcontroller.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/controller.lua)と照合。
 - 比較はソースに基づく機能・制御方式の確認。両版の実機比較および上記の永久コンボ定義の実行は本書作成時には未実施。永久コンボの例は開発者から提供された用途説明に基づく。
-- 対象：v11.7.19（項目名は2026-09-29に確認）。最初の確認：[351e310（v11.7.16）](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20)。
+- 対象：v11.7.20（項目名は2026-10-01に確認）。最初の確認：[351e310（v11.7.16）](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20)。
 - [README](../README.ja.md)／[日本語リリースノート](RELEASE_NOTES.ja.md)。
 - メニュー・設定：[menu.lua](../scripts/menu.lua)、[config.lua](../scripts/config.lua)。
 - 基本操作：[controller.lua](../scripts/controller.lua)、[position.lua](../scripts/position.lua)。
 - 記録：[recordingWizard.lua](../scripts/recordingWizard.lua)、[macro.lua](../scripts/macro.lua)。
 - ステップ・パターン：[actionSequenceEditor.lua](../scripts/actionSequenceEditor.lua)、[actionSequenceRunner.lua](../scripts/actionSequenceRunner.lua)。
-- AG／GC表示：[hud.lua](../scripts/hud.lua)、[guardCancel.lua](../scripts/guardCancel.lua)、[inputHistory.lua](../scripts/inputHistory.lua)。
+- AG／GC表示：[hud.lua](../scripts/hud.lua)、[guardCancel.lua](../scripts/guardCancel.lua)、[inputHistory.lua](../scripts/inputHistory.lua)、[gcStats.lua](../scripts/gcStats.lua)。
 - 測定：[tickData.lua](../scripts/tickData.lua)、[airGuardGap.lua](../scripts/airGuardGap.lua)。
 
 今後の版で項目名や動作が変わった場合は、該当章と対象版を更新してください。

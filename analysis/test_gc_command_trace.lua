@@ -304,6 +304,10 @@ do
 	package.preload["./scripts/pbStats"] = function()
 		return dofile("pbStats.lua")
 	end
+	-- 5 つ目 (2026-10-01)。Show GC Stats の描画用。本物を読む。
+	package.preload["./scripts/gcStats"] = function()
+		return dofile("gcStats.lua")
+	end
 	img_dir = {}
 	for i = 1, 9 do img_dir[i] = "dir" .. i end
 	img_no_button, img_L_button, img_M_button, img_H_button = "n", "l", "m", "h"

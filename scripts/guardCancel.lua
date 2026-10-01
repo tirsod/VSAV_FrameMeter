@@ -3956,6 +3956,19 @@ memory.registerexec(0x0221CC, function()
 		local _gct
 		_gct, p1_gc_open_seq = gc_tick_count(_gc, p1_gc_open_seq, globals.p1_tick_seq)
 		gct_tick(_gc)
+		-- SHOW GC STATS COUNTS OFF THIS SAME TICK (gcStats.lua): the window
+		-- state, the Success count and the command block gct_tick has just
+		-- read, plus $05 for the blocked string and $120 for the side. Looked up
+		-- here rather than held in a local - this file's main chunk is at Lua
+		-- 5.1's limit of 200 - and require hands back the one loaded table.
+		-- Protected: an error thrown in this hook would take the input bar with
+		-- it. The message is kept, and the box says so instead of its numbers.
+		local _ok, _err = pcall(require("./scripts/gcStats").on_tick,
+			globals.p1_tick_seq, _gc, _gct, gct.prog, gct.step,
+			memory.readbyte(0xFF8405), memory.readbyte(0xFF8520))
+		if not _ok and globals.gc_stats_error == nil then
+			globals.gc_stats_error = tostring(_err)
+		end
 		local _gc_changed = _gc ~= p1_gc_state
 		p1_gc_state = _gc
 

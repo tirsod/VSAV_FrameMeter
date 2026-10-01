@@ -2,10 +2,11 @@
 --
 -- Entering the select screen ($8009 = 2) clears what the last match left on
 -- screen: the input history, the icon columns down the edges, PB Count with
--- its timeline and LateMash, PB Stats, the GC Command Trace. Once on the way
--- in, not every frame. What each clear does is run in the modules' own tests
--- (test_pb_counter, test_guard_mark_column, test_gc_command_trace); this reads
--- the wiring, which nothing can run without the whole emulator.
+-- its timeline and LateMash, PB Stats, the GC Command Trace, GC Stats. Once on
+-- the way in, not every frame. What each clear does is run in the modules' own
+-- tests (test_pb_counter, test_guard_mark_column, test_gc_command_trace,
+-- test_gc_stats); this reads the wiring, which nothing can run without the
+-- whole emulator.
 --
 -- Run from scripts/ - the reads below are relative.
 --   cd scripts && lua5.1 ../analysis/test_select_clear.lua
@@ -31,6 +32,7 @@ for _, call in ipairs({
 	"guardCancelModule.clear_trace()",
 	"globals.total_pb_attempt_counter = {}", "globals.successful_pb_counter = {}",
 	"pbStatsModule.clear()",
+	"gcStatsModule.clear()",
 }) do
 	want("消す: " .. call, body:find(call, 1, true) ~= nil, true)
 end

@@ -2,6 +2,9 @@ local tech_hit_inputs = require './tech-hit-inputs'
 -- Show PB Stats (Trainer tab). The master script requires the same path to
 -- feed it, so this is the same module.
 local pbStatsModule = require "./scripts/pbStats"
+-- Show GC Stats (Trainer tab). Fed from guardCancel.lua's P1 hook, cleared by
+-- the master script; the same module through the same path.
+local gcStatsModule = require "./scripts/gcStats"
 -- Read only for the frequency counter below. require returns the module
 -- already loaded by menu.lua, so this costs nothing at run time.
 local actionSequenceRunnerModule = require './scripts/actionSequenceRunner'
@@ -485,6 +488,49 @@ local function draw_pb_stats()
 		end
 	end
 	tech_hit_inputs(PB_STATS_Y)
+end
+
+-- SHOW GC STATS (gcStats.lua). AT THE BOTTOM RIGHT, OVER THE P2 SPECIAL
+-- GAUGE'S CORNER OF THE SCREEN (user, 2026-10-01: P2 のスペシャルゲージ付近、
+-- 暗い枠で覆ってよい). It stays above the input bar, whose box starts at 203
+-- (inputHistory.lua: screen height - 21) and whose G / GC / SUCCESS 13t labels
+-- sit at 196 over whichever column they belong to - anywhere along it. So the
+-- box ends at 193. The GC Command Trace above ends by 150 at its longest (nine
+-- rows of 11 from blocks_top()). Right aligned on its own right edge, so a
+-- wider column never pushes it off the screen. On the same dark box as PB Stats.
+local GC_STATS_RIGHT, GC_STATS_Y, GC_STATS_ROW = 380, 166, 9
+local function draw_gc_stats()
+	if globals.options.display_gc_stats ~= true then return end
+	local CH = 4.2
+	local _lines = gcStatsModule.lines()
+	-- The count runs inside guardCancel.lua's hook, which keeps the first error
+	-- it threw. Numbers that stopped counting must not look like numbers.
+	if globals.gc_stats_error ~= nil then
+		_lines = { { { "GC Stats stopped: error", "#FF0000" } } }
+	end
+	local _w = 0
+	for _, _l in ipairs(_lines) do
+		local _n = 0
+		for _, _c in ipairs(_l) do _n = _n + #_c[1] end
+		if _n > _w then _w = _n end
+	end
+	local _x0 = GC_STATS_RIGHT - 2 - _w * CH
+	gui.box(_x0 - 2, GC_STATS_Y - 1, GC_STATS_RIGHT,
+		GC_STATS_Y + #_lines * GC_STATS_ROW, "#00000099", "#00000055")
+	for _i, _l in ipairs(_lines) do
+		local _x, _y = _x0, GC_STATS_Y + (_i - 1) * GC_STATS_ROW
+		for _, _c in ipairs(_l) do
+			-- A cell is right aligned by its leading spaces. It is drawn from its
+			-- first glyph, placed by the same arithmetic as the cell, so a
+			-- column's digits end in the same place on every line.
+			local _lead = #(_c[1]:match("^ *"))
+			if _lead < #_c[1] then
+				gui.text(math.floor(_x + _lead * CH + 0.5), _y,
+					_c[1]:sub(_lead + 1), _c[2])
+			end
+			_x = _x + #_c[1] * CH
+		end
+	end
 end
 
 -- WHAT GUARD ACTION FREQUENCY IS ACTUALLY DOING.
@@ -1192,6 +1238,7 @@ local hudModule = {
     -- which is how a nil colour reached gui.text and took the HUD down.
     ["draw_gc_command_trace"] = draw_gc_command_trace,
     ["draw_pb_stats"] = draw_pb_stats,
+    ["draw_gc_stats"] = draw_gc_stats,
     ["PB_STATS_X"] = PB_STATS_X,
     ["blocks_top"] = blocks_top,
     ["draw_air_guard_gap"] = draw_air_guard_gap,
@@ -1232,6 +1279,7 @@ local hudModule = {
 		frame_trap_trainer()
 		draw_push_dist()
 		draw_pb_stats()
+		draw_gc_stats()
 		draw_jump_in_trainer()
 		if globals.options.display_recording_gui == true then
 			draw_rec()

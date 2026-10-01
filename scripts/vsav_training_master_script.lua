@@ -51,6 +51,9 @@ local airGuardLogModule  = require "./scripts/airGuardLog"
 local airGuardGapModule  = require "./scripts/airGuardGap"
 -- Show PB Stats (Trainer tab). hud.lua requires the same path to draw it.
 local pbStatsModule      = require "./scripts/pbStats"
+-- Show GC Stats (Trainer tab). Counted from guardCancel.lua's P1 hook; hud.lua
+-- requires the same path to draw it.
+local gcStatsModule      = require "./scripts/gcStats"
 local autoguardModule    = require "./scripts/autoguard"
 local gameStateModule    = require './scripts/gameState'
 local dummyStateModule   = require './scripts/dummyState'
@@ -492,8 +495,8 @@ emu.registerbefore(function()
 		-- AND WHAT THE LAST MATCH LEFT ON SCREEN GOES: a character select stands
 		-- in for restarting the tool (user, 2026-09-27). Once on the way in -
 		-- the input history, the icon columns, PB Count with its timeline and
-		-- LateMash, PB Stats, the GC Command Trace. Air Guard Gaps and Tick
-		-- Data clear themselves off the match already.
+		-- LateMash, PB Stats, the GC Command Trace, GC Stats. Air Guard Gaps
+		-- and Tick Data clear themselves off the match already.
 		if not globals._select_cleared then
 			globals._select_cleared = true
 			inpHistoryModule.clear()
@@ -503,6 +506,8 @@ emu.registerbefore(function()
 			globals.total_pb_attempt_counter = {}
 			globals.successful_pb_counter = {}
 			pbStatsModule.clear()
+			-- A new pick is a new character to count for (user, 2026-10-01).
+			gcStatsModule.clear()
 		end
 	else
 		globals._select_cleared = false
@@ -600,6 +605,9 @@ emu.registerbefore(function()
 	-- globals["skip_frame"] 	 = frameskipHandlerModule.registerBefore()
 	globals["timers"] 		 = timersModule.registerBefore()
 	positionModule.registerBefore()
+	-- A blocked string the position shortcut slid you out of is not a try
+	-- either way (user, 2026-10-01): thrown away, not counted as NG.
+	if positionModule.busy() then gcStatsModule.discard() end
 	globals["current_frame"] = emu.framecount()
 	-- print("rev", globals.dummy.p2_reversal)
 
@@ -623,6 +631,8 @@ emu.registerbefore(function()
 		-- Off and on again starts from zero, as the menu says.
 		pbStatsModule.clear()
 	end
+	-- GC Stats the same way (user, 2026-10-01: PB Statsとあわせて).
+	if globals.options.display_gc_stats ~= true then gcStatsModule.clear() end
 	-- if globals.macroLua and (globals.macroLua.playing == true or globals.macroLua.recording == true) then
 	-- 	if was_gathering_graph_data == false then
 	-- 		last_dummy_config = {}
@@ -844,6 +854,9 @@ if savestate.registersave and savestate.registerload then --registersave/registe
 		-- them, which is the same fault this whole block exists to prevent.
 		actionSequenceEditorModule.abort("savestate_load")
 		actionSequenceRunnerModule.cancel()
+		-- The blocked string in progress happened in a game that has just been
+		-- rewound: thrown away, not counted as NG (user, 2026-10-01).
+		gcStatsModule.discard()
 		for _i = 1, 2 do
 			local _p = player_objects and player_objects[_i]
 			if _p ~= nil then

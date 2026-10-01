@@ -669,6 +669,9 @@ positionModule = {
   -- the Lua hotkeys on this as well: acting on the menu before the round is
   -- set up is no better than sliding on it.
   ["round_ready"] = function() return have_start end,
+  -- True while a slide or a restore is moving the pair. GC Stats throws the
+  -- blocked string in progress away then rather than counting it.
+  ["busy"] = function() return steps ~= nil or camera_restore_busy() end,
   -- RE-PLACE THE PAIR AT THE CURRENT SETTING (user, 2026-09-21).
   --
   -- The menu row changes the setting to re-place, and the watcher above acts

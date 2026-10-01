@@ -6,6 +6,42 @@ Newest first. Older releases are kept below.
 
 ---
 
+## v11.7.20
+
+### GC Stats
+
+`Trainer > Show GC Stats` tracks your GC success rate, split into the 1P side
+and the 2P side. It appears at the bottom right, just above the input bar.
+
+- One try is one blocked string. A string counts once the game accepts a
+  direction of your GC command during it: `Pass` if a GC came out anywhere in
+  it, `Fail` if it ended without one. `Cmd Expired` or `GC Expired` partway
+  through decides nothing
+- The 1P side and the 2P side are where your character stood: the left or the
+  right of the screen
+- `GC t` is the Ticks from the opening of the GC window to the GC (the same
+  number as `SUCCESS Nt` in the input bar); `Input t` is the Ticks from the
+  first direction of the command that produced the GC to the GC itself. Both
+  are averaged over `Pass` tries only, and neither is a score where smaller is
+  better
+- The notation, the colors, the stop at 99999 and starting again from zero
+  when toggled OFF then ON all work as in PB Stats
+- Only P1 is measured. Switching the side you control, including during a
+  Recording Wizard take, does not clear the counts
+- A blocked string you walked forward into also counts as a try. See Section
+  9.4 of the manual
+
+### Manual updates
+
+- Clearer paths into your first practice session and better section links
+- Consistent recording and playback terms, and the exact way to turn
+  Runahead off (`Video > Runahead > Disabled`)
+- The English documents now use Push Block / PB throughout, with smoother
+  wording and American spelling
+- A new section on GC Stats (9.4), with a screenshot from the game
+
+---
+
 ## v11.7.19
 
 ### Reorganized manuals and a guided practice session against Sasquatch

@@ -116,6 +116,8 @@ local default_training_settings = {
   loop_interval_after_frames = 0,
   restore_recorded_position = false,
   display_pb_stats = false,
+  -- OFF, like the GC Command Trace it sits with. Counting runs either way.
+  display_gc_stats = false,
   display_jump_in_trainer = false,
   game_speed = 3,
   bgm_on = false,
