@@ -6,7 +6,7 @@
 
 本書では **AG（アドバンシングガード）** と表記します。英語UIの **Push Block／PB** は同じ機能を指します。設定を探せるよう、`Show PB Counter` などの実際の項目名は変更せず記載します。
 
-対象：**v11.7.20.4／Fightcade 2 の FBNeo／日本版 `vsavj`（970519 Japan）**。導入手順は Windows 向けです。基本は自分が P1、ダミーが P2 の状態で説明します。
+対象：**v11.7.21／Fightcade 2 の FBNeo／日本版 `vsavj`（970519 Japan）**。導入手順は Windows 向けです。基本は自分が P1、ダミーが P2 の状態で説明します。
 
 [初めて使う方は導入から](#02-install) · [設定済みならAG・GCの実践へ](#sasquatch-ag-tutorial) · [対象環境・確認範囲](#verification-scope)
 
@@ -464,6 +464,8 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 
 この画像ではカーソルが `Guard Action Type` にあり、その下の `Random Guard Action %` の行がオレンジ、理由が最下行の右側に出ています。オレンジの行そのものにカーソルを合わせると、その行はカーソルの色になります。
 
+**`Random Start Wait` で、反撃の開始を毎回ずらせます。** 単位はTickで0〜60、`Random Guard Action %` のすぐ下にあります。反撃のたびに0からその値までの乱数を引き、その分だけ遅れて出ます。`0` は使わない設定で、従来どおり最速です。対象はReversalとCounter Attackのすべての種類（Specified、Character Specific、Recording、Action Steps、Action Patterns）と、`Loop Steps` の各周です。ガード、AG（Push Block）、GC、投げ抜けは遅らせません。1以上を引いた反撃は、ダミーが動けるようになってから入力を始めるため、値が小さいときは入力にかかる分より早くは出ません。`Guard Action Type` が `None`、`Guard Cancel`、`Push Block` のときは表示されません。Recordingタブの `Random Start Wait` と同じ設定です。
+
 | 種類 | 用途 |
 |---|---|
 | `None` | 反撃を設定しない |
@@ -536,6 +538,8 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 5. 停止はもう一度 `Play Recording` または `Volume Down`。
 
 `Loop Interval (Frames)` の `Before / After` で待ちを調整できます。`After` は前の再生と動作終了の後、位置を戻す前の待ち、`Before` は位置を戻した後、次の再生を始めるまでの待ちです。単位は**表示フレーム**で、Action Stepsのティックとは異なります。
+
+`Random Start Wait`（Tick、0〜60）を設定すると、再生の開始を毎回0からその値までの乱数だけ遅らせます。`Play Recording`、`Volume Down`、`Looped Playback` の各回（`Loop Interval` の後）、Recording系の反撃が対象です。待っている間にもう一度押すと止まります。Recording Wizardの確認用の再生は遅らせません。Dummyタブの `Random Start Wait` と同じ設定です。
 
 `Reset Distance Each Loop = yes` は、各ループで記録時の間合いへ戻します。対応する距離情報が入ったv11.4.1以降の記録で使えます。左右が入れ替わったときの再生方向も補正されますが、間合いや状況まで自動的に同一になるとは限りません。
 
@@ -645,6 +649,8 @@ Waitの選択画面では `After / Landing / Rapid / Chain / Cancel / Late Cance
 - `Auto (After)`：ダミーが行動可能になってから次の周のコマンド入力を始めます。コマンドの先行入力を行わないため、ダッシュは入力完成まで遅れ、最速にはなりません。
 - `Auto (Landing)`：着地フレーム（内部フレーム）に次の周の1ステップ目が出るよう、必要なコマンドを着地前から先行入力できます。最速着地ダッシュからジャンプ・空中技を繰り返す練習に使います。着地予測などの条件は[6.3](#steps-wait)を参照してください。
 - 数値：最後のステップから、次の周の1ステップ目までのティック数です。
+
+`Random Start Wait` が1以上なら、各周の開始も `Loop Wait` の後に、周ごとに引き直した乱数の分だけ遅れます。
 
 最初の一周を始めるには反撃のきっかけが必要です。ループ境界では `Loop Wait` が使われ、単純に1ステップ目のWaitを毎回繰り返すわけではありません。
 
@@ -943,7 +949,7 @@ AGを `Guard` 側で設定することで、`Guard Action Type` を反撃用に�
 | ティックで見るもの | 表示フレームで見るもの |
 |---|---|
 | Tick Data、Action Timeline | 記録・再生、記録の `Loop Interval (Frames)` |
-| Action StepsのWait、Loop Wait | Show Jump In Trainer |
+| Action StepsのWait、Loop Wait、Random Start Wait | Show Jump In Trainer |
 | AG／GCの受付と履歴 | Show Dashes Interval、Show Dash Time |
 | Air Guard Gaps、Frame Trap Trainer | Dash Attack Cancel／Attack Dash Gap Trainer |
 
@@ -1179,7 +1185,7 @@ Action Steps側の `Auto (10)` が、この表示では `Dash > 12t` となる�
 - 文書更新・整合性確認日：2026-10-02（エミュレーター上の操作確認は含みません）。
 - 比較対象のフォーク元：[`fc2`、92980a5](https://github.com/NBeing/VSAV_Training/tree/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6)。最速入力の制約と既存トレーナーは[元のmenu.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/menu.lua)、入力列の処理は[元のcontroller.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/controller.lua)と照合。
 - 比較はソースに基づく機能・制御方式の確認。両版の実機比較および上記の永久コンボ定義の実行は本書作成時には未実施。永久コンボの例は開発者から提供された用途説明に基づく。
-- 対象：v11.7.20.4（項目名は2026-10-02に確認）。最初の確認：[351e310（v11.7.16）](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20)。
+- 対象：v11.7.21（項目名は2026-10-03に確認）。最初の確認：[351e310（v11.7.16）](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20)。
 - [README](../README.ja.md)／[日本語リリースノート](RELEASE_NOTES.ja.md)。
 - メニュー・設定：[menu.lua](../scripts/menu.lua)、[config.lua](../scripts/config.lua)。
 - 基本操作：[controller.lua](../scripts/controller.lua)、[position.lua](../scripts/position.lua)。

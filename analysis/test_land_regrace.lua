@@ -18,6 +18,13 @@
 -- 許されるのは 10 ティック (資料、VSAV_MEMORY_NOTES.md)。ヒットストップは
 -- 11 ティックなので、猶予を超えたら死んだ窓に押し込まず入れ直す。
 --
+-- 2026-10-03: ダッシュは「猶予」ではなくゲームの受付そのものを見る。ROM 0x02A4C8 の
+-- 前ダッシュ受付は 前 → (段 2) → N → (段 4) → 前 で成立し、各段 12 ティックで消える。
+-- 受付はヒットストップ中も進み、成立はその 1 ティックだけ有効で、ダッシュに移るのは
+-- 凍結明けの地上。空中や凍結中の入れ直しは、その最初の前が途中のダッシュを空振りで
+-- 成立させて使い切る (モリガン 17/17、サスカッチ大P)。このテストは同じ受付の模型を
+-- 持ち、「空振りの成立が無く、地上で 1 回成立する」ことをコードで判定する。
+--
 -- scripts/ から走らせる。
 --   cd scripts && lua5.1 ../analysis/test_land_regrace.lua
 local ram = {}
@@ -65,47 +72,144 @@ local function to_bits(entry)
 end
 
 local P2 = 0xFF8800
+local REC = R.DASH_REC_FORWARD             -- 段 (0xFF89F0) / タイマー (+4)
+
+-- ゲームの前ダッシュ受付 (ROM 0x02A4C8) の模型。ティックの終わりに、そのティックの
+-- レバーで 1 回進め、段とタイマーを実機と同じ番地に書く。歩進は次のティックで
+-- それを読む - 実機でも歩進のフックは受付より先に走る。
+local rec_prev_lev = 0
+local recog = {}                           -- 成立したティック: { air, frozen }
+local function recognizer(lev)
+	local e = 0                            -- 方向ビットの立ち上がり
+	for _, bit in ipairs({ 1, 2, 4, 8 }) do
+		if (lev % (bit * 2)) >= bit and (rec_prev_lev % (bit * 2)) < bit then e = e + bit end
+	end
+	rec_prev_lev = lev
+	local st, tm = ram[REC] or 0, ram[REC + 4] or 0
+	local fwd_edge = (e % 4) >= 2
+	if st == 0 then
+		if fwd_edge then st, tm = 2, R.DASH_STEP_TICKS end
+	elseif st == 2 then
+		tm = tm - 1
+		if tm == 0 then st = 0
+		elseif lev == 0 then st, tm = 4, R.DASH_STEP_TICKS
+		elseif (lev % 4) >= 2 then -- 前を押したまま
+		else st = 0 end
+	elseif st == 4 then
+		tm = tm - 1
+		if tm == 0 then st = 0
+		elseif e ~= 0 then
+			if fwd_edge then
+				recog[#recog + 1] = { air = ram[P2 + 0x38] ~= 0, frozen = ram[P2 + 0x5C] ~= 0 }
+			end
+			st = 0
+		end
+	end
+	ram[REC], ram[REC + 4] = st, tm
+end
+-- 空振りの成立 (空中か凍結中) と、地上で取られた成立の数。
+local function spent()
+	local n = 0
+	for _, r in ipairs(recog) do if r.air or r.frozen then n = n + 1 end end
+	return n
+end
+local function taken()
+	local n = 0
+	for _, r in ipairs(recog) do if not r.air and not r.frozen then n = n + 1 end end
+	return n
+end
 
 -- 歩進の代役。guardCancel の seq_tick ブロックと同じ規則。
 local defender = {}
 local log = {}
+local clock = 0
+local refeed_last = 0
+local function restart(s)
+	s.current_frame = 1
+	s.tick_held = 0
+	s.land_hold = 0
+	restarts = (restarts or 0) + 1
+end
 local function tick()
 	local wrote = nil
+	clock = clock + 1
+	ram[0xFF8081] = clock % 256
+	local frozen = ram[P2 + 0x5C] ~= 0
 	for _pass = 1, 2 do
 		R.service(defender)
 		local s = defender.pending_input_sequence
 		if s == nil or s.sequence == nil then break end
 		local i = s.current_frame or 1
+		local stop = false
 		if s.seq_land and s.saw_freeze and i == #s.sequence
-		   and (s.tick_held or 0) == 0
-		   and ram[P2 + 0x38] ~= 0
-		   and seq_ticks_to_landing() ~= nil then
-			s.land_hold = (s.land_hold or 0) + 1
-			if s.land_hold < (R.DASH_GRACE_TICKS or 10) - 1 then
-				wrote = { src = "hold", lev = 0, btn = 0 }
-				break
+		   and (s.tick_held or 0) == 0 then
+			local rec = R.dash_recognizer(s.sequence)
+			local air = ram[P2 + 0x38] ~= 0 and seq_ticks_to_landing() ~= nil
+			if rec ~= nil then
+				if air or frozen then
+					stop = true
+				else
+					local st, tm = ram[rec] or 0, ram[rec + 4] or 0
+					if st == 0 then restart(s) ; i = 1
+					elseif not (st == 4 and tm >= 2) then stop = true end
+				end
+			elseif air then
+				s.land_hold = (s.land_hold or 0) + 1
+				if s.land_hold < (R.DASH_GRACE_TICKS or 10) - 1 then stop = true
+				else restart(s) ; i = 1 end
 			end
-			s.current_frame = 1
-			s.tick_held = 0
-			s.land_hold = 0
-			i = 1
-			restarts = (restarts or 0) + 1
+		end
+		if not stop and s.restart_pending then
+			if frozen then
+				stop = true
+			else
+				s.restart_pending = nil
+				s.tick_held = 0
+				s.entry_ticks = 0
+				local rec = R.dash_recognizer(s.sequence)
+				if rec ~= nil and ram[rec] == 4 and (ram[rec + 4] or 0) >= 2 then
+					s.current_frame = #s.sequence
+					refeed_last = refeed_last + 1
+					stop = true
+				else
+					s.current_frame = 1
+					i = 1
+				end
+			end
+		end
+		if stop then
+			wrote = { src = ((s.current_frame or 1) == #s.sequence) and "hold" or "wait",
+			          lev = 0, btn = 0 }
+			break
 		end
 		if i <= #s.sequence then
 			local lev, btn = to_bits(s.sequence[i])
-			wrote = { src = "step", lev = lev, btn = btn, idx = i }
-			if ram[P2 + 0x5C] ~= 0 then s.saw_freeze = true end
+			s.entry_ticks = (s.entry_ticks or 0) + 1
+			if (lev ~= 0 or btn ~= 0) and frozen
+			   and s.entry_ticks > (R.DASH_GRACE_TICKS or 10) then
+				s.restart_pending = true
+				wrote = { src = "wait", lev = 0, btn = 0 }
+				break
+			end
+			wrote = { src = "step", lev = lev, btn = btn, idx = i,
+			          frozen = frozen, air = (ram[P2 + 0x38] ~= 0) }
 			local hold = (btn == 0 and lev ~= 0) and 2 or 1
-			s.tick_held = (s.tick_held or 0) + 1
-			if s.tick_held >= hold then
+			-- 凍結中の押しはゲームが捨てるので、配送したと数えない。
+			if not ((lev ~= 0 or btn ~= 0) and frozen) then
+				s.tick_held = (s.tick_held or 0) + 1
+			end
+			if (s.tick_held or 0) >= hold then
 				s.current_frame = i + 1
 				s.tick_held = 0
+				s.entry_ticks = 0
 			end
+			if frozen then s.saw_freeze = true end
 			break
 		end
 		defender.pending_input_sequence = nil
 	end
 	log[#log + 1] = wrote or { src = "none", lev = 0, btn = 0 }
+	recognizer(log[#log].lev)
 	return log[#log]
 end
 local function run(n) for _ = 1, n do tick() end end
@@ -118,7 +222,8 @@ local function install()
 	} } } }
 end
 local function start()
-	log = {} ; restarts = 0
+	log = {} ; restarts = 0 ; recog = {} ; refeed_last = 0
+	ram[REC], ram[REC + 4], rec_prev_lev = 0, 0, 0
 	defender = {}
 	R.cancel()
 	R.arm("reversal")
@@ -129,6 +234,7 @@ local function airborne()
 	ram[P2 + 0x44] = -65536
 	ram[P2 + 0x4C] = -65536
 	ram[P2 + 0x3A] = 0
+	ram[P2 + 0x5C] = 0
 end
 local function finals()
 	local n = 0
@@ -140,12 +246,19 @@ local function holds()
 	for _, e in ipairs(log) do if e.src == "hold" then n = n + 1 end end
 	return n
 end
+-- 凍結を n ティック、1 ティックごとに減らしながら流す。
+local function freeze(n)
+	for k = n, 1, -1 do
+		ram[P2 + 0x5C] = k
+		tick()
+	end
+	ram[P2 + 0x5C] = 0
+end
 
 seq_ticks_to_landing = function() return 4 end
 
 print("[1] 凍らなかった配送は、これまでどおり出る")
 install() ; start() ; airborne()
-ram[P2 + 0x5C] = 0
 run(10)
 want("最終の forward が空中でもそのまま出る", finals() > 0, true)
 want("待ちに入らない", holds(), 0)
@@ -154,12 +267,9 @@ print("[2] 凍った配送は、着地まで最終押しを待つ")
 install() ; start() ; airborne()
 -- 凍結は commit の後に始まる。ゲートは凍結中に commit しないので、
 -- 最初から凍らせては配送そのものが始まらず、試したことにならない。
-ram[P2 + 0x5C] = 0
 run(2)                                     -- commit して助走が始まる
-ram[P2 + 0x5C] = 11                        -- ここで凍る
-run(2)
-ram[P2 + 0x5C] = 0                         -- 明けたが、まだ空中
-run(4)
+freeze(2)                                  -- ここで凍る
+run(4)                                     -- 明けたが、まだ空中
 want("最終の forward を空中で打たない", finals(), 0)
 want("待っている", holds() > 0, true)
 
@@ -167,26 +277,79 @@ print("[3] 本当に着地したら、その場で出る")
 ram[P2 + 0x38] = 0
 run(2)
 want("着地して最終の forward が出た", finals() > 0, true)
+want("ダッシュは地上で 1 回成立した", taken(), 1)
+want("空振りの成立は無い", spent(), 0)
 
-print("[4] 猶予を超えたら、頭から入れ直す")
+print("[4] 空中では、どれだけ待っても入れ直さず、押さない")
+-- 以前は 9 ティックで空中のまま入れ直していた。その最初の前が、途中まで入った
+-- ダッシュを空中で成立させて使い切り、着地後には新しい 1 段目しか残らなかった。
 install() ; start() ; airborne()
-ram[P2 + 0x5C] = 0
 run(2)
-ram[P2 + 0x5C] = 11
-run(2)
-ram[P2 + 0x5C] = 0
+freeze(2)
 run(30)                                    -- 着地しないまま待たせ続ける
-want("入れ直した", (restarts or 0) > 0, true)
-want("待ちは猶予の内に収まる", holds() <= (R.DASH_GRACE_TICKS - 2) * 3, true)
-want("死んだ窓に押し込まない - 入れ直し前の空振りなし", finals(), 0)
+want("空中で入れ直さない", (restarts or 0), 0)
+want("空中で最後の前を押さない", finals(), 0)
+want("空振りの成立は無い", spent(), 0)
+
+-- 実機の並び: 前 (2)、N、ここでヒットストップ、明けて空中、着地。
+local function frozen_at_n(n, air_after)
+	install() ; start() ; airborne()
+	run(3)                                 -- {} 前 前 (助走が始まる)
+	freeze(n)                              -- N のティックで凍る
+	run(air_after)                         -- 明けて空中
+	ram[P2 + 0x38] = 0                     -- 着地
+end
+
+print("[4b] 着地で途中のダッシュがまだ生きていれば、最後の前だけで成立させる")
+frozen_at_n(6, 1)                          -- N から 8 ティックで着地
+tick()
+want("入れ直さない", (restarts or 0), 0)
+want("着地のティックに最後の前を押す", finals() > 0, true)
+want("ダッシュは地上で 1 回成立した", taken(), 1)
+want("空振りの成立は無い", spent(), 0)
+
+print("[4c] 実機の形 (モリガン、サスカッチ大K) - 11 ティック凍り、着地で受付が切れる")
+frozen_at_n(11, 1)                         -- 着地のティックで受付が消える
+tick()
+want("消えるティックでは押さない", finals(), 0)
+want("消えるティックでは入れ直さない", (restarts or 0), 0)
+tick()
+want("消えた次のティックで頭から入れ直す", (restarts or 0), 1)
+run(8)
+want("入れ直した動作が地上で成立した", taken(), 1)
+want("空振りの成立は無い", spent(), 0)
+want("入れ直しは 1 回だけ", (restarts or 0), 1)
+
+print("[4d] 着地していても、ヒットストップ中は押さない")
+install() ; start() ; airborne()
+run(3)
+ram[P2 + 0x5C] = 11
+tick()                                     -- N で凍る
+ram[P2 + 0x38] = 0                         -- 凍ったまま着地 (規則として)
+run(3)
+want("凍っている間は最後の前を押さない", finals(), 0)
+want("凍っている間は入れ直さない", (restarts or 0), 0)
+
+print("[4e] 実機の形 (サスカッチ大P) - 助走の 1 回目の前で凍り、押しすぎて入れ直しへ")
+-- 遅い大Pは助走の最初のティックで当たる。前を押したまま凍り、10 ティックを超えて
+-- 入れ直しに回る。その手を離した瞬間が N になって受付は最後の段へ進む。以前は
+-- 明けた空中で頭から入れ直し、その最初の前が空振りで成立して消えていた。
+install() ; start() ; airborne()
+run(2)                                     -- {} 前 (1 ティック目は凍る前)
+freeze(11)
+run(2)                                     -- 明けて 2 ティック空中 (実機 lg104-105)
+want("最後の前へ進めた (頭からではない)", refeed_last, 1)
+want("空中では押さない", finals(), 0)
+ram[P2 + 0x38] = 0                         -- 着地
+tick()
+want("着地のティックで成立させる", taken(), 1)
+want("空振りの成立は無い", spent(), 0)
+want("頭から入れ直していない", (restarts or 0), 0)
 
 print("[5] 着地が来ないなら停滞しない (前に戻しバグの再発防止)")
 install() ; start() ; airborne()
-ram[P2 + 0x5C] = 0
 run(2)
-ram[P2 + 0x5C] = 11
-run(2)
-ram[P2 + 0x5C] = 0
+freeze(2)
 seq_ticks_to_landing = function() return nil end
 run(6)
 want("最終の forward は出る", finals() > 0, true)
@@ -197,11 +360,8 @@ print("[6] 出したダッシュ自身のホップで、入れ直しを始めな
 -- 足が浮くので $38 が 0 -> 1 になる。2 ティック目に「空中かつ降下中」と見て入れ
 -- 直していたため、ダッシュ→着地→ダッシュ→着地が延々続いた (実機 2026-09-19)。
 install() ; start() ; airborne()
-ram[P2 + 0x5C] = 0
 run(2)
-ram[P2 + 0x5C] = 11
-run(2)
-ram[P2 + 0x5C] = 0
+freeze(2)
 run(6)                                     -- 空中で待たせる
 ram[P2 + 0x38] = 0                         -- 着地。最終エントリの 1 ティック目が出る
 tick()
@@ -214,6 +374,22 @@ want("最終エントリを出し切る", finals() > f0, true)
 
 print("[7] 猶予はダッシュの資料値で、出所が書いてある")
 want("DASH_GRACE_TICKS = 10", R.DASH_GRACE_TICKS, 10)
+want("DASH_STEP_TICKS = 12 (ROM 0x02A552 の 0x0C)", R.DASH_STEP_TICKS, 12)
+want("受付の番地 (P2 $1F0 / $1F8)", R.DASH_REC_FORWARD == 0xFF89F0 and R.DASH_REC_BACK == 0xFF89F8, true)
+do
+	local gsrc = io.open("guardCancel.lua"):read("*a")
+	local guard = gsrc:find("if _s0.seq_land and _s0.saw_freeze and _i == #_s0.sequence", 1, true)
+	local rs = guard and gsrc:find("_s0.current_frame = 1", guard, true)
+	local body = (guard and rs) and gsrc:sub(guard, rs) or ""
+	-- ダッシュはゲームの受付を読んで決めること、空中・凍結中は押さないこと (2026-10-03)。
+	want("空中と凍結中は待つ", body:find("if _air or memory.readbyte(0xFF885C) ~= 0 then", 1, true) ~= nil, true)
+	want("入れ直しはゲームの受付の段を読んで決める", body:find("local _st = memory.readbyte(_rec)", 1, true) ~= nil, true)
+	local rp = gsrc:find("if _s0.restart_pending then", 1, true)
+	local rp_end = rp and gsrc:find("_s0.current_frame = 1", rp, true) or nil
+	local rp_body = (rp and rp_end) and gsrc:sub(rp, rp_end) or ""
+	want("押しすぎの入れ直しも、生きている受付なら最後の前へ",
+		rp_body:find("_s0.current_frame = #_s0.sequence", 1, true) ~= nil, true)
+end
 do
 	local rsrc = io.open("actionSequenceRunner.lua"):read("*a")
 	want("ノーマル 1F = 1 tick の根拠が書いてある",

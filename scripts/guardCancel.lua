@@ -4753,9 +4753,50 @@ memory.registerexec(0x02211A, function()
 		                  and memory.readbyte(0xFF8940) == 0x0A)
 		if _csig or _csnosig then
 			csp_pending = false
-			run_one_frame_special_ref()
-			debugKnockdownModule.mark_write("csp_poke",
-				_csig and 1 or 2, memory.readbyte(0xFF8940))
+			-- RANDOM START WAIT (user, 2026-10-02). Drawn when the request was
+			-- made; 0 pokes here as it always has. Anything else is due that
+			-- many Ticks after this one - the dummy is free by then, which
+			-- run_one_frame_special accepts ($05 == 0x00). Kept on GA, not in a
+			-- local: this hook is at the 60-upvalue ceiling.
+			local _rw = GA.csp_wait or 0
+			GA.csp_wait = nil
+			if _rw > 0 then
+				GA.csp_due = (memory.readbyte(0xFF8081) + _rw) % 256
+				debugKnockdownModule.mark_write("csp_rsw", _rw,
+					memory.readbyte(0xFF8940))
+			else
+				run_one_frame_special_ref()
+				debugKnockdownModule.mark_write("csp_poke",
+					_csig and 1 or 2, memory.readbyte(0xFF8940))
+			end
+		end
+	end
+	-- The delayed poke. A difference of 0, or past it (the half-window above
+	-- 128), is due; a re-run tick that reads the clock a little early just
+	-- waits a little longer.
+	--
+	-- Due is not enough on its own: run_one_frame_special refuses anything but
+	-- a free dummy standing or walking ($06 0x00 / 0x04) and the request would
+	-- be gone. So a dummy turning round or in a proximity block is waited for,
+	-- tick by tick, and one that has been hit or has blocked again ($05 non-zero)
+	-- drops it - that is a new chance, with a request of its own.
+	if GA.csp_due ~= nil and run_one_frame_special_ref ~= nil then
+		local _now = memory.readbyte(0xFF8081)
+		local _left = (GA.csp_due - _now) % 256
+		if _left == 0 or _left > 128 then
+			local _c06 = memory.readbyte(0xFF8806)
+			if memory.readbyte(0xFF8805) ~= 0x00 then
+				GA.csp_due = nil
+			elseif _c06 == 0x00 or _c06 == 0x04 then
+				GA.csp_due = nil
+				run_one_frame_special_ref()
+				debugKnockdownModule.mark_write("csp_poke", 3,
+					memory.readbyte(0xFF8940))
+			else
+				-- Still due next tick: keep it on this one, so a long wait
+				-- cannot run the half-window round to "not yet".
+				GA.csp_due = _now
+			end
 		end
 	end
 
@@ -5170,7 +5211,11 @@ memory.registerexec(0x02211A, function()
 		-- on separate ticks spends a tick doing nothing - and a tick is the
 		-- whole unit this path exists to get right.
 		for _pass = 1, 2 do
-			if _d0 == nil or globals.dummy.guard_action ~= 'sequence' then break end
+			-- owns(): also a Specified start delayed by Random Start Wait.
+			if _d0 == nil
+			   or not actionSequenceRunnerModule.owns(globals.dummy.guard_action) then
+				break
+			end
 			actionSequenceRunnerModule.service(_d0)
 			local _s0 = _d0.pending_input_sequence
 			if _s0 == nil or not _s0.seq_tick or _s0.sequence == nil then break end
@@ -5249,46 +5294,81 @@ memory.registerexec(0x02211A, function()
 			-- Whatever replaces this has to ask about the freeze since the
 			-- ANCHOR, not the freeze during the delivery.
 			if _s0.seq_land and _s0.saw_freeze and _i == #_s0.sequence
-			   and (_s0.tick_held or 0) == 0
-			   -- The touchdown, not "able to act".
-			   --
-			   -- 2026-09-19: releasing on $05/$06 both zero instead was tried,
-			   -- because Jedah's landing press is on the floor every time
-			   -- (AF:0) and cannot act every time (NF 2 of 2) and still
-			   -- produces nothing. It made Sasquatch's second dash LATE - the
-			   -- case that was working - so it was taken straight back out.
-			   --
-			   -- The two are not the same question, and the evidence says so:
-			   -- Sasquatch's landing presses were AIRBORNE (AF 46 of 46) and
-			   -- his dash came out anyway. Whatever decides this is not simply
-			   -- "the press must land on free+0", and guessing again is how the
-			   -- working case keeps getting broken. Jedah is left unsolved and
-			   -- written up in design_landing_prediction.md.
-			   and memory.readbyte(0xFF8838) ~= 0
-			   and ticks_to_landing() ~= nil then
+			   and (_s0.tick_held or 0) == 0 then
+				-- A DASH: ASK THE GAME WHERE ITS RECOGNISER IS (2026-10-02).
+				--
+				-- The neutral in front of this entry has put the game's dash
+				-- recogniser on its last step, waiting for one more forward
+				-- press, for DASH_STEP_TICKS (actionSequenceRunner, from
+				-- 0x02A4C8). It keeps counting through hit stop. That press
+				-- completes the dash wherever it falls - but the dash is only
+				-- taken on a tick a $06 handler can take it, never inside the
+				-- freeze and not near the floor in the air.
+				--
+				-- The old rule held a fixed nine ticks, then entered the motion
+				-- again from the top, in the air. Traced on Morrigan (dash MK LP)
+				-- and Sasquatch (dash cancel HK, the HK's second hit), looped on
+				-- Auto (Landing) with the attack blocked: the re-entered motion's
+				-- FIRST forward completed the old dash inside the freeze or in
+				-- the air, where it was spent, and its later forward only started
+				-- a new one. No dash on any such lap (Morrigan 17 of 17).
+				--
+				-- So nothing is pressed in the air or inside the freeze. On the
+				-- floor, with the freeze over, the recogniser itself decides
+				-- ($1F0/$1F4 for forward, read before this tick runs it, so a
+				-- timer of 2 or more is still alive after its own decrement):
+				--   last step, alive  -> press now: the dash completes on the
+				--                        touchdown, the fastest there is
+				--   step 0            -> nothing left of it: enter the motion again
+				--                        from the top
+				--   anything else     -> wait a tick (on the first step our
+				--                        neutral moves it on; on the last with the
+				--                        timer about to run out it clears)
+				--
+				-- The floor is $38 back to 0, not "able to act": releasing on
+				-- $05/$06 both zero was tried on 2026-09-19 and made Sasquatch's
+				-- second dash late, so it was taken straight back out.
+				--
+				-- A motion that is not a dash keeps the rule it had: hold out the
+				-- grace in the air, then enter it again. Its recogniser is a
+				-- different one and nothing here has been measured against it.
 				local _R = actionSequenceRunnerModule
-				_s0.land_hold = (_s0.land_hold or 0) + 1
-				-- One tick of the grace is already spent by the neutral entry
-				-- itself, so the hold may use the rest and no more.
-				if _s0.land_hold < (_R.DASH_GRACE_TICKS or 10) - 1 then
-					return
+				local _rec = _R.dash_recognizer and _R.dash_recognizer(_s0.sequence)
+				local _air = memory.readbyte(0xFF8838) ~= 0 and ticks_to_landing() ~= nil
+				if _rec ~= nil then
+					if _air or memory.readbyte(0xFF885C) ~= 0 then
+						return
+					end
+					local _st = memory.readbyte(_rec)
+					local _tm = memory.readbyte(_rec + 4)
+					if _st == 0 then
+						_s0.current_frame = 1
+						_s0.tick_held = 0
+						_s0.land_hold = 0
+						_i = 1
+					elseif not (_st == 4 and _tm >= 2) then
+						return
+					end
+					-- Otherwise the last step is alive: this press completes it.
+				elseif _air then
+					_s0.land_hold = (_s0.land_hold or 0) + 1
+					-- One tick of the grace is already spent by the neutral entry
+					-- itself, so the hold may use the rest and no more.
+					if _s0.land_hold < (_R.DASH_GRACE_TICKS or 10) - 1 then
+						return
+					end
+					-- Spent. Start the motion over so the window is fresh.
+					--
+					-- saw_freeze STAYS SET. Clearing it made the second attempt
+					-- blind: it would walk straight to its own last entry and press
+					-- in the air again. Keeping it means the list cycles until the
+					-- floor is really there; the whole branch is under
+					-- ticks_to_landing() ~= nil, so it cannot spin forever.
+					_s0.current_frame = 1
+					_s0.tick_held = 0
+					_s0.land_hold = 0
+					_i = 1
 				end
-				-- Spent. Start the motion over so the window is fresh.
-				--
-				-- saw_freeze STAYS SET. Clearing it made the second attempt
-				-- blind: it would walk straight to its own last entry and press
-				-- in the air again, which is the thing being fixed. Keeping it
-				-- means the list cycles - run up, hold out the grace, enter it
-				-- again - until the floor is really there. Every cycle hands the
-				-- final press a window that is still open.
-				--
-				-- This cannot spin forever: the whole branch is under
-				-- ticks_to_landing() ~= nil, so the moment the dummy is not on
-				-- its way down the press goes out instead.
-				_s0.current_frame = 1
-				_s0.tick_held = 0
-				_s0.land_hold = 0
-				_i = 1
 			end
 			-- THE WINDOW RAN OUT WHILE WAITING. START OVER INSTEAD.
 			--
@@ -5308,9 +5388,28 @@ memory.registerexec(0x02211A, function()
 			if _s0.restart_pending then
 				if memory.readbyte(0xFF885C) ~= 0 then return end
 				_s0.restart_pending = nil
-				_s0.current_frame = 1
 				_s0.tick_held = 0
 				_s0.entry_ticks = 0
+				-- A DASH MAY STILL BE HALF-ENTERED (2026-10-02).
+				--
+				-- Letting go of the stretched forward is a neutral, and a
+				-- neutral is exactly what moves the game's recogniser on to its
+				-- last step - so the dash is waiting for one more forward. The
+				-- top of the motion would hand it that forward now, in the air
+				-- off a freeze where it is spent (traced: Sasquatch, dash cancel
+				-- HP, the HP connecting on the run-up's first tick, every such lap
+				-- without a dash). Go to the last entry instead, and press
+				-- nothing on this tick: on a landing delivery the branch above
+				-- then holds it for the floor; on any other it goes on the next
+				-- tick. Step 0 means the dash is gone - start from the top.
+				local _rec = actionSequenceRunnerModule.dash_recognizer
+				             and actionSequenceRunnerModule.dash_recognizer(_s0.sequence)
+				if _rec ~= nil and memory.readbyte(_rec) == 4
+				   and memory.readbyte(_rec + 4) >= 2 then
+					_s0.current_frame = #_s0.sequence
+					return
+				end
+				_s0.current_frame = 1
 				_i = 1
 			end
 			-- A DASH CANNOT BE AIMED WHILE THE CHARACTER IS STILL TURNING.
@@ -5542,7 +5641,8 @@ memory.registerexec(0x02211A, function()
 		do
 			local _rvn = actionSequenceRunnerModule.rev_lever_now(
 				memory.readbyte(0xFF8081))
-			if _rvn ~= nil and globals.dummy.guard_action == 'sequence'
+			if _rvn ~= nil
+			   and actionSequenceRunnerModule.owns(globals.dummy.guard_action)
 			   and _d0 ~= nil and _d0.pending_input_sequence == nil then
 				assert_input_bits(entry_to_bits({ _rvn }), 0)
 				return
@@ -5562,7 +5662,8 @@ memory.registerexec(0x02211A, function()
 		-- lever while it lasts.
 		do
 			local _wl = actionSequenceRunnerModule.waiting_lever()
-			if _wl ~= nil and globals.dummy.guard_action == 'sequence'
+			if _wl ~= nil
+			   and actionSequenceRunnerModule.owns(globals.dummy.guard_action)
 			   and _d0 ~= nil and _d0.pending_input_sequence == nil then
 				assert_input_bits(entry_to_bits(_wl), 0)
 				return
@@ -5588,7 +5689,7 @@ memory.registerexec(0x02211A, function()
 			-- ends the hold early rather than holding for another 250 ticks.
 			local _left = (seq_held_btn_until - memory.readbyte(0xFF8081)) % 256
 			if _left == 0 or _left > 64
-			   or globals.dummy.guard_action ~= 'sequence' then
+			   or not actionSequenceRunnerModule.owns(globals.dummy.guard_action) then
 				seq_held_btn = nil
 				seq_held_btn_until = nil
 			elseif _d0 ~= nil and _d0.pending_input_sequence == nil
@@ -5610,7 +5711,7 @@ memory.registerexec(0x02211A, function()
 		end
 		if seq_held_lever ~= nil then
 			if actionSequenceRunnerModule.pending_count() == 0
-			   or globals.dummy.guard_action ~= 'sequence' then
+			   or not actionSequenceRunnerModule.owns(globals.dummy.guard_action) then
 				seq_held_lever = nil
 			elseif _d0 ~= nil and _d0.pending_input_sequence == nil
 			       and globals.show_menu ~= true then
@@ -7606,6 +7707,77 @@ local function service_held_reversal()
 	end
 end
 
+-- One draw of the Random Start Wait, 0 when it is off or the module is missing.
+-- These two hang on GA rather than being locals: the main chunk is at Lua 5.1's
+-- 200-local ceiling.
+function GA.rsw_draw()
+	local _ok, _m = pcall(require, "./scripts/randomStartWait")
+	if not _ok or type(_m) ~= "table" or _m.roll == nil then return 0 end
+	return _m.roll()
+end
+
+-- RANDOM START WAIT FOR THE GUARD ACTIONS THE ARM PLACES (user, 2026-10-02).
+--
+-- Reversal / Counter Attack - Specified, Action Steps and Action Patterns. The
+-- arm can only aim at the free tick: the motion goes in during the stun and the
+-- press on free-1 or free+0, and every measurement in this file was made on
+-- that. A start that has to wait cannot be placed that way - the motion would
+-- go stale in the buffer long before a sixty Tick wait was over.
+--
+-- So a draw above 0 does not arm. The same input goes to the runner, which
+-- holds it until the dummy can act on the ground and delivers it on the tick
+-- clock, aimed so the press lands the drawn number of Ticks after the tick the
+-- arm would have pressed on (actionSequenceRunner, start_steps). A draw of 0
+-- returns false and the arm runs exactly as it always has.
+--
+-- Everything the arm would have asked about the press is answered here, from
+-- the same functions: where the press sits (kd_press_base), how long it waits
+-- after the motion (kd_delay_ticks - Guard Action Delay, or step one's Wait),
+-- whether the direction stays down while it waits (kd_holds_direction), the
+-- dash cancel's reverse, and the button lever row.
+function GA.rsw_defer()
+	local _w = GA.rsw_draw()
+	if _w <= 0 then return false end
+	local _ga = globals.dummy.guard_action
+	local _o = {
+		wait = _w,
+		adj = kd_press_base() - 1,
+		delay = kd_delay_ticks(),
+		hold_dir = kd_holds_direction(),
+	}
+	-- dash_cancel_reverse_bits() answers nil in sequence mode, where the runner
+	-- parks a cancel step's reverse itself. Same here.
+	if _ga ~= 'sequence' then
+		_o.rev = DASH_CANCEL_REVERSE[GA.stick()]
+		-- Guard Action Delay = Auto. kd_delay_ticks has already turned it into
+		-- the arm's dash number; the runner swaps in its own measured one.
+		local _gd = globals.options and globals.options.gc_delay
+		if type(_gd) == "number" and _gd < 0 then _o.auto_dash = GA.stick() end
+	end
+	-- button_lever_bits(), as names: the walker turns names into bits on the
+	-- tick it writes them, when the facing is known.
+	local _li = globals.options and globals.options.counter_attack_lever
+	if _li == 2 then
+		_o.lever = {}
+	elseif type(_li) == "number" and _li > 2 then
+		_o.lever = BUTTON_LEVER_DIR[_li]
+	end
+	local _done = false
+	if _ga == 'sequence' then
+		_done = actionSequenceRunnerModule.arm_deferred("reversal", _o)
+	end
+	if not _done then
+		-- Specified, or a sequence with nothing to compile: the list the arm
+		-- would have queued (ga_sequence's fallback).
+		local _mk = make_input_sequence(GA.stick(), GA.button(), "", 0)
+		if _mk ~= nil and #_mk > 0 then
+			_done = actionSequenceRunnerModule.arm_oneshot(_ga, _mk, _o)
+		end
+	end
+	debugKnockdownModule.mark_write("rsw_defer", _w, _done and 1 or 0)
+	return _done
+end
+
 local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 	-- FIX: runs before any early return - verifying a poke already made must
 	-- not depend on this frame's random frequency roll.
@@ -7628,10 +7800,19 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 	--
 	-- Loading a savestate is handled separately, in the master script, beside
 	-- the same clean-up for pending_input_sequence.
-	if globals.dummy.guard_action ~= 'sequence'
+	-- owns(): Action Steps / Patterns, or a Specified guard action whose
+	-- Random Start Wait is still queued there (rsw_defer).
+	if not actionSequenceRunnerModule.owns(globals.dummy.guard_action)
 	   or globals.game_state == nil
 	   or not globals.game_state.match_begun then
 		actionSequenceRunnerModule.cancel()
+	end
+	-- A Character Specific poke waiting out its Random Start Wait belongs to
+	-- that guard action; switched away, it does not go off.
+	if GA.csp_due ~= nil
+	   and globals.dummy.guard_action ~= 'Character Specific Reversal'
+	   and globals.dummy.guard_action ~= 'Character Specific Counter' then
+		GA.csp_due = nil
 	end
 
 	-- GUARD = PUSH BLOCK IS NOT A GUARD ACTION.
@@ -7670,6 +7851,9 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 		-- and replaces the schedule wholesale; a refusal has to drop it, or an
 		-- opportunity is not one unit.
 		actionSequenceRunnerModule.cancel()
+		-- And a Character Specific poke still waiting out its Random Start
+		-- Wait: it belonged to the chance before this one.
+		GA.csp_due = nil
 		-- And the direction a Hold step left down goes with it. The walker
 		-- would drop it on its next pass anyway, once the schedule reads empty;
 		-- doing it here means the dummy is not leaning on a direction for the
@@ -7843,7 +8027,9 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 			_defender.counter.sequence = nil
 		end
 		if should_reversal then 
-			if not globals.macroLua.playing then  
+			-- starting: waiting out its Random Start Wait. playcontrol()
+			-- toggles, so asking again then would call it off.
+			if not globals.macroLua.playing and not globals.macroLua.starting then
 				globals.macroLua.playcontrol()
 			end
 		else
@@ -7858,7 +8044,9 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 		end
 
 		if should_counter then
-			if not globals.macroLua.playing then  
+			-- starting: waiting out its Random Start Wait. playcontrol()
+			-- toggles, so asking again then would call it off.
+			if not globals.macroLua.playing and not globals.macroLua.starting then
 				globals.macroLua.playcontrol()
 			end
 			wasJustGuarding = false
@@ -7918,7 +8106,18 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 		else
 			_armed = (arm_edge or hs_arm_edge or BLK.edge)
 		end
-		if _armed and _defender.pending_input_sequence == nil then
+		if _armed and _defender.pending_input_sequence == nil
+		   and GA.rsw_defer() then
+			-- RANDOM START WAIT: handed to the runner instead of armed (see
+			-- rsw_defer). A fire like any other for the frequency count, and
+			-- the opportunity is covered, so the reactive path below must not
+			-- queue the motion again when the reversal window opens.
+			gc_fires = gc_fires + 1
+			debugKnockdownModule.mark_write("gc_fire", gc_opportunity % 256,
+				(globals and globals.options and globals.options.gc_freq) or -1)
+			prebuffer_used = true
+			BLK.edge = false
+		elseif _armed and _defender.pending_input_sequence == nil then
 			-- ONE ROW PER GUARD ACTION THAT ACTUALLY GOES OUT.
 			--
 			-- gc_roll counts opportunities, this counts fires. Their ratio is
@@ -8092,7 +8291,9 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 
 	elseif globals.dummy.guard_action == 'recording on reversal' then
 		if should_reversal then 
-			if not globals.macroLua.playing then  
+			-- starting: waiting out its Random Start Wait. playcontrol()
+			-- toggles, so asking again then would call it off.
+			if not globals.macroLua.playing and not globals.macroLua.starting then
 				globals.macroLua.playcontrol()
 			end
 		else
@@ -8120,6 +8321,14 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 		-- work that went into them.
 		if (arm_edge or hs_arm_edge or BLK.edge)
 		   and not move_is_pit_of_blame() then
+			-- Random Start Wait, drawn once per request. The tick hook pokes
+			-- on the signature as before when it is 0, and that many Ticks
+			-- later otherwise.
+			-- A new request supersedes a delayed poke still waiting.
+			if not csp_pending then
+				GA.csp_wait = GA.rsw_draw()
+				GA.csp_due = nil
+			end
 			csp_pending = true
 		end
 		if not should_reversal then
@@ -8133,6 +8342,10 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 		-- a wake-up. Without it the character specific counter was block-only
 		-- while its input-driven twin covered both.
 		if counter_arm_edge() and not move_is_pit_of_blame() then
+			if not csp_pending then
+				GA.csp_wait = GA.rsw_draw()
+				GA.csp_due = nil
+			end
 			csp_pending = true
 		end
 		if not should_counter then

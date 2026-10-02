@@ -1170,6 +1170,49 @@ gc_input_delay_menu_item.is_disabled = check_for_gc_disabled
 local guard_action_frequency_menu_item = list_menu_item("Random Guard Action %", training_settings, "gc_freq", gc_freq,1, "How often the dummy does what Guard Action Type is set to, rolled once per\nchance. 0% never does it: while a Guard Action Type is set, this row is\norange when the cursor is on another row, and the bottom line says why.")
 guard_action_frequency_menu_item.is_disabled = function() return training_settings.guard_action == 1 end
 
+-- RANDOM START WAIT (user, 2026-10-02). One setting, two rows: here under
+-- Random Guard Action % - whether it acts is drawn first, then how long it
+-- waits - and on the Recording tab under Loop Interval. Same property, so the
+-- two always read the same. randomStartWait.lua says what waits and what not.
+local function random_start_wait_item(description)
+  local item = integer_menu_item("Random Start Wait", training_settings,
+        "random_start_wait", 0, 60, false, 0, nil, description)
+  -- 0 to N, because that is what is drawn. 0 alone is off.
+  function item:draw(_x, _y, _selected)
+    local _c = text_default_color
+    local _prefix, _suffix = "", ""
+    if _selected then
+      _c = text_selected_color
+      _prefix, _suffix = "< ", " >"
+    end
+    local _v = tonumber(self.object[self.property_name]) or 0
+    local _label = (_v > 0) and ("0-" .. _v) or "0"
+    gui.text(_x, _y, _prefix .. self.name .. " : " .. _label .. _suffix, _c,
+             text_default_border_color)
+  end
+  return item
+end
+local dummy_random_start_wait_item = random_start_wait_item(
+  "Waits a random number of game Ticks, 0 up to this, before the dummy's own\n"
+  .. "action starts - drawn again every time. 0 is off: as fast as before.\n"
+  .. "Reversal and Counter Attack of every kind, and each Loop Steps lap.\n"
+  .. "Defence never waits: Guard, Push Block, Guard Cancel, throw tech.\n"
+  .. "A reversal that waits goes in once the dummy can act, so it is never sooner\n"
+  .. "than its input takes. The same setting as Recording > Random Start Wait.")
+-- Shown where it does something: not for None, Guard Cancel or Push Block,
+-- which are defence.
+dummy_random_start_wait_item.is_disabled = function()
+  local _ga = training_settings.guard_action
+  return _ga == 1 or _ga == 2 or _ga == 3
+end
+local recording_random_start_wait_item = random_start_wait_item(
+  "Waits a random number of game Ticks, 0 up to this, before a recording starts\n"
+  .. "playing - drawn again every time. 0 is off.\n"
+  .. "Play Recording, the playback hotkey, every Looped Playback pass (after Loop\n"
+  .. "Interval), and the Recording guard actions on the Dummy tab.\n"
+  .. "The Recording Wizard's check playback does not wait.\n"
+  .. "The same setting as Dummy > Random Start Wait.")
+
 function set_p1_reversal_names()
   return charMovesModule.get_player_movelists().P1.reversal_names
 end
@@ -1596,7 +1639,9 @@ return {
               local _label = _self.name
               local _st = globals.macroLua ~= nil and globals.macroLua.get_recording_status ~= nil
                           and globals.macroLua.get_recording_status() or nil
-              if _st ~= nil and _st.playing then _label = _label .. "  (playing)" end
+              -- starting: waiting out its Random Start Wait. Pressing again
+              -- stops it there too, so it reads the same.
+              if _st ~= nil and (_st.playing or _st.starting) then _label = _label .. "  (playing)" end
               if _selected then
                 _c = text_selected_color
                 _label = "< " .. _label .. " >"
@@ -1626,6 +1671,7 @@ return {
           list_menu_item("Recording Slot", training_settings, "recording_slot", recording_slot,1,"Choose a playback/recording slot\nWill be overriden by random playback"),
           checkbox_menu_item("Looped Playback", training_settings, "looped_playback", 0, "The playback slot will be played back when the current recording ends\nThis works with random playback slots enabled below\nas well as with guard actions"),
           interval_popup_menu_item(training_settings),
+          recording_random_start_wait_item,
           checkbox_menu_item("Reset Distance Each Loop", training_settings, "restore_recorded_position", 0, "Puts both characters back to the distance the recording was made from, at the\nstart of every loop. Without it the two drift apart over the passes and the\nsetup you were practising stops happening.\nOnly works on recordings made from v11.4.1 on - the distance is stored in the\nrecording itself.\nNot used with Use Savestate Upon Recording, which restores everything anyway."),
           checkbox_menu_item("Use Savestate Upon Recording", training_settings, "use_recording_savestate", 0, "BETA! EXPERIMENTAL! (But works!)\nCreates a savestate when you hit record, and loads it before playback.\nUse this for timing sensitive training. VERY USEFUL!!!!"),
           checkbox_menu_item("Use Random Recording Slot", training_settings, "random_playback", 0, "This can be used in two ways:\n 1) Random playback file on reversal\n 2) Using looped playback mode a random playback file will be \n    played back when the current recording ends"),
@@ -1707,6 +1753,7 @@ return {
 
             }, "Use this to set up various counter attacks."), action_rate_warning),
             guard_action_frequency_menu_item,
+            dummy_random_start_wait_item,
             counter_attack_stick_menu_item,
             counter_attack_button_menu_item,
             counter_attack_lever_menu_item,

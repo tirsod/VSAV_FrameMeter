@@ -1226,6 +1226,27 @@ local loop_sched = nil
 -- Which trigger the loop belongs to, so a restart can ask for the list again
 -- rather than replay the one compiled at the arm.
 local loop_which = nil
+-- WHO THE QUEUE BELONGS TO WHEN IT IS NOT AN ACTION SEQUENCE.
+--
+-- A Random Start Wait on Reversal / Counter Attack - Specified cannot be placed
+-- by the arm (see rsw_defer in guardCancel), so the queue here delivers it once
+-- the dummy can act. guardCancel only runs the runner and its tick walker under
+-- Action Steps / Patterns and cancels the queue under anything else; this
+-- names the one other guard action that may use it, for as long as its start
+-- is queued, and until the last of its input has gone out. Asked through
+-- M.owns.
+local oneshot_owner = nil
+
+-- A NEW DRAW FOR EACH LOOP LAP. Looked up when it is needed rather than at load,
+-- so the offline tests - which load this file on its own from scripts/ - do not
+-- need the module, and read 0 (no wait) without it.
+local function rsw_roll()
+	local ok, m = pcall(require, "./scripts/randomStartWait")
+	if ok and type(m) == "table" and type(m.roll) == "function" then
+		return m.roll()
+	end
+	return 0
+end
 
 -- Called by the walker when a step carrying rev runs off its end. `now` is
 -- the tick that just ended - the step's last tap - so the holding starts two
@@ -1307,6 +1328,9 @@ local function log_entry(e)
 end
 
 local function log_wait(step, ticks)
+	-- A delayed step one is still step one: its item went in when it was
+	-- queued, as the arm's does, and its gap is counted from the trigger.
+	if step.start_part then return end
 	-- A LOOP RESTART IS NOT STEP ONE'S WAIT, SO IT IS NOT ON STEP ONE'S ITEM.
 	--
 	-- Round two onwards, loop_refill fires step one with the Loop Wait in
@@ -1418,6 +1442,11 @@ function M.cancel()
 	arm_rev = nil
 	loop_sched = nil
 	loop_which = nil
+	-- oneshot_owner is NOT dropped here. A cancel can land while a Specified
+	-- start is half delivered (a refused chance, the match ending), and the
+	-- walker only runs while the guard action is owned - drop it now and the
+	-- rest of that input list sits in the delivery slot for good, so nothing
+	-- can arm again. M.service lets go once the slot is empty.
 	air_seen = false
 	contact_used = false
 	rapid_used = false
@@ -1456,6 +1485,7 @@ function M.arm(which)
 	arm_rev = sched[1].rev
 	loop_sched = sched
 	loop_which = which
+	oneshot_owner = nil
 	contact_used = false
 	rapid_used = false
 	gate_busy_seen = false
@@ -1471,6 +1501,184 @@ function M.arm(which)
 	M.wait_log = {}
 	log_entry({ index = 1, op = sched[1].op_ticks })
 	return sched[1].sequence
+end
+
+-- RANDOM START WAIT: STEP ONE, WHEN THE ARM CANNOT PLACE IT (user, 2026-10-02).
+--
+-- The arm aims at the free tick and nothing else: the motion goes into the
+-- buffer during the stun and the press lands on free-1 (a special) or free+0.
+-- A start that waits cannot ride that - the motion would go stale long before
+-- a sixty Tick wait was over - so guardCancel hands it here instead, with
+-- everything the arm would have asked already answered:
+--
+--   wait      the drawn number of Ticks
+--   adj       -1 for a special (pressed on free-1), 0 for everything else
+--   delay     the press offset after the motion: Guard Action Delay, or step
+--             one's Wait in a sequence
+--   hold_dir  whether the direction stays down while the button waits
+--   rev       a dash cancel's reverse direction (Specified only)
+--   lever     the Reversal/Counter Button Lever row, as names, or nil
+--   auto_dash the dash motion's name when Guard Action Delay is Auto
+--             (Specified only) - see DASH_ACTION_ID
+--
+-- The step waits until the dummy can act on the ground, then goes in on the
+-- tick clock aimed so the press lands `wait` Ticks after the tick the arm would
+-- have pressed on - a numbered Wait's own arithmetic, `wait - lead`, from that
+-- tick. A wait shorter than the input itself cannot be met from there and comes
+-- out as early as the input allows.
+--
+-- WITH A DELAY, THE BUTTON IS A STEP OF ITS OWN. The arm splits the press from
+-- the motion when the button waits (v173): the motion finishes where it always
+-- would and only the button moves. Here that is two steps - the motion, then a
+-- one-entry press `delay` Ticks after its last tap - which is exactly how a
+-- numbered step after a dash already lands. A dash cancel adds the arm's two
+-- Ticks and parks its reverse the way a dash-cancel step does.
+local LEVER_NAME = {
+	["forward"] = true, ["back"] = true, ["up"] = true, ["down"] = true,
+	["h_charge"] = true, ["v_charge"] = true,
+}
+-- Guard Action Delay = Auto on a dash: the arm's own per-character number is an
+-- ARM-path offset, and this path is the step path, which was measured on its
+-- own (MEASURED_STEP_FLOORS - for the cancels the two run from four under to
+-- nine over). So the button step asks auto_ticks_for, exactly as an Attack
+-- step after a Dash step does.
+local DASH_ACTION_ID = {
+	["forward dash"] = "dash.f", ["back dash"] = "dash.b",
+	["forward dash cancel"] = "dashc.f", ["back dash cancel"] = "dashc.b",
+}
+
+local function start_steps(src, o)
+	local list = src and src.sequence
+	if type(list) ~= "table" or #list == 0 then return nil end
+	local dirs, btns = {}, {}
+	for _, k in ipairs(list[#list]) do
+		if LEVER_NAME[k] then dirs[#dirs + 1] = k else btns[#btns + 1] = k end
+	end
+	local adj = o.adj or 0
+	local delay = o.delay or 0
+	local a = {}
+	for k, v in pairs(src) do a[k] = v end
+	a.start_free = true
+	a.start_part = true
+	a.timing = nil
+	a.auto = false
+	a.wait = 0
+	a.is_loop = nil
+	local split = (#btns > 0) and (delay > 0 or o.rev ~= nil)
+	if not split then
+		local seq = list
+		-- The lever row replaces the direction the press rides on. The arm
+		-- applies it everywhere except a special pressed on free-1, where the
+		-- motion and the press are one injection.
+		if o.lever ~= nil and #btns > 0 and adj == 0 then
+			seq = {}
+			for i = 1, #list - 1 do seq[i] = list[i] end
+			local e = {}
+			for _, k in ipairs(o.lever) do e[#e + 1] = k end
+			for _, k in ipairs(btns) do e[#e + 1] = k end
+			seq[#list] = e
+		end
+		a.sequence = seq
+		a.lead = lead_ticks(seq)
+		-- With no button the delay moves the last tap, as on the arm.
+		a.start_wait = adj + (o.wait or 0) + delay
+		return { a }
+	end
+	local mseq = {}
+	for i = 1, #list - 1 do mseq[i] = list[i] end
+	mseq[#list] = dirs
+	a.sequence = mseq
+	a.lead = lead_ticks(mseq)
+	a.start_wait = adj + (o.wait or 0)
+	-- The step's own holds and reverse belong after the press, so they move to
+	-- the button step. What is held between the two is the arm's choice.
+	a.hold, a.hold_btn, a.hold_btn_ticks = nil, nil, nil
+	a.rev = o.rev
+	if o.rev == nil and o.hold_dir and #dirs > 0 then a.hold = dirs end
+	local e = {}
+	if o.lever ~= nil then
+		for _, k in ipairs(o.lever) do e[#e + 1] = k end
+	elseif o.rev == nil and o.hold_dir then
+		for _, k in ipairs(dirs) do e[#e + 1] = k end
+	end
+	for _, k in ipairs(btns) do e[#e + 1] = k end
+	local bwait = delay + ((o.rev ~= nil) and 2 or 0)
+	if o.auto_dash ~= nil and DASH_ACTION_ID[o.auto_dash] ~= nil then
+		local n = M.auto_ticks_for({ action = DASH_ACTION_ID[o.auto_dash] },
+		                           { action = "atk" })
+		if n ~= nil then bwait = n end
+	end
+	local b = {
+		sequence = { e },
+		motion = src.motion,
+		button = src.button,
+		index = src.index,
+		wait = bwait,
+		auto = false,
+		lead = 0,
+		op_ticks = 1,
+		start_part = true,
+		hold = src.hold,
+		hold_btn = src.hold_btn,
+		hold_btn_ticks = src.hold_btn_ticks,
+		rev = src.rev,
+	}
+	return { a, b }
+end
+
+-- The per-run state M.arm resets, for the two entries below.
+local function start_reset()
+	anchor = nil
+	arm_hold = nil
+	arm_hold_btn = nil
+	arm_hold_btn_ticks = nil
+	arm_rev = nil
+	contact_used = false
+	rapid_used = false
+	gate_busy_seen = false
+	held_after = nil
+	M.wait_log = {}
+end
+
+-- Action Steps / Action Patterns. The whole list is queued, step one first and
+-- waiting; the loop keeps the list as compiled, so its laps are unchanged.
+function M.arm_deferred(which, o)
+	if patterns_mode() then M.pick_pattern(which) end
+	local sched = M.schedule(which)
+	if sched == nil then return false end
+	local first = start_steps(sched[1], o or {})
+	if first == nil then return false end
+	start_reset()
+	pending = first
+	for i = 2, #sched do pending[#pending + 1] = sched[i] end
+	loop_sched = sched
+	loop_which = which
+	oneshot_owner = nil
+	log_entry({ index = 1, op = sched[1].op_ticks })
+	return true
+end
+
+-- Reversal / Counter Attack - Specified: one input list, no loop. `owner` is
+-- the guard action it belongs to - see oneshot_owner.
+function M.arm_oneshot(owner, list, o)
+	if type(list) ~= "table" or #list == 0 then return false end
+	local first = start_steps({ sequence = list, index = 1,
+	                            op_ticks = list_ticks(list) }, o or {})
+	if first == nil then return false end
+	start_reset()
+	pending = first
+	loop_sched = nil
+	loop_which = nil
+	oneshot_owner = owner
+	return true
+end
+
+-- Whether the runner and its tick walker work for this guard action: always
+-- for Action Steps / Patterns, and for a Specified one while its start is
+-- queued.
+function M.owns(ga)
+	if ga == 'sequence' then return true end
+	return oneshot_owner ~= nil and ga == oneshot_owner
 end
 
 -- Returns step one's hold once, then forgets it. One-shot because the walker
@@ -1661,6 +1869,43 @@ local air_seen = false
 -- motion from the top rather than waiting longer.
 M.DASH_GRACE_TICKS = 10
 
+-- HOW LONG A HALF-ENTERED DASH STAYS ALIVE, FROM THE ROM (2026-10-02).
+--
+-- The forward-dash recogniser is 0x02A4C8, called every tick from 0x02239E -
+-- before 0x022552 looks at $5C, so it runs straight through hit stop:
+--
+--   step 0  forward press edge ($127)        -> step 2, timer 12
+--   step 2  forward held: wait; neutral       -> step 4, timer 12
+--   step 4  forward press edge                -> recognised: $113 = 1 for
+--                                                that one tick only
+--   every tick in step 2/4: timer - 1, and at 0 back to step 0
+--
+-- The 12 is the 0x0C written at 0x02A552. The dash itself is only taken by a
+-- $06 handler (0x027B80 reads $113), and those do not run during hit stop -
+-- so a recognition that falls inside a freeze, or anywhere 0x027B80 refuses,
+-- is spent and gone.
+M.DASH_STEP_TICKS = 12
+
+-- WHERE THAT STATE LIVES, FOR P2. Read rather than modelled: guardCancel's
+-- walker asks the game what step the dash is on before it presses. The forward
+-- recogniser is $1F0 (step) / $1F4 (timer), the back one $1F8 / $1FC - the
+-- lea ($1f0,A6) / ($1f8,A6) at 0x029F12 / 0x029F1C. Confirmed against a P2 RAM
+-- trace on 2026-10-02: step 2 timer 12 on the forward edge, counting down
+-- through hit stop, step 4 on the neutral, back to 0 on the recognition.
+M.DASH_REC_FORWARD = 0xFF89F0
+M.DASH_REC_BACK = 0xFF89F8
+
+-- Which recogniser a delivery's motion runs on, or nil when it is not a dash:
+-- its last entry has to be a lone forward or back tap. Everything else - a
+-- command motion, an attack - has recognisers of its own and is left alone.
+function M.dash_recognizer(list)
+	local last = type(list) == "table" and list[#list] or nil
+	if last == nil or #last ~= 1 then return nil end
+	if last[1] == "forward" then return M.DASH_REC_FORWARD end
+	if last[1] == "back" then return M.DASH_REC_BACK end
+	return nil
+end
+
 local function landing_ready(step)
 	local _air = memory.readbyte(P2_BASE + 0x38) ~= 0
 	if _air then
@@ -1764,7 +2009,26 @@ local function service_body(defender)
 	end
 
 	local step = pending[1]
-	if CONNECT_TIMED[step.timing] then
+	if step.start_free then
+		-- A RANDOM START WAIT'S STEP ONE (see start_steps): counted from the
+		-- first tick the dummy can act, on the ground. $05 alone, not
+		-- dummy_free: Pose may have the dummy crouching or walking by then, and
+		-- the input goes in on top of that the way a reversal's does. Hit or
+		-- blocked again before it goes, it starts counting again from the
+		-- next recovery.
+		if memory.readbyte(P2_BASE + 0x05) ~= 0
+		   or memory.readbyte(P2_BASE + 0x38) ~= 0 then
+			step.free_at = nil
+			return
+		end
+		if step.free_at == nil then step.free_at = now end
+		local _start = (step.start_wait or 0) - (step.lead or 0)
+		if _start < 0 then _start = 0 end
+		-- The emulator re-runs a tick or two now and then, so the clock can
+		-- read just before free_at. That is "not yet", not 255 Ticks later.
+		local _e = (now - step.free_at) % 256
+		if _e >= 128 or _e < _start then return end
+	elseif CONNECT_TIMED[step.timing] then
 		local _ok
 		if step.timing == TIMING_CHAIN then _ok = chain_ready(step)
 		elseif step.timing == TIMING_RAPID then _ok = rapid_ready(step)
@@ -1910,6 +2174,18 @@ local function service_body(defender)
 		local _start = step.wait - step.lead
 		if _start < 0 then _start = 0 end
 		if ((now - anchor) % 256) < _start then return end
+	end
+
+	-- A LOOP LAP'S RANDOM START WAIT, AFTER WHATEVER LOOP WAIT ASKED FOR.
+	--
+	-- Drawn in loop_refill. Counted from the tick the lap's own gate opened, so
+	-- a number, Auto (After) and Auto (Landing) all come out that many Ticks
+	-- later than they would have. Loop Wait tops out at 120 and this at 60, so
+	-- the fixed gate above never runs far enough past its anchor to wrap.
+	if (step.start_extra or 0) > 0 then
+		if step.extra_from == nil then step.extra_from = now end
+		local _e = (now - step.extra_from) % 256
+		if _e >= 128 or _e < step.start_extra then return end
 	end
 
 	-- Fired on this contact, so the next timing-gated step waits for a fresh
@@ -2138,6 +2414,9 @@ local function loop_refill()
 	-- Marked so the readout can say Loop rather than repeating step one's own
 	-- mode, which is not what this pass waited for.
 	_first.is_loop = true
+	-- Random Start Wait, drawn afresh for every lap; service_body adds it after
+	-- the gate above opens. The Loop item on the readout includes it.
+	_first.start_extra = rsw_roll()
 	pending = { _first }
 	for i = 2, #loop_sched do pending[#pending + 1] = loop_sched[i] end
 	-- Left for service_body to name on the first tick with the slot free, the
@@ -2250,7 +2529,14 @@ function M.service(defender)
 	end
 	if pending == nil then
 		loop_refill()
-		if pending == nil then return end
+		if pending == nil then
+			-- A Specified start has gone out in full, its last entry included:
+			-- hand the guard action back to the arm.
+			if oneshot_owner ~= nil and defender.pending_input_sequence == nil then
+				oneshot_owner = nil
+			end
+			return
+		end
 	end
 	service_body(defender)
 end

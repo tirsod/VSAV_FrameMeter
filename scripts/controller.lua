@@ -141,12 +141,15 @@ function handle_hotkeys()
 		-- dummy does neither cleanly. Stop the playback first (Volume Down or
 		-- Play Recording), then swap.
 		if  _inputs["P1 Coin"] == nil and last_inputs["P1 Coin"] == false
-		    and globals.macroLua.playing ~= true then
+		    and globals.macroLua.playing ~= true
+		    and globals.macroLua.starting ~= true then
 			globals.controllerModule.togglecontrolling()
 		end
 		if  (not _wizard_busy and _inputs["Volume Down"] == nil and last_inputs["Volume Down"] == false ) then 
 
-      if globals.macroLua.playing then
+      -- starting is a playback waiting out its Random Start Wait: a press
+      -- then stops it, the same as while it plays.
+      if globals.macroLua.playing or globals.macroLua.starting then
         globals.macroLua.playcontrol()
       else
         -- Not while recording: the load would switch recording off (see the

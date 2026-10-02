@@ -112,6 +112,10 @@ local default_training_settings = {
   -- per knockdown) - list_menu_item indices, not values. The row only appears
   -- while the dummy is Anakaris.
   pit_of_blame = 1,
+  -- Random Start Wait, game Ticks, 0-60. Each of the dummy's own actions and
+  -- each recording playback waits a fresh draw of 0..this before it starts.
+  -- 0 is off. Shown on both the Dummy and the Recording tab (randomStartWait.lua).
+  random_start_wait = 0,
   loop_interval_before_frames = 0,
   loop_interval_after_frames = 0,
   restore_recorded_position = false,

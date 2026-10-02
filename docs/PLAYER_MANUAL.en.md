@@ -6,7 +6,7 @@ Practice offense, defense and execution in Vampire Savior with repeatable dummy 
 
 This guide uses **PB (Push Block)**, matching the English UI. Menu options are shown by their on-screen names, such as `Show PB Counter`.
 
-For **v11.7.20.4 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
+For **v11.7.21 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
 
 [Start with installation](#02-install) · [Already set up? Try the PB / GC drill](#sasquatch-pb-tutorial) · [Scope and verification](#verification-scope)
 
@@ -466,6 +466,8 @@ Selecting `Guard Action Type` reveals the settings for that type. Start with **`
 
 Here the cursor is on `Guard Action Type`: the `Random Guard Action %` row below it is orange, and the reason is on the right of the bottom line. With the cursor on the orange row itself, the row shows the cursor color instead.
 
+**`Random Start Wait` varies when the response starts.** It is in Ticks, 0–60, and sits right under `Random Guard Action %`. Each time the dummy responds, it draws a number from 0 up to the setting and comes out that many Ticks later; `0` is off, the fastest timing as before. It applies to every Reversal and Counter Attack type (Specified, Character Specific, Recording, Action Steps, Action Patterns) and to each `Loop Steps` pass. Guarding, Push Block, guard cancel and throw tech never wait. A response that waits starts its input once the dummy can act, so with a small value it never comes out sooner than its input takes. The row is hidden for `None`, `Guard Cancel` and `Push Block`, and it is the same setting as `Random Start Wait` on the Recording tab.
+
 | Type | Purpose |
 |---|---|
 | `None` | No counter action |
@@ -538,6 +540,8 @@ Saving returns to the slot list so you can record another action. `Lua Hotkey 1`
 5. Stop by activating `Play Recording` or pressing `Volume Down` again.
 
 Use `Before / After` in `Loop Interval (Frames)` to adjust pauses. `After` waits after the previous playback and recovery, before positions are restored. `Before` waits after that restoration and before the next playback. These values use **displayed frames**, unlike the Ticks used by Action Steps.
+
+`Random Start Wait` (Ticks, 0–60) delays the start of playback by a fresh random number from 0 up to the setting each time: `Play Recording`, `Volume Down`, each `Looped Playback` pass (after `Loop Interval`) and the Recording responses. Pressing again while it waits stops it. The Recording Wizard's check playback does not wait. It is the same setting as `Random Start Wait` on the Dummy tab.
 
 `Reset Distance Each Loop = yes` restores recorded spacing each pass. It works with recordings made from v11.4.1 onward that contain distance information. Playback directions are also mirrored when sides switch, but this alone does not guarantee identical spacing or game state.
 
@@ -647,6 +651,8 @@ Set `Dummy > Loop Steps = yes` and configure `Loop Wait`.
 - `Auto (After)`: starts the next pass's command once the dummy can act. It does not enter the command in advance, so a dash is delayed by the input lead-in.
 - `Auto (Landing)`: can enter the command before touchdown so the next pass's first action comes out on the landing Tick. Useful for repeating jumps or air attacks after dashing as soon as the dummy lands. See the conditions in [6.3](#steps-wait).
 - A number: Ticks from the final step to the first step of the next pass.
+
+With `Random Start Wait` above 0, each pass also starts that many Ticks later after `Loop Wait`, drawn again for every pass.
 
 The first pass still requires a response trigger. Subsequent passes use `Loop Wait` at the boundary rather than simply reusing step one's Wait.
 
@@ -945,7 +951,7 @@ At Turbo 3, some displayed frames contain two Ticks of game processing. You cann
 | Measured in Ticks | Measured in displayed frames |
 |---|---|
 | Tick Data, Action Timeline | Recording/playback and recording `Loop Interval (Frames)` |
-| Action Steps Wait, Loop Wait | Show Jump In Trainer |
+| Action Steps Wait, Loop Wait, Random Start Wait | Show Jump In Trainer |
 | PB/GC windows and histories | Show Dashes Interval, Show Dash Time |
 | Air Guard Gaps, Frame Trap Trainer | Dash Attack Cancel / Attack Dash Gap Trainer |
 
@@ -1181,7 +1187,7 @@ For reports, include version, P1/P2 characters, which character is on each side,
 - Documentation updated and checked for consistency: 2026-10-02. This does not include testing the procedures in an emulator.
 - Upstream comparison: [`fc2`, 92980a5](https://github.com/NBeing/VSAV_Training/tree/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6). Earliest-input limitations and existing trainers were checked in [upstream menu.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/menu.lua), and input delivery in [upstream controller.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/controller.lua).
 - The comparison covers source-level features and control methods. An emulator A/B comparison and execution of the infinite-combo definitions were not performed while preparing this manual. The infinite-combo examples reflect use cases supplied by the developer.
-- Fork version: v11.7.20.4; labels checked 2026-10-02. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
+- Fork version: v11.7.21; labels checked 2026-10-03. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
 - [English README](../README.md) / [English release notes](RELEASE_NOTES.md).
 - Menus/settings: [menu.lua](../scripts/menu.lua), [config.lua](../scripts/config.lua).
 - Controls: [controller.lua](../scripts/controller.lua), [position.lua](../scripts/position.lua).

@@ -6,6 +6,36 @@ Newest first. Older releases are kept below.
 
 ---
 
+## v11.7.21
+
+### Random Start Wait: a random delay before the dummy acts
+
+- New `Random Start Wait` setting, in game Ticks from 0 to 60. It is on the
+  Dummy tab under `Random Guard Action %` and on the Recording tab under
+  `Loop Interval (Frames)`; the two rows are the same setting
+- Each time the dummy starts an action of its own, it first waits a fresh
+  random number of Ticks from 0 up to the setting: every Reversal and Counter
+  Attack type, each `Loop Steps` pass (after `Loop Wait`), and every recording
+  playback, including each `Looped Playback` pass (after `Loop Interval`)
+- `0` is off: the fastest timing, as before. Defense never waits (guard,
+  Push Block, guard cancel, throw tech), and neither does the Recording
+  Wizard's check playback
+- A response that waits starts its input once the dummy can act, so it never
+  comes out sooner than its input takes
+- When playback waits, the Lua console shows the number drawn
+
+### Fixed: a looped dash could go missing after a blocked attack
+
+- With `Loop Wait = Auto (Landing)`, a dash that was being entered when the
+  dummy's own attack was blocked could fail to come out, leaving only the next
+  attack where the dummy stood. Seen with Morrigan (dash > MK > LP) and
+  Sasquatch (dash cancel > HK, dash cancel > HP)
+- The tool now reads the game's own dash input state and finishes or
+  re-enters the dash only on a tick the dummy can actually dash on, instead of
+  re-entering it in the air during the hit stop
+
+---
+
 ## v11.7.20.4
 
 ### GC: earlier is better, with two tips for a faster GC

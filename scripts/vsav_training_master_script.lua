@@ -54,6 +54,12 @@ local pbStatsModule      = require "./scripts/pbStats"
 -- Show GC Stats (Trainer tab). Counted from guardCancel.lua's P1 hook; hud.lua
 -- requires the same path to draw it.
 local gcStatsModule      = require "./scripts/gcStats"
+-- Random Start Wait. Loaded HERE, at start-up, like every other module: the
+-- runner, guardCancel and macro.lua only look it up while running
+-- (pcall(require, ...)), and the one other module used that way - gcStats - is
+-- also loaded above first, so those look-ups are always answered from the
+-- cache rather than resolved against a path mid-run.
+local randomStartWaitModule = require "./scripts/randomStartWait"
 local autoguardModule    = require "./scripts/autoguard"
 local gameStateModule    = require './scripts/gameState'
 local dummyStateModule   = require './scripts/dummyState'
@@ -489,6 +495,7 @@ emu.registerbefore(function()
 	-- in the same frame, and this has to win.
 	if memory.readbyte(0xFF8009) == 2 then
 		actionSequenceRunnerModule.cancel()
+		if guard_action_input ~= nil then guard_action_input.csp_due = nil end
 		if player_objects ~= nil and player_objects[2] ~= nil then
 			player_objects[2].pending_input_sequence = nil
 		end
@@ -854,6 +861,9 @@ if savestate.registersave and savestate.registerload then --registersave/registe
 		-- them, which is the same fault this whole block exists to prevent.
 		actionSequenceEditorModule.abort("savestate_load")
 		actionSequenceRunnerModule.cancel()
+		-- And a Character Specific poke waiting out its Random Start Wait: it is
+		-- due on a tick counted from before the load.
+		if guard_action_input ~= nil then guard_action_input.csp_due = nil end
 		-- The blocked string in progress happened in a game that has just been
 		-- rewound: thrown away, not counted as NG (user, 2026-10-01).
 		gcStatsModule.discard()
