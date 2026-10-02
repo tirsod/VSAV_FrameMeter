@@ -140,6 +140,7 @@ open(0x05,{{action="atk",lever="none",button="LP",wait=-1}})
 tap("LP")
 rows_eq("Attack Neutral + LP",{
   "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Attack  >",
   "     Direction : Neutral  >",
   "     Button : LP  >",
@@ -149,6 +150,7 @@ open(0x05,{{action="custom",lever="DPF",button="HP",wait=-1}})
 tap("LP")
 rows_eq("Custom DPF + HP",{
   "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Custom  >",
   "     Motion : DPF  >",
   "     Button : HP  >",
@@ -159,6 +161,7 @@ open(0x05,{{action="dash.f",wait=-1}})
 tap("LP")
 rows_eq("Dash Forward",{
   "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Dash Forward  >",
   "     Hold : No",
   "   Back"})
@@ -167,6 +170,7 @@ open(0x05,{{action="dashc.f",wait=-1},{action="atk",lever="none",button="HP",wai
 tap("LP")
 rows_eq("Dash Forward Cancel - Hold 行は出ない",{
   "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Dash Forward Cancel  >",
   "   Move Step : 1 / 2  >",
   "   Remove This Step  >",
@@ -176,6 +180,7 @@ open(0x05,{{action="crouch.d",wait=-1}})
 tap("LP")
 rows_eq("Crouch Neutral",{
   "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Crouch Neutral  >",
   "     Hold : No",
   "   Back"})
@@ -185,6 +190,7 @@ open(0x05,{{action="dash.f",wait=-1},{action="atk",lever="none",button="LK",wait
 tap("down") tap("LP")
 rows_eq("Dash の次の Attack",{
   "   Wait : Auto (11)  >",
+  "     Random Delay : 0  >",
   ">  Action : Attack  >",
   "     Direction : Neutral  >",
      "     Button : LK  >",
@@ -372,6 +378,7 @@ open(0x05,{{action="atk",lever="down-back",button="LP",wait=-1}})
 tap("LP")
 rows_eq("Attack Down Back + LP",{
   "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Attack  >",
   "     Direction : Down Back  >",
   "     Button : LP  >",
@@ -382,6 +389,7 @@ open(0x05,{{action="atk",lever="none",button="LP",wait=-1}})
 tap("LP")
 rows_eq("Attack Neutral + LP - 保持するものが無い",{
   "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Attack  >",
   "     Direction : Neutral  >",
   "     Button : LP  >",
@@ -395,6 +403,7 @@ open(0x05,{{action="custom",lever="DPF",button="HP",wait=-1}})
 tap("LP")
 rows_eq("Custom DPF - 最後が方向なので付く",{
   "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Custom  >",
   "     Motion : DPF  >",
   "     Button : HP  >",
@@ -405,6 +414,7 @@ open(0x05,{{action="custom",lever="down-back",button="HP",wait=-1}})
 tap("LP")
 rows_eq("Custom Down Back - 素の方向なので出る",{
   "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Custom  >",
   "     Motion : Down Back  >",
   "     Button : HP  >",
@@ -415,6 +425,7 @@ open(0x05,{{action="atk",lever="down-back",button="LP",hold=true,wait=-1}})
 tap("LP")
 rows_eq("Hold : Yes",{
   "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Attack  >",
   "     Direction : Down Back  >",
   "     Button : LP  >",
@@ -427,6 +438,7 @@ open(0x05,{{action="dash.f",wait=-1}})
 tap("LP")
 rows_eq("Dash Forward - 名前付きアクションにも付く",{
   "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Dash Forward  >",
   "     Hold : No",
   "   Back"})
@@ -435,6 +447,7 @@ open(0x05,{{action="walk.f",hold=true,wait=-1}})
 tap("LP")
 rows_eq("Stand Forward - 15 ティック歩く指定の土台",{
   "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Stand Forward  >",
   "     Hold : Yes",
   "   Back"})
@@ -443,6 +456,7 @@ open(0x05,{{action="neutral",wait=-1}})
 tap("LP")
 rows_eq("Stand Neutral - 保持するものが無い",{
   "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Stand Neutral  >",
   "   Back"})
 
@@ -617,6 +631,7 @@ rows_eq("(Hold) 付きの一覧",{
 tap("down") tap("LP")
 rows_eq("詳細では二重に言わない",{
   "   Wait : Auto (11)  >",
+  "     Random Delay : 0  >",
   ">  Action : Attack  >",
   "     Direction : Down Back  >",
   "     Button : LP  >",
@@ -666,6 +681,7 @@ open(0x05,{{action="crouch.d",hold=true,wait=30},{action="neutral",wait=1}})
 tap("LP")
 rows_eq("詳細は Wait が先、カーソルは Action",{
   "   Wait : 30 Ticks  >",
+  "     Random Delay : 0  >",
   ">  Action : Crouch Neutral  >",
   "     Hold : Yes",
   "   Move Step : 1 / 2  >",
@@ -1030,6 +1046,55 @@ do
   seq_special_list = nil
   seq_special_command = nil
 end
+
+print("[RD] Random Delay (v11.7.21.1) - Wait の下の行、一覧の +0-5t、値の画面")
+open(0x05,{{action="atk",lever="none",button="LP",wait=-1},
+            {action="atk",lever="none",button="LK",wait=6,random_delay=5}})
+rows_eq("一覧は Wait の後ろに +0-5t、0 の歩には付かない",{
+  ">  1  Auto (Fastest)  Attack : LP  >",
+  "   2  +6t +0-5t  Attack : LK  >",
+  "   + Add Step  >",
+  "   Save",
+  "   Back Without Saving",
+  "   Clear All Steps"})
+tap("down") tap("LP")                      -- 2 歩目の詳細へ
+rows_eq("詳細は Wait の下に字下げして 0-5",{
+  "   Wait : 6 Ticks  >",
+  "     Random Delay : 0-5  >",
+  ">  Action : Attack  >",
+  "     Direction : Neutral  >",
+  "     Button : LK  >",
+  "   Move Step : 2 / 2  >",
+  "   Remove This Step  >",
+  "   Back"})
+goto_row("Random Delay") tap("LP")         -- 値の画面へ
+rows_eq("値の画面は Fixed Ticks と同じ形",{
+  ">  < 0-5 Ticks >",
+  "   Back"})
+-- Right で増え、上限 60 で止まり、MP で 0 に戻る。
+local P1d = P1
+local function hold_right(k)
+  for _=1,k do
+    P1d.input.pressed={right=true} P1d.input.down={right=true} E.registerBefore()
+    P1d.input.pressed={} P1d.input.down={} E.registerBefore()
+  end
+end
+hold_right(70)
+rows_eq("上限は 60",{">  < 0-60 Ticks >","   Back"})
+tap("MP")
+rows_eq("MP で 0 (使わない)",{">  < 0 Ticks >","   Back"})
+tap("right")
+rows_eq("0 から Right で 0-1",{">  < 0-1 Ticks >","   Back"})
+tap("down") tap("LP")                      -- Back の行で抜ける
+rows_eq("抜けると詳細に 0-1",{
+  "   Wait : 6 Ticks  >",
+  ">    Random Delay : 0-1  >",
+  "   Action : Attack  >",
+  "     Direction : Neutral  >",
+  "     Button : LK  >",
+  "   Move Step : 2 / 2  >",
+  "   Remove This Step  >",
+  "   Back"})
 
 print(fails==0 and "\n全て通った" or ("\n"..fails.." 件 NG"))
 os.exit(fails==0 and 0 or 1)

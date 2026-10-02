@@ -6,7 +6,7 @@ Practice offense, defense and execution in Vampire Savior with repeatable dummy 
 
 This guide uses **PB (Push Block)**, matching the English UI. Menu options are shown by their on-screen names, such as `Show PB Counter`.
 
-For **v11.7.21 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
+For **v11.7.21.1 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
 
 [Start with installation](#02-install) · [Already set up? Try the PB / GC drill](#sasquatch-pb-tutorial) · [Scope and verification](#verification-scope)
 
@@ -589,11 +589,14 @@ Edits do not take effect until `Save`. `Back Without Saving` discards changes. I
 | `Direction / Motion` | Direction held with the button or the command motion; depends on the Action |
 | `Button` | Attack button to press; `None` means no button |
 | `Wait` | Delay **before this step starts**; measured from the response timing for step one and from the previous step thereafter |
+| `Random Delay` | The row under Wait. Adds a random number of Ticks, from 0 up to the setting, to the timing the Wait gives (0–60; 0 is off), drawn again each time the step runs. The list shows it as `+6t +0-5t` |
 | `Hold` | Keeps the direction held until the next step; does not repeatedly press the button. The reverse direction used for a dash cancel is held automatically |
 | `Move Step` | Changes the step's position in the list |
 | `Remove This Step` | Deletes the step after confirmation |
 
 `Clear All Steps` returns the list to one empty step and asks for confirmation.
+
+Use `Random Delay` to reproduce the wobble in a human's timing. For example, `0-5` on top of the fastest dash attack `Auto (11)` spreads it from the fastest to 5 Ticks later each time. It counts from the moment the Wait's condition is met, whatever the Wait is (a number, After, Auto, Landing, Chain/Cancel). On Chain or Cancel a large value can miss the window, and the step then comes out on its own. Step one's value is drawn together with `Random Start Wait`, so a turn that draws above 0 starts its input once the dummy can act. The time actually waited is included in the Wait shown by `Show Step Wait Ticks`.
 
 <a id="steps-wait"></a>
 ### 6.3 Read Wait settings
@@ -1187,7 +1190,7 @@ For reports, include version, P1/P2 characters, which character is on each side,
 - Documentation updated and checked for consistency: 2026-10-02. This does not include testing the procedures in an emulator.
 - Upstream comparison: [`fc2`, 92980a5](https://github.com/NBeing/VSAV_Training/tree/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6). Earliest-input limitations and existing trainers were checked in [upstream menu.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/menu.lua), and input delivery in [upstream controller.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/controller.lua).
 - The comparison covers source-level features and control methods. An emulator A/B comparison and execution of the infinite-combo definitions were not performed while preparing this manual. The infinite-combo examples reflect use cases supplied by the developer.
-- Fork version: v11.7.21; labels checked 2026-10-03. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
+- Fork version: v11.7.21.1; labels checked 2026-10-03. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
 - [English README](../README.md) / [English release notes](RELEASE_NOTES.md).
 - Menus/settings: [menu.lua](../scripts/menu.lua), [config.lua](../scripts/config.lua).
 - Controls: [controller.lua](../scripts/controller.lua), [position.lua](../scripts/position.lua).

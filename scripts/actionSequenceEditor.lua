@@ -281,6 +281,9 @@ local HELP = {
 	-- the charge is held across every step and Wait before it, and a dash
 	-- cancel holds its reverse by itself - is in the player manual (6.2, 6.4).
 	hold   = "Keeps the direction until the next step. Charge moves: Yes on every step before.",
+	-- One line, as wait is. What it rides on and why a long one can miss a
+	-- Chain is in the player manual (6.2).
+	random_delay = "Adds a random 0 to this many Ticks after the Wait, new each time. 0 is off.",
 	order  = "Where this step sits in the list. Left and Right move it.",
 	delete = "Remove this step from the list. Asks first.",
 	clear  = "Empty the list back to one step. Asks first.",
@@ -842,6 +845,24 @@ end
 -- fifth tick after the guard" is one of the things this is for. It is the same
 -- offset Guard Action Delay uses, so the motion goes in at once and only the
 -- press waits - which is the only way to put a press on a named tick.
+-- RANDOM DELAY (v11.7.21.1): a random 0..N Ticks on top of the step's Wait,
+-- drawn again every time the step runs. The ceiling is the runner's
+-- RANDOM_DELAY_MAX - sixty, the same as Random Start Wait. 0 is off and is not
+-- written to the file.
+local RANDOM_DELAY_MAX = 60
+local function random_delay_value(s)
+	local v = math.floor(tonumber(s and s.random_delay) or 0)
+	if v < 0 then v = 0 end
+	if v > RANDOM_DELAY_MAX then v = RANDOM_DELAY_MAX end
+	return v
+end
+-- 0-5, the way Random Start Wait writes its range; plain 0 when off.
+local function random_delay_text(s)
+	local v = random_delay_value(s)
+	if v > 0 then return "0-" .. v end
+	return "0"
+end
+
 local function wait_label(s, i)
 	local v = s.wait or 0
 	-- ONE WORD FOR IT: Auto. What it waits for belongs in the description, not
@@ -1255,7 +1276,11 @@ end
 local function list_wait_label(s, i)
 	local w = wait_label(s, i)
 	local n = w:match("^(%d+) Ticks$")
-	if n ~= nil then return "+" .. n .. "t" end
+	if n ~= nil then w = "+" .. n .. "t" end
+	-- RANDOM DELAY, IN THE SAME NOTATION: +0-5t is "a further 0 to 5 Ticks",
+	-- beside the +30t or Auto it rides on. Nothing when it is off.
+	local rd = random_delay_value(s)
+	if rd > 0 then w = w .. " +0-" .. rd .. "t" end
 	return w
 end
 
@@ -1356,6 +1381,9 @@ local function detail_items(i)
 	-- Auto (Fastest) is its value.
 	local a = {
 		{ label = "Wait : " .. wait_label(s, i), kind = "wait", child = true },
+		-- Indented: it is part of the Wait, the random extra on top of it.
+		{ label = "  Random Delay : " .. random_delay_text(s),
+		  kind = "random_delay", child = true },
 		{ label = "Action : " .. (head or action_label(s, "", " ")),
 		  kind = "action", child = true },
 	}
@@ -1737,6 +1765,10 @@ local function import_now()
 					wait = tonumber(one.wait) or WAIT_AUTO,
 					timing = one.timing, hold = one.hold,
 				}
+				-- Random Delay, clamped to 0..60 like everything else read
+				-- from someone else's file; 0 is left out.
+				local _rd = random_delay_value(one)
+				if _rd > 0 then steps[j].random_delay = _rd end
 			end
 			if not ok then
 				skipped = skipped + 1
@@ -1914,6 +1946,15 @@ local function build(s)
 		end
 		a[#a + 1] = { label = "Back", kind = "back", gap_before = true }
 		return a
+	end
+	if s.type == "random_delay" then
+		-- THE SAME SHAPE AS Fixed Ticks: a value row moved with Left/Right and
+		-- a Back row to leave by, so Left on the value is never the only way out.
+		local _v = random_delay_text(draft.steps[s.index]) .. " Ticks"
+		if s.cursor == 1 then _v = "< " .. _v .. " >" end
+		return { { label = _v, kind = "random_delay_value",
+		           note = "A new random number of Ticks, 0 up to this, after the Wait each time." },
+		         { label = "Back", kind = "back", gap_before = true } }
 	end
 	if s.type == "fixed_wait" then
 		local _v = tostring(draft.steps[s.index].wait or ((s.index > 1) and 1 or 0)) .. " Ticks"
@@ -2131,10 +2172,10 @@ local function enter()
 
 	elseif s.type == "root" then
 		if item.kind == "step" then
-			push({ type = "detail", index = item.index, cursor = 2 })   -- on Action
+			push({ type = "detail", index = item.index, cursor = 3 })   -- on Action
 		elseif item.kind == "add" then
 			table.insert(draft.steps, added_step())
-			push({ type = "detail", index = #draft.steps, cursor = 2 })   -- on Action
+			push({ type = "detail", index = #draft.steps, cursor = 3 })   -- on Action
 		elseif item.kind == "save" then
 			save_draft()
 			leave_root()
@@ -2155,6 +2196,8 @@ local function enter()
 		local i = s.index
 		if item.kind == "action" then
 			push(groups_screen(i))
+		elseif item.kind == "random_delay" then
+			push({ type = "random_delay", index = i, cursor = 1, crumb = "Random Delay" })
 		elseif item.kind == "wait" then
 			local _st = draft.steps[i]
 			local _cursor = wait_choice_index(_st, i, draft.steps[i - 1])
@@ -2245,6 +2288,9 @@ local function enter()
 		end
 
 	elseif s.type == "fixed_wait" then
+		if item.kind == "back" then back() end
+
+	elseif s.type == "random_delay" then
 		if item.kind == "back" then back() end
 
 	elseif s.type == "pick" then
@@ -2611,6 +2657,29 @@ function M.registerBefore()
 		return
 	end
 
+	if s.type == "random_delay" then
+		-- Every key means what it means on Fixed Ticks.
+		if held_repeat("down") then
+			s.cursor = 2
+		elseif held_repeat("up") then
+			s.cursor = 1
+		elseif s.cursor == 2 then
+			if pressed("left") or pressed("LP") or pressed("right") then back() end
+		else
+			local st = draft.steps[s.index]
+			local v = random_delay_value(st)
+			if held_repeat_at("right", REPEAT_RATE_FAST) then
+				v = math.min(RANDOM_DELAY_MAX, v + 1)
+			elseif held_repeat_at("left", REPEAT_RATE_FAST) then
+				v = math.max(0, v - 1)
+			elseif pressed("MP") then
+				v = 0
+			end
+			st.random_delay = (v > 0) and v or nil
+		end
+		return
+	end
+
 	if s.type == "pattern_order" then
 		-- Every key means what it means on Move Step, one screen over.
 		if held_repeat("down") then
@@ -2885,7 +2954,7 @@ function M.guiRegister()
 			or "Use the file window that has opened"
 	elseif s.type == "wait" then
 		help = "Up/Down: Select   Right or LP: Apply   Left: Back"
-	elseif s.type == "fixed_wait" then
+	elseif s.type == "fixed_wait" or s.type == "random_delay" then
 		if s.cursor == 2 then help = "Left, Right or LP: Back"
 		else help = "Left: fewer   Right: more   MP: Reset" end
 	elseif s.type == "order" or s.type == "pattern_order" then

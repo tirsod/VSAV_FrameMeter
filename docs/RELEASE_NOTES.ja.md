@@ -6,6 +6,21 @@ English: [RELEASE_NOTES.md](RELEASE_NOTES.md)
 
 ---
 
+## v11.7.21.1
+
+### Random Delay — ステップの Wait に乱数を上乗せする
+
+- Action Steps の各ステップに、`Wait` の下に字下げした `Random Delay` の行を足しました（ゲームの
+  Tickで0〜60、0は使わない）。ステップが出るたびに、0から設定値までの乱数を引き直し、Waitで決まる
+  タイミングに足します
+- Wait の種類を問いません。数値、After、Auto、Landing、Chain／Cancel 系のどれにも上乗せできます。
+  Chain や Cancel では値を大きくすると受付を外れ、人間がつなぎ損ねたときのように単発の技として出ます
+- 使い方の例：最速の入力に `0-5` を足して人間のぶれを再現する、大きい値で固めの間隔を毎回変える
+- 一覧ではWaitの後ろに `+6t +0-5t` のように表示します。1ステップ目の値は `Random Start Wait` と合わせて
+  引きます。Action Patterns の書き出し・取り込みにも入ります（古い版で取り込むと、この値だけ無視されます）
+
+---
+
 ## v11.7.21
 
 ### Random Start Wait — ダミーの行動の前に乱数の待ちを入れる

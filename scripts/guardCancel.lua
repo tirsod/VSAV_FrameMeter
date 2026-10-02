@@ -7737,8 +7737,16 @@ end
 -- dash cancel's reverse, and the button lever row.
 function GA.rsw_defer()
 	local _w = GA.rsw_draw()
-	if _w <= 0 then return false end
 	local _ga = globals.dummy.guard_action
+	-- Step one's own Random Delay (v11.7.21.1) is drawn here too, on the same
+	-- footing: the arm only knows the free tick. Pick the pattern first, so the
+	-- draw is the one for the pattern that runs - the arm that follows, either
+	-- branch, uses that same pick.
+	if _ga == 'sequence' and actionSequenceRunnerModule.prepick ~= nil then
+		actionSequenceRunnerModule.prepick("reversal")
+		_w = _w + actionSequenceRunnerModule.draw_first_delay("reversal")
+	end
+	if _w <= 0 then return false end
 	local _o = {
 		wait = _w,
 		adj = kd_press_base() - 1,

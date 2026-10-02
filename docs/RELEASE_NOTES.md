@@ -6,6 +6,24 @@ Newest first. Older releases are kept below.
 
 ---
 
+## v11.7.21.1
+
+### Random Delay: a random extra on top of each step's Wait
+
+- Each Action Steps step has a new `Random Delay` row, indented under `Wait`
+  (game Ticks, 0 to 60; 0 is off). Every time the step runs, a fresh random
+  number from 0 up to the setting is added to the timing its Wait gives
+- It rides on any Wait: a number, After, a measured Auto, Landing, or a
+  Chain/Cancel window. On a connection a large value can miss the window and
+  the step comes out on its own, like a human missing the link
+- Typical use: `0-5` on a fastest input to reproduce human wobble, larger
+  values to vary the gaps in a pressure string
+- The step list shows it after the Wait, as in `+6t +0-5t`. Step one's value
+  is drawn together with `Random Start Wait`. Action Patterns export and import
+  carry it; an older version simply ignores it
+
+---
+
 ## v11.7.21
 
 ### Random Start Wait: a random delay before the dummy acts

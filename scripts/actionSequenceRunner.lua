@@ -449,6 +449,17 @@ local rapid_used = false
 -- Seen busy since this step reached the head of the queue. See timing_missed.
 local gate_busy_seen = false
 
+-- RANDOM DELAY (v11.7.21.1): a step's own random extra on top of its Wait,
+-- drawn once each time the step reaches the head of the queue. Kept here and
+-- not on the step, because the compiled steps are shared by every lap and a
+-- draw written onto one would come back on the next lap unchanged.
+--   { step = <the record at the head>, n = <ticks drawn>, from = <tick it
+--     started counting, once the step's own gate had opened> }
+local rd_head = nil
+-- A pattern picked ahead of the arm by M.prepick, so the arm runs the pattern
+-- whose step one the Random Delay was drawn for (see M.prepick).
+local prepicked = false
+
 -- Bit 0 of the cel flags. Lua 5.1 here has no bit library, and $21 is one byte.
 local function rapid_cel_open()
 	return (memory.readbyte(P2_BASE + 0x21) % 2) == 1
@@ -1017,6 +1028,8 @@ function M.compile(seq, mis)
 			-- so the two agree.
 			raw_wait = (i == 1) and math.max(0, wait) or wait,
 			lead = lead_ticks(inputs),
+			-- RANDOM DELAY, 0 to RANDOM_DELAY_MAX Ticks; 0 or missing is off.
+			rdelay = M.random_delay_of(step),
 			-- For the readout: how many ticks this step spends putting its own
 			-- inputs in. A bare button is 1, a command motion is several.
 			op_ticks = list_ticks(inputs),
@@ -1430,6 +1443,8 @@ function M.wait_log_lines(cols)
 end
 
 function M.cancel()
+	rd_head = nil
+	prepicked = false
 	if pending ~= nil then
 		M.steps_dropped = M.steps_dropped + #pending
 	end
@@ -1471,8 +1486,11 @@ end
 -- Compiles the trigger's sequence, keeps steps 2..n, and returns the first so
 -- the caller can queue it exactly where it queues a motion today.
 function M.arm(which)
-	-- THE ROLL HAPPENS HERE, BEFORE ANYTHING IS ASKED FOR THE STEPS.
-	if patterns_mode() then M.pick_pattern(which) end
+	-- THE ROLL HAPPENS HERE, BEFORE ANYTHING IS ASKED FOR THE STEPS - unless
+	-- M.prepick already made it for this arm.
+	if patterns_mode() and not prepicked then M.pick_pattern(which) end
+	prepicked = false
+	rd_head = nil
 	local sched = M.schedule(which)
 	if sched == nil then return nil end
 	pending = {}
@@ -1564,6 +1582,10 @@ local function start_steps(src, o)
 	a.auto = false
 	a.wait = 0
 	a.is_loop = nil
+	-- Step one's Random Delay was drawn with the Random Start Wait and is in
+	-- o.wait already (guardCancel, GA.rsw_defer); drawing it again here would
+	-- count it twice.
+	a.rdelay = nil
 	local split = (#btns > 0) and (delay > 0 or o.rev ~= nil)
 	if not split then
 		local seq = list
@@ -1628,6 +1650,7 @@ end
 
 -- The per-run state M.arm resets, for the two entries below.
 local function start_reset()
+	rd_head = nil
 	anchor = nil
 	arm_hold = nil
 	arm_hold_btn = nil
@@ -1643,7 +1666,8 @@ end
 -- Action Steps / Action Patterns. The whole list is queued, step one first and
 -- waiting; the loop keeps the list as compiled, so its laps are unchanged.
 function M.arm_deferred(which, o)
-	if patterns_mode() then M.pick_pattern(which) end
+	if patterns_mode() and not prepicked then M.pick_pattern(which) end
+	prepicked = false
 	local sched = M.schedule(which)
 	if sched == nil then return false end
 	local first = start_steps(sched[1], o or {})
@@ -1671,6 +1695,25 @@ function M.arm_oneshot(owner, list, o)
 	loop_which = nil
 	oneshot_owner = owner
 	return true
+end
+
+-- STEP ONE'S RANDOM DELAY, FOR THE ARM (v11.7.21.1).
+--
+-- Step one goes out on the arm, which only knows the free tick, so its Random
+-- Delay is drawn there together with the Random Start Wait (guardCancel,
+-- GA.rsw_defer): a total above 0 takes the deferred start, 0 keeps the fastest.
+-- The pattern has to be picked first so the draw belongs to the pattern that
+-- runs - prepick makes that pick, and the arm that follows uses it.
+function M.prepick(which)
+	if patterns_mode() then M.pick_pattern(which) end
+	prepicked = true
+end
+
+function M.draw_first_delay(which)
+	local sched = M.schedule(which)
+	local n = (sched ~= nil and sched[1] ~= nil) and (sched[1].rdelay or 0) or 0
+	if n <= 0 then return 0 end
+	return math.random(0, n)
 end
 
 -- Whether the runner and its tick walker work for this guard action: always
@@ -1868,6 +1911,17 @@ local air_seen = false
 -- window that has already closed. That is why exceeding this restarts the
 -- motion from the top rather than waiting longer.
 M.DASH_GRACE_TICKS = 10
+
+-- RANDOM DELAY'S CEILING, AND THE ONE PLACE A SAVED VALUE IS READ (v11.7.21.1).
+-- Sixty Ticks, the same as Random Start Wait: small numbers are the human
+-- wobble on a fastest input, large ones vary a gap in a pressure string.
+M.RANDOM_DELAY_MAX = 60
+function M.random_delay_of(step)
+	local v = math.floor(tonumber(step and step.random_delay) or 0)
+	if v < 0 then v = 0 end
+	if v > M.RANDOM_DELAY_MAX then v = M.RANDOM_DELAY_MAX end
+	return v
+end
 
 -- HOW LONG A HALF-ENTERED DASH STAYS ALIVE, FROM THE ROM (2026-10-02).
 --
@@ -2176,6 +2230,24 @@ local function service_body(defender)
 		if ((now - anchor) % 256) < _start then return end
 	end
 
+	-- RANDOM DELAY: THIS STEP'S OWN, AFTER ITS WAIT (v11.7.21.1).
+	--
+	-- A fresh draw of 0..rdelay Ticks each time the step comes up, counted from
+	-- the tick its own gate opened - so it rides on whatever the Wait is: a
+	-- number, After, a measured Auto, Landing, or a Chain/Cancel window. On a
+	-- connection a long draw can carry the press out of the window, and the
+	-- step then goes out on its own: a human missing the link, reproduced.
+	if (step.rdelay or 0) > 0 then
+		if rd_head == nil or rd_head.step ~= step then
+			rd_head = { step = step, n = math.random(0, step.rdelay), from = nil }
+		end
+		if rd_head.n > 0 then
+			if rd_head.from == nil then rd_head.from = now end
+			local _e = (now - rd_head.from) % 256
+			if _e >= 128 or _e < rd_head.n then return end
+		end
+	end
+
 	-- A LOOP LAP'S RANDOM START WAIT, AFTER WHATEVER LOOP WAIT ASKED FOR.
 	--
 	-- Drawn in loop_refill. Counted from the tick the lap's own gate opened, so
@@ -2210,6 +2282,7 @@ local function service_body(defender)
 	if #pending == 0 then pending = nil end
 	anchor = nil
 	gate_busy_seen = false
+	rd_head = nil
 
 	M.steps_fired = M.steps_fired + 1
 	queue_input_sequence(defender, step.sequence)
