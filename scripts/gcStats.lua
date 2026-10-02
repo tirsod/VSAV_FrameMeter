@@ -72,9 +72,7 @@
 --            command and a fresh one, only the fresh one counts. Both ends are
 --            read in the same hook, on the monotonic p1_tick_seq, so there is
 --            no byte to wrap. Not the trace's gaps added up - absolute ticks.
---            A cancel whose motion began before the count could see it (the
---            script started, or a load) has no origin: it is a Pass, and it
---            is left out of this average (no_in_t says how many).
+--            Averaged over the same Passes as the steps below.
 --
 -- OFF AND ON AGAIN STARTS FROM ZERO, as PB Stats does (user, 2026-10-01: PB
 -- Statsとあわせて). Nothing is counted while Show GC Stats is off, and the
@@ -86,11 +84,23 @@
 --
 -- EACH STEP OF THE MOTION, AVERAGED (user, 2026-10-01: コマンドの各方向の平均).
 -- Over the Passes, the gaps the GC Command Trace draws row by row: first
--- direction to second, second to third, third to the button. The three add up
--- to Input t, so they say where that time went. A Pass whose motion was not
--- seen from its first direction, or that took other than three directions,
--- is left out of them (no_steps says how many). hud.lua draws them with the
--- trace's own arrows.
+-- direction to second, second to third, third to the button. hud.lua draws
+-- them with the trace's own arrows.
+--
+-- INPUT t AND THE THREE STEPS ARE ONE MEASUREMENT (2026-10-02). With t1 t2 t3
+-- the ticks the game took the three directions of the motion that came out
+-- and ts the cancel, the steps are t2 - t1, t3 - t2 and ts - t3 and Input t
+-- is ts - t1. All four are added from the same Passes - the ones whose motion
+-- was seen from its first direction and took exactly three - so the three
+-- step averages add up to the Input t average exactly, before the two-decimal
+-- display rounds each of them. They were counted under two separate tests
+-- before (the first direction seen, and three of them seen), which nothing
+-- kept in step. A Pass outside them - its motion began before the count
+-- could see it (the script started, a load), or it took other than three -
+-- still counts as a Pass and is left out of all four (no_input says how
+-- many). GC t keeps its own test, the window's opening, and can be averaged
+-- over more Passes than these. The one log with +1 in it (v11.7.11, 3 Passes)
+-- has all three directions seen every time.
 --
 -- COUNTS STOP AT 99999, as PB Stats' do (user, 2026-10-01: PBにあわせて). The
 -- design drew 9999+ and went on counting; a side whose Total has reached the
@@ -109,22 +119,23 @@ local TRIAL_MIN_STEPS = 1
 local C_HEAD, C_TEXT, C_PASS, C_FAIL = "#AAAAAA", "#FFFFFF", "#00FF00", "#FF0000"
 
 local function new_side()
+	-- n_in counts the Passes behind Input t and the three steps alike.
 	return { total = 0, pass = 0, fail = 0, n_gc = 0, sum_gc = 0, n_in = 0, sum_in = 0,
-	         n_st = 0, sum_st = { 0, 0, 0 } }
+	         sum_st = { 0, 0, 0 } }
 end
 
 local st
 -- What the next tick is compared against, and the string in progress. A
 -- discarded string is not counted; the first tick after only learns.
 local function forget()
-	st.cur, st.w05, st.prog, st.step, st.m0, st.taken = nil, nil, nil, nil, nil, 0
-	st.tk = nil
+	st.cur, st.w05, st.prog, st.step, st.tk, st.taken = nil, nil, nil, nil, nil, 0
 end
 local function reset()
 	st = {
 		[1] = new_side(), [2] = new_side(),
-		-- Passes left out of an average because their origin was never seen.
-		no_gc_t = 0, no_in_t = 0, no_steps = 0,
+		-- Passes left out of GC t (its window's opening was not seen), and of
+		-- Input t and the steps (its three directions were not all seen).
+		no_gc_t = 0, no_input = 0,
 	}
 	forget()
 end
@@ -189,27 +200,24 @@ local function on_tick(seq, gc, gct, prog, step, s05, b120)
 	-- it: a cancel whose last direction and button land on one tick drops +0
 	-- to 0 on that tick (gct_tick's note, seq=5576).
 	--
-	-- m0 is the tick the live motion took its first direction: nil with no
-	-- motion alive, false with one alive that began before the first tick seen
-	-- (the script starting, a load). That one's later directions must not stand
-	-- in for its start, so it keeps false until it ends. tk is the same
-	-- motion's direction ticks in order, false likewise when its start was
-	-- not seen.
+	-- tk is the ticks the live motion took its directions on, in order: nil
+	-- with no motion alive, false with one alive that began before the first
+	-- tick seen (the script starting, a load). That one's later directions
+	-- must not stand in for its start, so it keeps false until it ends.
 	local p0, s0 = st.prog, st.step
 	st.prog, st.step = prog, step
 	local dropped = false
 	if prog == nil then
-		st.m0, st.taken, st.tk = nil, 0, nil
+		st.tk, st.taken = nil, 0
 	elseif p0 == nil then
 		-- Not "(prog ~= 0) and false or nil": and/or cannot yield false.
-		st.m0, st.taken, st.tk = nil, 0, nil
-		if prog ~= 0 then st.m0, st.tk = false, false end
+		st.tk, st.taken = nil, 0
+		if prog ~= 0 then st.tk = false end
 	else
 		local took = prog > p0 or step > s0
 		dropped = p0 ~= 0 and prog == 0
-		if p0 == 0 and prog ~= 0 then st.m0, st.taken, st.tk = nil, 0, nil end
+		if p0 == 0 and prog ~= 0 then st.tk, st.taken = nil, 0 end
 		if took then
-			if st.m0 == nil then st.m0 = seq end
 			st.taken = st.taken + 1
 			if st.tk ~= false then
 				st.tk = st.tk or {}
@@ -247,19 +255,16 @@ local function on_tick(seq, gc, gct, prog, step, s05, b120)
 				else
 					st.no_gc_t = st.no_gc_t + 1
 				end
-				if st.m0 then
-					s.n_in, s.sum_in = s.n_in + 1, s.sum_in + (seq - st.m0)
-				else
-					st.no_in_t = st.no_in_t + 1
-				end
+				-- Input t and the three steps, together or not at all.
 				local tk = st.tk
 				if type(tk) == "table" and #tk == 3 then
-					s.n_st = s.n_st + 1
+					s.n_in = s.n_in + 1
+					s.sum_in = s.sum_in + (seq - tk[1])
 					s.sum_st[1] = s.sum_st[1] + (tk[2] - tk[1])
 					s.sum_st[2] = s.sum_st[2] + (tk[3] - tk[2])
 					s.sum_st[3] = s.sum_st[3] + (seq - tk[3])
 				else
-					st.no_steps = st.no_steps + 1
+					st.no_input = st.no_input + 1
 				end
 			end
 			-- Counted. The rest of this string, if any, is not a second try.
@@ -271,7 +276,7 @@ local function on_tick(seq, gc, gct, prog, step, s05, b120)
 		st.cur = nil
 	end
 	-- After the success above has read where the motion began.
-	if dropped then st.m0, st.taken, st.tk = nil, 0, nil end
+	if dropped then st.tk, st.taken = nil, 0 end
 end
 
 local function avg(sum, n)
@@ -320,8 +325,8 @@ local function steps()
 	local out = {}
 	for i = 1, 2 do
 		local s = st[i]
-		out[i] = { avg(s.sum_st[1], s.n_st), avg(s.sum_st[2], s.n_st),
-		           avg(s.sum_st[3], s.n_st) }
+		out[i] = { avg(s.sum_st[1], s.n_in), avg(s.sum_st[2], s.n_in),
+		           avg(s.sum_st[3], s.n_in) }
 	end
 	return out
 end

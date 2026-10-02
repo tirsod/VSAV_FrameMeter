@@ -6,6 +6,30 @@ Newest first. Older releases are kept below.
 
 ---
 
+## v11.7.20.2
+
+### GC Stats: Input t and the per-step averages now cover the same successes
+
+- `Input t` and the three per-step averages are now calculated from the same
+  successful attempts: those whose three directions were all measured. They
+  were previously counted under separate conditions, so the two averages could
+  have covered different attempts (no such difference was found in the
+  recorded logs or on screen)
+- Before rounding, the three per-step averages add up to the `Input t`
+  average. Each is rounded to two decimals for display, so their sum may
+  differ slightly
+- A success whose input could not be measured from its start still counts as
+  a `Pass` but is left out of these averages. `GC t` is calculated as before
+
+### Manual updates
+
+- Shorter first practice steps, with a clearer path from the results to the
+  next improvement: compare both sides and review failed attempts in the trace
+- Links to GC Stats from the README and the guided practice
+- Section 9.4 explains which successes the averages cover and the rounding
+
+---
+
 ## v11.7.20.1
 
 ### GC Stats: per-step averages and automatic display placement
@@ -13,8 +37,8 @@ Newest first. Older releases are kept below.
 - Under the table, one row per side averages each step of the command over
   `Pass` attempts. With the GC Command Trace's arrows, the second and third
   directions and the buttons each show the average number of Ticks since the
-  previous input. These values are averages of the input intervals shown in the trace, and
-  the three add up to `Input t`
+  previous input. These values are averages of the input intervals shown in
+  the trace, and the three add up to `Input t`
 - When `PB Stats`, `Tick Data`, `Air Guard Gaps` and `Recording GUI` are all
   OFF, GC Stats sits at the top left, left of the GC Command Trace. When any of
   them is ON, it stays at the bottom right. The settings decide the position,
@@ -39,14 +63,14 @@ and the 2P side. It appears at the bottom right, just above the input bar.
 - `GC t` is the Ticks from the opening of the GC window to the GC (the same
   number as `SUCCESS Nt` in the input bar); `Input t` is the Ticks from the
   first direction of the command that produced the GC to the GC itself. Both
-  are averaged over `Pass` attempts only, and neither is a score where smaller is
-  better
+  are averaged over `Pass` attempts only, and neither is a score where smaller
+  is better
 - The notation, the colors, the stop at 99999 and starting again from zero
   when toggled OFF then ON all work as in PB Stats
 - Only P1 is measured. Switching the side you control, including during a
   Recording Wizard take, does not clear the counts
-- A blocked string you walked forward into also counts as an attempt. See Section
-  9.4 of the manual
+- A blocked string you walked forward into also counts as an attempt. See
+  Section 9.4 of the manual
 
 ### Manual updates
 

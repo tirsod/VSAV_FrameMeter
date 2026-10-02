@@ -212,7 +212,7 @@ do
 	want("Input t の合計", n(1, "sum_in"), (ok - first) + (ok2 - f2))
 	want("平均は Pass の回だけ", n(1, "n_in"), 2)
 	-- 最後の方向とボタンが同じティックなら、ボタンまでの間隔は 0
-	want("方向ごとも 2 回ぶん", n(1, "n_st"), 2)
+	want("方向ごとも同じ 2 回ぶん (n_in を共有)", n(1, "n_in"), 2)
 	want("ボタンまでの合計 (1 回目 + 0)", M.state()[1].sum_st[3], ok - third)
 	-- Fail を足しても平均は動かない
 	local before = row(1):sub(-14)
@@ -299,8 +299,7 @@ do
 	block() d2() d3() cancel()
 	want("起点の無い成功も Pass", n(1, "pass"), 2)
 	want("Input t の平均には入れない", n(1, "n_in"), 1)
-	want("入れなかった数を残す", M.state().no_in_t, 1)
-	want("方向ごとの平均にも入れない", n(1, "n_st") .. "/" .. M.state().no_steps, "1/1")
+	want("入れなかった数を残す (方向ごとも一緒に外す)", M.state().no_input, 1)
 	-- ラウンドが終わる (試合中でなくなる)
 	block() d1()
 	RUN = false
@@ -559,6 +558,95 @@ do
 	local hsrc = io.open("hud.lua"):read("*a")
 	local gr = hsrc:find('["guiRegister"] = function()', 1, true)
 	want("毎フレーム描く", gr ~= nil and hsrc:find("draw_gc_stats()", gr, true) ~= nil, true)
+end
+
+print("")
+print("[12b] Input t と 3 区間は同じ成功から (2026-10-02)")
+do
+	-- t1 t2 t3 = 3 つの方向を受け付けたティック、ts = 成立。区間は t2-t1、t3-t2、
+	-- ts-t3、Input t は ts-t1。4 つとも同じ成功だけから足すので、丸め前の 3 区間
+	-- の平均の合計は Input t の平均に一致する。
+	local function close(a, b) return math.abs(a - b) < 1e-9 end
+	local function raw(i)
+		local s = M.state()[i]
+		if s.n_in == 0 then return nil end
+		return s.sum_st[1] / s.n_in, s.sum_st[2] / s.n_in, s.sum_st[3] / s.n_in,
+			s.sum_in / s.n_in
+	end
+	fresh()
+	-- 間隔の違う成功を 3 回
+	for _, gaps in ipairs({ { 2, 5, 1 }, { 4, 3, 0 }, { 7, 1, 2 } }) do
+		block()
+		d1() idle(gaps[1] - 1)
+		d2() idle(gaps[2] - 1)
+		if gaps[3] == 0 then
+			-- 最後の方向とボタンが同じティック
+			tick({ clock = 0, act = 0x0E, s05 = 0, prog = 0, step = 6 })
+			tick({ act = 0 })
+		else
+			d3() idle(gaps[3] - 1)
+			cancel()
+		end
+	end
+	local a1, a2, a3, ain = raw(1)
+	want("3 回とも数える", n(1, "pass") .. "/" .. n(1, "n_in"), "3/3")
+	want("区間の平均 (丸め前)", string.format("%.4f %.4f %.4f", a1, a2, a3),
+		string.format("%.4f %.4f %.4f", 13 / 3, 9 / 3, 3 / 3))
+	want("丸め前の合計 = 平均 Input t", close(a1 + a2 + a3, ain), true)
+	want("同じティックの最後の方向+ボタンは区間 3 が 0 (合計 3 = 1+0+2)",
+		M.state()[1].sum_st[3], 3)
+
+	-- 計測できない成功を混ぜる: 起点が見えない (ロード直後) と、2 つしか方向を
+	-- 受け付けていない (段が一度に 2 つ進んだ形。実ログには無い、作った入力)
+	d1()
+	M.discard()
+	idle(1)
+	block() d2() d3() cancel()
+	block() d1() tick({ prog = 4, step = 6 }) cancel()
+	want("計測できない成功も Pass に残る", n(1, "pass"), 5)
+	want("Input t と区間の対象は同じ 3 回のまま", n(1, "n_in"), 3)
+	want("外した数", M.state().no_input, 2)
+	local b1, b2, b3, bin = raw(1)
+	want("混ぜても丸め前の合計 = 平均 Input t", close(b1 + b2 + b3, bin), true)
+	want("混ぜても値は変わらない", close(bin, ain), true)
+
+	-- 失敗は時間の平均に入らない
+	block() d1() d2() expire() run_out() tick({ s05 = 0 })
+	want("Fail は 1、平均の対象は 3 のまま", n(1, "fail") .. "/" .. n(1, "n_in"), "1/3")
+
+	-- 失効して入れ直した成功は、成立したコマンドだけで測る。連続ガードの
+	-- 途中の失効では Fail を確定しない
+	block()
+	d1() d2() expire()
+	run_out()
+	hit_again()
+	local r1 = d1() idle(2)
+	local r2 = d2() idle(1)
+	local r3 = d3()
+	local rs = cancel()
+	want("途中の失効は Fail にならず、Pass が 1 増える",
+		n(1, "pass") .. "/" .. n(1, "fail"), "6/1")
+	want("入れ直した方から: Input t の合計が増えた分",
+		M.state()[1].sum_in - (13 + 9 + 3), rs - r1)
+	want("区間も入れ直した方から", (M.state()[1].sum_st[1] - 13) .. "/"
+		.. (M.state()[1].sum_st[2] - 9) .. "/" .. (M.state()[1].sum_st[3] - 3),
+		(r2 - r1) .. "/" .. (r3 - r2) .. "/" .. (rs - r3))
+	local c1, c2, c3, cin = raw(1)
+	want("4 回でも丸め前の合計 = 平均 Input t", close(c1 + c2 + c3, cin), true)
+
+	-- 1P と 2P は混ざらない
+	S.side = 0
+	block() d1() idle(9) d2() d3() cancel()
+	S.side = 1
+	want("2P は 2P だけ", n(2, "n_in") .. "/" .. M.state()[2].sum_in, "1/12")
+	want("1P は変わらない", n(1, "n_in"), 4)
+	local e1, e2, e3, ein = raw(2)
+	want("2P も丸め前の合計 = 平均 Input t", close(e1 + e2 + e3, ein), true)
+	-- 表示: 丸めた 3 つの和と Input t の表示は、ずれても 0.01 程度
+	local st = M.steps()[1]
+	local shown = tonumber(st[1]) + tonumber(st[2]) + tonumber(st[3])
+	local itxt = tonumber(row(1):match("(%S+)$"))
+	want("表示の差は丸めの範囲", math.abs(shown - itxt) <= 0.015 + 1e-9, true)
 end
 
 print("")
