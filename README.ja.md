@@ -6,24 +6,26 @@ See what the Warlord sees, and practice what the Warlord practices, in VSAV trai
 
 **内部フレーム（Tick）単位で相手の動きを再現し、攻めの検証と守りの練習に使える、Fightcade 2／FBNeo用トレーニングモードです。** 入力や攻防のタイミングを可視化し、成功・失敗の理由を確認しながら練習できます。
 
-[VSAV_Trainingのfc2ブランチ](https://github.com/NBeing/VSAV_Training/tree/fc2)を基に拡張したフォークです。本書の対象は **v11.7.20.2** です。
+[VSAV_Trainingのfc2ブランチ](https://github.com/NBeing/VSAV_Training/tree/fc2)を基に拡張したフォークです。本書の対象は **v11.7.20.3** です。
 
-**[ダウンロード](https://github.com/vampiresavior001/VSAV_Training/archive/refs/heads/fc2-v11.zip)** · [導入](#windowsでの導入) · [最初のAG・GC練習](#first-ag-drill) · [日本語マニュアル](docs/PLAYER_MANUAL.ja.md)
+**[ダウンロード（最新版）](https://github.com/vampiresavior001/VSAV_Training/releases/latest)** · [導入](#windowsでの導入) · [最初のAG・GC練習](#first-ag-drill) · [日本語マニュアル](docs/PLAYER_MANUAL.ja.md)
 
-## Tick単位で、再現・検証・改善する
+![左はAG、右はGCを練習中の画面。番号の表示は下の説明を参照](docs/images/screen_map.png)
 
-Tickはゲームの内部フレームです。
+左がAG、右がGCの練習中の画面です。1 AGの入力回数と押した位置　2 押したボタン　3 AGの成功率と平均　4 GCコマンドの受付と結果　5 GCの成功率と入力時間（左右別）　6 自分の入力とガード・GCの印　7 ダミーの入力（[画面の見方](docs/PLAYER_MANUAL.ja.md#screen-map)）
 
-**自分では難しい操作も、Action Stepsで動作とタイミングを指定するだけで再現できます。** 「最速ダッシュからの最速攻撃」「中足払いキャンセル天雷破」など、達人の動きを練習相手にできます。
+## Tick単位で、再現・練習・改善する
 
-**相手の動きを再現する → AG・GCや割り込みを試す → 表示を見て入力を改善する。** 同じ攻めを繰り返させて、対処を磨けます。
+Tickはゲームの内部フレームです。本フォークは、この内部フレームに合わせてダミーの入力を制御します。
 
 | ゲーム速度 | 表示フレームと内部フレームの関係 |
 |---|---|
 | ノーマル | 表示1フレーム＝1 Tick |
 | ターボ3 | 表示3フレーム＝4 Tick |
 
-本フォークは内部フレームに合わせて入力を制御し、フォーク元で制約のあった反撃タイミングの再現を改良しています。起き上がり・ガード後・着地後に、必殺技のリバーサルだけでなく、**小技・投げによる暴れ、ジャンプ、ダッシュ**も指定できます。
+1. **相手を再現する。** 自分では難しい操作も、Action Stepsで動作とタイミングを指定するだけで再現できます。「最速ダッシュからの最速攻撃」「中足払いキャンセル天雷破」など、達人の動きを練習相手にできます。起き上がり・ガード後・着地後には、必殺技のリバーサルだけでなく、**小技・投げによる暴れ、ジャンプ、ダッシュ**も指定できます。自分で操作できる動きは、[Recording Wizard](docs/PLAYER_MANUAL.ja.md#05-recording)で手軽に記録できます（記録・再生は表示フレーム単位です）。
+2. **練習する。** 同じ攻めを繰り返させて、AG・GC・空中ガード後の割り込みを試します。
+3. **結果を見て直す。** 入力が受付のどこに入ったか、どこで遅れたかを画面で確かめ、次の入力を直します。PB StatsとGC Statsで、成功率と入力時間の変化も追えます。
 
 行動ごとの最速入力の条件は[Action Steps](docs/PLAYER_MANUAL.ja.md#06-steps)を参照してください。
 
@@ -38,7 +40,7 @@ Tickはゲームの内部フレームです。
 | **GC（ガードキャンセル）を練習する** | 失敗した入力を確認して修正し、[GC Stats](docs/PLAYER_MANUAL.ja.md#gc-stats)で左右の苦手と練習の成果を確かめる |
 | **空中ガード後の攻防を調べる** | 空中チェーンの割り込める隙間、実際の割り込みタイミング、空中ガードした時点、着地後の有利不利を確認する |
 
-**Tick Data**は、従来の表示フレーム単位の測定で生じていたターボによる数値の揺れを抑え、発生・持続・戻り・有利不利の数え方・考え方を攻略サイトのフレームデータに合わせています。測定条件とAction Timelineの読み方は[マニュアル10章](docs/PLAYER_MANUAL.ja.md#10-data)で説明しています。
+**Tick Data**は、従来の表示フレーム単位の測定で生じていたターボによる数値の揺れを抑え、発生・持続・戻り・有利不利の数え方・考え方を攻略サイトのフレームデータに合わせています。測定条件とAction Timelineの読み方は[マニュアル11章](docs/PLAYER_MANUAL.ja.md#10-data)で説明しています。
 
 ### 入力が「どうなったか」を見る
 
@@ -52,23 +54,19 @@ Tickはゲームの内部フレームです。
 
 **記録・再生は表示フレーム単位です。** 自分では難しい操作や、Tick単位の正確なタイミングはAction Stepsで定義してください。
 
-## 導入前に：Runaheadを無効にする
-
-**Runaheadが有効なままでは、トレーニングスクリプトの挙動が不正になります。** Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐため、FBNeoフォルダーを丸ごと複製してトレーニング専用にします。
-
-対戦は通常のFightcadeから、練習は複製先のバッチから起動します。複製と`Video > Runahead > Disabled`の設定は、次の導入手順に沿って行ってください。
-
 ## Windowsでの導入
 
 対象ゲームは **Vampire Savior - the lord of vampire（970519 Japan／`vsavj`）** です。
 
 **ROMは含まれません。各自で用意し、先にFBNeoでゲームが起動できる状態にしてください。**
 
+**FBNeoの`Video > Runahead`は`Disabled`にしてください。** 有効なままでは、反撃などのタイミングが正しく再現されません。Fightcadeで対戦もする場合は、FBNeoフォルダーを丸ごと複製して練習専用にすると、設定を切り替えずに済みます。対戦は通常のFightcadeから、練習は複製先のバッチから起動します。
+
 1. FightcadeとFBNeoを終了します。
 2. Fightcadeの`emulator/fbneo`フォルダー全体を、別の場所へコピーします。例：`C:/VSAV_Training/fbneo`。
-3. 本プロジェクトをダウンロードして展開し、`run_vsav_training.bat`と`scripts`フォルダー全体を、**複製先のfbneoフォルダー**へ配置します。バッチファイルは`fcadefbneo.exe`と同じ階層に置きます。
+3. [最新版のzip](https://github.com/vampiresavior001/VSAV_Training/releases/latest)をダウンロードして展開し、`run_vsav_training.bat`と`scripts`フォルダー全体を、**複製先のfbneoフォルダー**へ配置します。バッチファイルは`fcadefbneo.exe`と同じ階層に置きます。
 4. 複製先の`run_vsav_training.bat`を起動し、FBNeo本体の **`Video > Runahead > Disabled`** を選びます。元の設定もコピーされるため、複製するだけでは無効になりません。
-5. FBNeoを完全終了して同じバッチから再起動し、`Video > Runahead`で`Disabled`が選ばれていることを確認します。
+5. FBNeoを完全終了して同じバッチから再起動します。試合を始めて、画面の上に赤い警告（`RUN-AHEAD DETECTED`）が出なければ設定できています。
 6. `Input > Map Game Inputs`でゲーム操作と下表の機能を割り当てます。P2側のゲーム入力も設定してください。
 
 全画面で遊ぶときは、先に`Video > Blitter options > Windowed Fullscreen`にチェックを入れてください。古い形式の全画面では、パターンの名前入力やExport・Importのウィンドウを表示できません。
@@ -108,11 +106,9 @@ Tickはゲームの内部フレームです。
 
 サスカッチにショートダッシュ小Pをさせて、AG（アドバンシングガード）とGC（ガードキャンセル）を練習します。最後に、その動きを保存して次回も使えるようにします。
 
-**最初はAGかGCのどちらかを試せれば十分です。連発と保存は、慣れてから進めてください。**
+最初はAGかGCのどちらかを試せれば十分です。連発と保存は、慣れてから進めてください。以下は流れです。実際の設定は[画像付きチュートリアル](docs/PLAYER_MANUAL.ja.md#sasquatch-ag-tutorial)に沿って進めてください。
 
-**以下は練習の流れです。実際の設定は、[画像付きチュートリアル](docs/PLAYER_MANUAL.ja.md#sasquatch-ag-tutorial)に沿って進めてください。**
-
-1. **作る。** ダミーをサスカッチにし、`Reversal - Action Steps`で`Dash > Forward Cancel`（`Auto (Fastest)`）→LP（`Auto (8)`）を定義します。
+1. **作る。** ダミーをサスカッチにし、`Reversal - Action Steps`で`Dash > Forward Cancel`（`Auto (Fastest)`）→LP（`Auto (8)`）を定義します。すぐ試すなら、配布物の`scripts/patterns/Sasquatch_Short_LP.json`をAction Patternsの`Import from a File`で取り込めます。
 2. **AGする。** こちらの技をガードさせてショートダッシュ小Pを出させ、これにAGします。PB Counter／PB Statsで、例えば遅らせAGで受付内に6回入力できたか確認します。
 3. **GCも試す。** 同じ小Pに自キャラのGCを入力し、成功表示と、受け付けられた方向・ボタン・入力間隔を確認します。[GC Stats](docs/PLAYER_MANUAL.ja.md#gc-stats)で左右それぞれの成功率も確認できます。
 4. **連続で練習する。** `Loop Steps = yes`、`Loop Wait = Auto (Landing)`にして、着地からショートダッシュ小Pを繰り返させます。
@@ -122,13 +118,9 @@ Tickはゲームの内部フレームです。
 
 **[日本語プレイヤーマニュアル](docs/PLAYER_MANUAL.ja.md)** に、操作・設定・表示の読み方をまとめています。
 
-- [ダミーのガード・受け身・反撃](docs/PLAYER_MANUAL.ja.md#04-dummy)
-- [記録とループ再生](docs/PLAYER_MANUAL.ja.md#05-recording)
-- [Action Steps](docs/PLAYER_MANUAL.ja.md#06-steps)／[Action Patterns](docs/PLAYER_MANUAL.ja.md#07-patterns)
-- [AG練習](docs/PLAYER_MANUAL.ja.md#08-pb)／[GC練習](docs/PLAYER_MANUAL.ja.md#09-gc)
-- [Tick Data・空中ガードの分析](docs/PLAYER_MANUAL.ja.md#10-data)
-- [目的別の練習レシピ](docs/PLAYER_MANUAL.ja.md#11-drills)
-- [困ったとき](docs/PLAYER_MANUAL.ja.md#14-troubleshooting)
+- **相手を作る：** [ダミーのガード・受け身・反撃](docs/PLAYER_MANUAL.ja.md#04-dummy)、[記録とループ再生](docs/PLAYER_MANUAL.ja.md#05-recording)、[Action Steps](docs/PLAYER_MANUAL.ja.md#06-steps)、[Action Patterns](docs/PLAYER_MANUAL.ja.md#07-patterns)
+- **練習する：** [AG練習](docs/PLAYER_MANUAL.ja.md#08-pb)、[GC練習](docs/PLAYER_MANUAL.ja.md#09-gc)、[目的別の練習レシピ](docs/PLAYER_MANUAL.ja.md#11-drills)
+- **調べる：** [Tick Data・空中ガードの分析](docs/PLAYER_MANUAL.ja.md#10-data)、[困ったとき](docs/PLAYER_MANUAL.ja.md#14-troubleshooting)
 
 ### 対応範囲
 
@@ -145,7 +137,7 @@ FBNeoを終了する前に編集内容を保存し、次のファイルをバッ
 | 設定・Action Steps・Action Patterns | `scripts/training_settings.json` |
 | 記録 | `scripts/macro`フォルダー全体 |
 
-更新はトレーニング専用の複製先へ行います。配布物に記録ファイルが含まれる場合があるため、自分の記録を不用意に上書きしないでください。更新後はFBNeoを完全に再起動し、`Video > Runahead`で`Disabled`が選ばれていることも確認します。
+更新はトレーニング専用の複製先へ行います。配布物に記録ファイルが含まれる場合があるため、自分の記録を不用意に上書きしないでください。更新後はFBNeoを完全に再起動し、画面の上に赤い警告が出ないことを確認します。
 
 ## 変更履歴・不具合報告
 
@@ -153,7 +145,7 @@ FBNeoを終了する前に編集内容を保存し、次のファイルをバッ
 - [Release notes (English)](docs/RELEASE_NOTES.md)
 - [このフォークのIssues](https://github.com/vampiresavior001/VSAV_Training/issues)
 
-不具合を報告する際は、バージョン、P1／P2キャラクター、左右配置、設定画面、再現手順を添えてください。トレーニング用FBNeoの`Video > Runahead`で`Disabled`が選ばれていることも確認してください。
+不具合を報告する際は、バージョン、P1／P2キャラクター、左右配置、設定画面、再現手順を添えてください。画面の上に赤いRunaheadの警告が出ていないかも確認してください。
 
 ## フォーク元・クレジット
 

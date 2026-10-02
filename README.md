@@ -6,24 +6,26 @@ English | [日本語](README.ja.md)
 
 **A training mode for Fightcade 2 / FBNeo that reproduces opponent actions with internal-frame (Tick) precision, so you can test your offense and practice your defense.** Detailed displays of your inputs and their timing help you see why an attempt succeeded or failed and adjust your timing.
 
-This fork extends [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2). This README covers **v11.7.20.2**.
+This fork extends [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2). This README covers **v11.7.20.3**.
 
-**[Download](https://github.com/vampiresavior001/VSAV_Training/archive/refs/heads/fc2-v11.zip)** · [Installation](#windows-installation) · [First PB / GC drill](#first-pb-drill) · [English manual](docs/PLAYER_MANUAL.en.md)
+**[Download the latest release](https://github.com/vampiresavior001/VSAV_Training/releases/latest)** · [Installation](#windows-installation) · [First PB / GC drill](#first-pb-drill) · [English manual](docs/PLAYER_MANUAL.en.md)
 
-## Reproduce, test and improve in Ticks
+![Practicing PB (left) and GC (right). The numbered displays are described below](docs/images/screen_map.png)
 
-A Tick is an internal game frame.
+Practicing PB (left) and GC (right): 1 PB presses and where they landed · 2 Pressed buttons · 3 PB success rate and averages · 4 What the game accepted of your GC command, and the result · 5 GC success rate and input time, by side · 6 Your inputs, with guard and GC marks · 7 The dummy's inputs ([how to read the screen](docs/PLAYER_MANUAL.en.md#screen-map))
 
-**Reproduce expert-level execution by defining actions and timing in Action Steps.** Set up a dash followed by an attack, both timed as early as possible, or crouching medium kick canceled into Tenraiha—without having to perform the sequence yourself.
+## Reproduce, practice and improve in Ticks
 
-**Reproduce the offense → try PB, GC or an interrupt → use the readouts to refine your inputs.** Repeat the same sequence to improve your response.
+A Tick is an internal game frame. This fork controls the dummy's inputs on that internal clock.
 
 | Game speed | Displayed frames and internal frames |
 |---|---|
 | Normal | One displayed frame = one Tick |
 | Turbo 3 | Three displayed frames = four Ticks |
 
-This fork controls inputs on that internal clock, improving the precision of responses that were limited in the original. On wake-up, after blocking and after landing, you can specify **light attacks, throws, jumps and dashes**, as well as special-move reversals.
+1. **Reproduce the opponent.** Define actions and timing in Action Steps to reproduce execution you could not perform yourself: a dash followed by an attack, both as early as possible, or crouching medium kick canceled into Tenraiha. On wake-up, after blocking and after landing, you can specify **light attacks, throws, jumps and dashes** as well as special-move reversals. For actions you can perform yourself, [Recording Wizard](docs/PLAYER_MANUAL.en.md#05-recording) records them quickly (recording and playback run in displayed frames).
+2. **Practice.** Make the dummy repeat the same offense and try PB, GC or an interrupt after air guarding.
+3. **Read the result and adjust.** See where your inputs landed in the window and where you were late, then adjust your next attempt. PB Stats and GC Stats track your success rate and input time.
 
 See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions required to act at the earliest possible moment.
 
@@ -38,7 +40,7 @@ See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions require
 | **Practice GC (Guard Cancel)** | Review failed inputs and adjust your execution. Use [GC Stats](docs/PLAYER_MANUAL.en.md#gc-stats) to identify your weaker side and track progress |
 | **Examine situations after air guarding** | Find interruptible gaps in air chains, evaluate actual interrupt timing, see when you air-blocked and check landing advantage |
 
-**Tick Data** avoids the turbo-frame variation of the original display-frame measurements. Its counting conventions for startup, active time, recovery and frame advantage are aligned with those used by strategy sites. See [manual Section 10](docs/PLAYER_MANUAL.en.md#10-data) for measurement conditions and how to read Action Timeline.
+**Tick Data** avoids the turbo-frame variation of the original display-frame measurements. Its counting conventions for startup, active time, recovery and frame advantage are aligned with those used by strategy sites. See [manual Section 11](docs/PLAYER_MANUAL.en.md#10-data) for measurement conditions and how to read Action Timeline.
 
 ### See what happened to your inputs
 
@@ -52,23 +54,19 @@ For actions you can perform yourself, **[Recording Wizard](docs/PLAYER_MANUAL.en
 
 **Recording and playback operate in displayed frames.** Use Action Steps for difficult execution or precise Tick-level timing.
 
-## Before installing: disable Runahead
-
-**Leaving Runahead enabled causes the training script to behave incorrectly.** If you also play matches through Fightcade, copy the entire FBNeo folder to create a separate training installation so you do not have to switch settings for every session.
-
-Launch matches through Fightcade and training through the copied batch file. Follow the installation steps below to create the copy and select `Video > Runahead > Disabled`.
-
 ## Windows installation
 
 The target game is **Vampire Savior - the lord of vampire (970519 Japan / `vsavj`)**.
 
 **ROMs are not included. Supply your own files and first make sure the game runs in FBNeo.**
 
+**Set FBNeo's `Video > Runahead` to `Disabled`.** With Runahead enabled, the dummy cannot reproduce reversal timing correctly. If you also play matches through Fightcade, copy the entire FBNeo folder for training so you never have to switch the setting. Launch matches through Fightcade and training through the copied batch file.
+
 1. Close Fightcade and FBNeo.
 2. Copy Fightcade's entire `emulator/fbneo` folder to another location, for example `C:/VSAV_Training/fbneo`.
-3. Download and extract this project. Put `run_vsav_training.bat` and the entire `scripts` folder in the **copied fbneo folder**, with the batch file next to `fcadefbneo.exe`.
+3. Download and extract the [latest release zip](https://github.com/vampiresavior001/VSAV_Training/releases/latest). Put `run_vsav_training.bat` and the entire `scripts` folder in the **copied fbneo folder**, with the batch file next to `fcadefbneo.exe`.
 4. Launch the copied batch file and select **`Video > Runahead > Disabled`** in FBNeo itself. Copying the folder also copies settings; it does not disable Runahead by itself.
-5. Fully close FBNeo, relaunch through the same batch file and confirm that `Disabled` is selected under `Video > Runahead`.
+5. Fully close FBNeo and relaunch through the same batch file. Start a match: if no red warning (`RUN-AHEAD DETECTED`) appears at the top of the screen, the setting is correct.
 6. Use `Input > Map Game Inputs` to configure game controls and the functions below. Configure P2 game inputs too.
 
 To play in full screen, check `Video > Blitter options > Windowed Fullscreen` first. The older full-screen mode cannot show the windows used to name, export and import patterns.
@@ -109,11 +107,9 @@ Recording's `Looped Playback` and Action Steps' `Loop Steps` are separate settin
 
 Make Sasquatch perform short-dash LP, then practice PB (Push Block) and GC (Guard Cancel) against it. Save the sequence so you can use it again next time.
 
-**Start by trying either PB or GC. Looping and saving can wait until you are comfortable with the drill.**
+Start by trying either PB or GC; looping and saving can wait until you are comfortable. The steps below outline the drill. Follow the [illustrated tutorial](docs/PLAYER_MANUAL.en.md#sasquatch-pb-tutorial) for the settings and controls.
 
-**The steps below outline the drill. Follow the [illustrated tutorial](docs/PLAYER_MANUAL.en.md#sasquatch-pb-tutorial) for the settings and controls.**
-
-1. **Build it.** Choose Sasquatch as the dummy. With `Reversal - Action Steps`, define `Dash > Forward Cancel` (`Auto (Fastest)`) followed by LP (`Auto (8)`).
+1. **Build it.** Choose Sasquatch as the dummy. With `Reversal - Action Steps`, define `Dash > Forward Cancel` (`Auto (Fastest)`) followed by LP (`Auto (8)`). To try it right away, import `scripts/patterns/Sasquatch_Short_LP.json` from the release with `Import from a File` in Action Patterns.
 2. **Practice PB.** Make the dummy block your attack to trigger short-dash LP, then use PB against it. Use PB Counter and PB Stats to check, for example, whether you delayed your first press and still fit six valid presses within the window.
 3. **Try GC too.** Block the same LP and enter your character’s GC command. Check the success indicator, accepted directions and buttons, and input intervals. Use [GC Stats](docs/PLAYER_MANUAL.en.md#gc-stats) to compare your success rate on the left and right sides.
 4. **Repeat it.** Set `Loop Steps = yes` and `Loop Wait = Auto (Landing)` to repeat short-dash LP as soon as the dummy lands.
@@ -123,13 +119,9 @@ Make Sasquatch perform short-dash LP, then practice PB (Push Block) and GC (Guar
 
 The **[English player manual](docs/PLAYER_MANUAL.en.md)** covers controls, settings and how to interpret the readouts.
 
-- [Dummy defense, recovery and counter actions](docs/PLAYER_MANUAL.en.md#04-dummy)
-- [Recording and looping](docs/PLAYER_MANUAL.en.md#05-recording)
-- [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) / [Action Patterns](docs/PLAYER_MANUAL.en.md#07-patterns)
-- [PB practice](docs/PLAYER_MANUAL.en.md#08-pb) / [GC practice](docs/PLAYER_MANUAL.en.md#09-gc)
-- [Tick Data and air-guard analysis](docs/PLAYER_MANUAL.en.md#10-data)
-- [Practice recipes](docs/PLAYER_MANUAL.en.md#11-drills)
-- [Troubleshooting](docs/PLAYER_MANUAL.en.md#14-troubleshooting)
+- **Build the opponent:** [Dummy defense, recovery and counter actions](docs/PLAYER_MANUAL.en.md#04-dummy), [Recording and looping](docs/PLAYER_MANUAL.en.md#05-recording), [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps), [Action Patterns](docs/PLAYER_MANUAL.en.md#07-patterns)
+- **Practice:** [PB practice](docs/PLAYER_MANUAL.en.md#08-pb), [GC practice](docs/PLAYER_MANUAL.en.md#09-gc), [Practice recipes](docs/PLAYER_MANUAL.en.md#11-drills)
+- **Analyze:** [Tick Data and air-guard analysis](docs/PLAYER_MANUAL.en.md#10-data), [Troubleshooting](docs/PLAYER_MANUAL.en.md#14-troubleshooting)
 
 ### Scope
 
@@ -146,7 +138,7 @@ Save your edits before closing FBNeo, then back up:
 | Settings, Action Steps and Action Patterns | `scripts/training_settings.json` |
 | Recordings | Entire `scripts/macro` folder |
 
-Update the separate training installation. The downloaded files may include recordings, so take care not to overwrite your own. Fully restart FBNeo afterward and confirm that `Disabled` is selected under `Video > Runahead`.
+Update the separate training installation. The downloaded files may include recordings, so take care not to overwrite your own. Fully restart FBNeo afterward and make sure no red warning appears at the top of the screen.
 
 ## Release history and reports
 
@@ -154,7 +146,7 @@ Update the separate training installation. The downloaded files may include reco
 - [日本語リリースノート](docs/RELEASE_NOTES.ja.md)
 - [This fork's Issues](https://github.com/vampiresavior001/VSAV_Training/issues)
 
-When reporting a problem, include the version, P1/P2 characters, which character is on each side, screenshots of your settings and steps to reproduce the problem. In your training copy of FBNeo, confirm that `Disabled` is selected under `Video > Runahead`.
+When reporting a problem, include the version, P1/P2 characters, which character is on each side, screenshots of your settings and steps to reproduce the problem. Also check whether the red Runahead warning appears at the top of the screen.
 
 ## Original project and credits
 

@@ -6,7 +6,7 @@ Practice offense, defense and execution in Vampire Savior with repeatable dummy 
 
 This guide uses **PB (Push Block)**, matching the English UI. Menu options are shown by their on-screen names, such as `Show PB Counter`.
 
-For **v11.7.20.2 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
+For **v11.7.20.3 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
 
 [Start with installation](#02-install) · [Already set up? Try the PB / GC drill](#sasquatch-pb-tutorial) · [Scope and verification](#verification-scope)
 
@@ -40,25 +40,65 @@ The distinction is **the precision of reproduced actions and the detail availabl
 
 ## Contents
 
-- [1. Choose what to practice](#01-purpose)
-- [2. Installation and first setup](#02-install)
-- [3. Controls and position shortcuts](#03-controls)
-- [Guided practice: PB and GC against Sasquatch](#sasquatch-pb-tutorial)
+- [Start here: the screen and what to practice](#01-purpose)
+
+**Part 1: Get started**
+
+- [1. Installation and first setup](#02-install)
+- [2. Controls and position shortcuts](#03-controls)
+- [3. Guided practice: PB and GC against Sasquatch](#sasquatch-pb-tutorial)
+
+**Part 2: Build the opponent**
+
 - [4. Dummy defense, recovery and counter actions](#04-dummy)
 - [5. Record opponent actions](#05-recording)
 - [6. Build actions with Action Steps](#06-steps)
 - [7. Save, randomize and share Action Patterns](#07-patterns)
+
+**Part 3: Practice**
+
 - [8. Practice PB](#08-pb)
 - [9. Practice guard cancels](#09-gc)
-- [10. Read move data and gaps](#10-data)
-- [11. Practice recipes](#11-drills)
+- [10. Practice recipes](#11-drills)
+
+**Part 4: Analyze and configure**
+
+- [11. Read move data and gaps](#10-data)
 - [12. Display and game settings](#12-options)
 - [13. Saving, backups and updates](#13-save)
 - [14. Troubleshooting](#14-troubleshooting)
 - [15. Glossary and reference version](#15-reference)
 
 <a id="01-purpose"></a>
-## 1. Choose what to practice
+## Start here: the screen and what to practice
+
+<a id="screen-map"></a>
+### The screen
+
+Show only the displays for the drill you are practicing; they are easier to read that way. You can also show PB and GC displays together.
+
+**Practicing PB** (`Show PB Counter` and `Show PB Stats` on the `Trainer` tab)
+
+![The screen while practicing PB. The numbers match the table below](images/screen_map_pb.png)
+
+| No. | Display | What it shows | More |
+|---|---|---|---|
+| 1 | PB Count line | Your PB presses and where in the 14-Tick window you pressed | [Section 8](#08-pb) |
+| 2 | Pressed-button list | The buttons you pressed in the window; `TECH HIT` marks the press that activated PB | [Section 8](#08-pb) |
+| 3 | PB Stats | Your PB success rate and averages | [8.3](#pb-stats) |
+
+**Practicing GC** (`Show GC Command Trace` and `Show GC Stats` on the `Trainer` tab, `Show Scrolling Input` on the `Display` tab)
+
+![The screen while practicing GC. The numbers match the table below](images/screen_map_gc.png)
+
+| No. | Display | What it shows | More |
+|---|---|---|---|
+| 4 | GC Command Trace | The GC directions and buttons the game accepted, their intervals and the result | [Section 9](#09-gc) |
+| 5 | GC Stats | Your GC success rate and input time, split into the 1P and 2P sides. Top left while PB Stats and the other top-left displays are off, bottom right otherwise | [9.4](#gc-stats) |
+| 6 | Input bar | Your inputs, with the guard and GC marks (`G`, `GC`, `SUCCESS`) | [9.3](#gc-timing) |
+| 7 | P2 inputs (`Show P2 Inputs`) | The dummy's inputs | [Section 12](#12-options) |
+
+### Choose what to practice
 
 | Goal | Feature | Where to start |
 |---|---|---|
@@ -70,14 +110,18 @@ The distinction is **the precision of reproduced actions and the detail availabl
 | Improve PB execution | `Show PB Counter`, `Show PB Stats` | [Section 8](#08-pb) |
 | Find why a GC failed | GC Command Trace, input history | [Section 9](#09-gc) |
 | Track your GC success rate on the 1P and 2P sides | `Show GC Stats` | [Section 9.4](#gc-stats) |
-| Examine advantage, interrupts and landing situations | Tick Data, Air Guard Gaps | [Section 10](#10-data) |
+| Examine advantage, interrupts and landing situations | Tick Data, Air Guard Gaps | [Section 11](#10-data) |
 
 Start with [installation](#02-install) and [basic controls](#03-controls), then [practice PB and GC against Sasquatch](#sasquatch-pb-tutorial).
 
-<a id="02-install"></a>
-## 2. Installation and first setup
+# Part 1: Get started
 
-### 2.1 Requirements
+From installation to your first drill.
+
+<a id="02-install"></a>
+## 1. Installation and first setup
+
+### 1.1 Requirements
 
 - FBNeo included with Fightcade 2.
 - This project's `run_vsav_training.bat` and the **entire `scripts` folder**.
@@ -85,20 +129,24 @@ Start with [installation](#02-install) and [basic controls](#03-controls), then 
 
 The launcher starts the Japanese `vsavj` set. First make sure the game runs in FBNeo on its own. If files are missing, check the missing-file list shown by FBNeo.
 
-### 2.2 Create a separate FBNeo installation for training
+### 1.2 Create a separate FBNeo installation for training
 
-**Select `Video > Runahead > Disabled` in FBNeo itself. Leaving Runahead enabled causes the script to behave incorrectly.**
+**Set `Video > Runahead` to `Disabled` in FBNeo itself.** With Runahead enabled, the dummy cannot reproduce reversal timing correctly.
 
 If you also play matches through Fightcade, **copy the entire `emulator/fbneo` folder and install the training mode in that copy** to avoid forgetting to switch settings. Copy everything under the FBNeo folder, not just the executable or scripts. Keep separate executables and settings for matches and training.
 
 1. Close Fightcade and FBNeo.
 2. Copy Fightcade's entire `emulator/fbneo` folder to another location, such as `C:/VSAV_Training/fbneo`.
-3. Download the target version from the [repository](https://github.com/vampiresavior001/VSAV_Training) and extract it.
+3. Download the latest zip from [Releases](https://github.com/vampiresavior001/VSAV_Training/releases/latest) and extract it.
 4. Put `run_vsav_training.bat` and `scripts` in the **copied fbneo folder**. The batch file must sit next to the copied `fcadefbneo.exe`.
 5. Double-click `run_vsav_training.bat` **in the copy**.
 6. In your training copy of FBNeo, select **`Video > Runahead > Disabled`** from the emulator menu. The original settings were copied too; copying the folder alone does not disable it.
 7. Fully close FBNeo, start it again through the copied batch file and confirm that `Disabled` is selected under `Video > Runahead`.
 8. Open `Input > Map Game Inputs` and assign game controls and the functions below.
+
+If Runahead is still enabled when a match starts, this red warning flashes at the top of the screen. If you see it, select `Video > Runahead > Disabled` and restart FBNeo.
+
+![The warning shown while Runahead is enabled: RUN-AHEAD DETECTED and the share of Ticks being re-run](images/runahead_warning.png)
 
 **To play in full screen, check `Video > Blitter options > Windowed Fullscreen`**, then switch with `Video > Toggle fullscreen mode` (`Alt+Enter`). Without the check, FBNeo uses its older full-screen mode, and the Windows dialogs used to name, export and import patterns cannot appear over it.
 
@@ -130,9 +178,9 @@ Recording's `Looped Playback` and Action Steps' `Loop Steps` are separate settin
 
 Configure P2's game inputs as well as P1's; check these if input behavior is unusual. You can map the functions to arcade-stick or controller buttons.
 
-### 2.3 First check
+### 1.3 First check
 
-Start the copied training installation and confirm that `Disabled` is selected under `Video > Runahead` before proceeding.
+Start the copied training installation. Before proceeding, make sure no red warning appears at the top of the screen.
 
 1. Choose your character and the dummy, then wait for the match to begin. After P1 is selected, P1's controls can also select P2.
 2. Open the menu with `Lua Hotkey 1`.
@@ -143,9 +191,9 @@ Start the copied training installation and confirm that `Disabled` is selected u
 **Selecting `All Guard` alone is not enough. If `Random Guard %` is `0%`, the dummy will not auto-block.** The row turns orange as a reminder.
 
 <a id="03-controls"></a>
-## 3. Controls and position shortcuts
+## 2. Controls and position shortcuts
 
-### 3.1 Menu navigation
+### 2.1 Menu navigation
 
 | Context | Controls |
 |---|---|
@@ -161,14 +209,14 @@ Moving beyond either end of a list returns to the tab selection. MP has differen
 
 `Reset This Tab` on `Display`, `Trainer` and `Analysis` resets all settings on that tab. A confirmation dialog opens with `Cancel` selected. This also resets any child settings hidden because their parent setting is OFF.
 
-### 3.2 Controlled side and character select
+### 2.2 Controlled side and character select
 
 - During a match, `P1 Coin` switches the side you control.
 - You cannot switch sides during recording playback. Stop playback first.
 - Use `Lua Hotkey 4` or `Game > Return to Character Select` to choose characters again.
 - Returning to character select stops playback and clears the match's recording savestate, input history and previous PB/GC readouts.
 
-### 3.3 Quickly restore positions
+### 2.3 Quickly restore positions
 
 During a match, hold the following direction and press `Lua Hotkey 2`. Left and right here mean screen directions.
 
@@ -192,7 +240,7 @@ You can also use `Dummy > Position`. In its diagram, `1` is you, `2` is the dumm
 
 <a id="sasquatch-ag-tutorial"></a>
 <a id="sasquatch-pb-tutorial"></a>
-## Guided practice: PB and GC against Sasquatch
+## 3. Guided practice: PB and GC against Sasquatch
 
 Make Sasquatch perform short-dash LP, then practice PB (Push Block) and GC (Guard Cancel) against it. Complete [installation and input mapping](#02-install) first.
 
@@ -200,7 +248,7 @@ Make Sasquatch perform short-dash LP, then practice PB (Push Block) and GC (Guar
 - **Repeat when ready:** Enable looping in [step 5](#tutorial-loop).
 - **Keep it for next time:** Name and save the sequence in [step 6](#tutorial-save).
 
-### 1. Prepare the counter action
+### Step 1: Prepare the counter action
 
 Choose your character for P1 and **Sasquatch** for the P2 dummy. Face each other on the ground, initially close enough for both attacks to reach. Open the menu with `Lua Hotkey 1` and configure `Dummy`:
 
@@ -218,7 +266,9 @@ This screenshot was taken after building the steps in 2, so `Reversal Action Ste
 
 `Random Guard %` controls blocking probability; `Random Guard Action %` controls the response probability. Set both to 100% to keep the drill consistent.
 
-### 2. Build short-dash LP
+### Step 2: Build short-dash LP
+
+> **Shortcut:** To try the drill before building it, import `scripts/patterns/Sasquatch_Short_LP.json` from the release. In Step 1, set `Guard Action Type` to `Reversal - Action Patterns`, open `Reversal Action Patterns` and select the file with `Import from a File`. The imported `Short LP` arrives unchecked: press MP on it in the list, or set `Use in Random` to `Yes` on its own screen, so it shows `[x]`. The file imports only while the dummy is Sasquatch. You can then skip Step 6.
 
 Open `Reversal Action Steps` with Right or LP and create **only these two steps**. To preserve an existing definition, save it in [Action Patterns](#07-patterns) first.
 
@@ -260,7 +310,7 @@ This response can also trigger after the dummy is hit or wakes up. Start with a 
 
 <a id="tutorial-ag"></a>
 <a id="tutorial-pb"></a>
-### 3. Practice PB against the LP
+### Step 3: Practice PB against the LP
 
 Open the menu and configure these readouts and practice settings:
 
@@ -283,7 +333,7 @@ If you fall short of six valid presses, check for simultaneous presses or inputs
 **Check: Complete six valid presses inside the window, even if PB activates before the sixth.**
 
 <a id="tutorial-gc"></a>
-### 4. Practice GC against the same LP
+### Step 4: Practice GC against the same LP
 
 Keep the dummy settings unchanged and practice your character's GC against the same LP. Leave `Loop Steps = no` and enable these readouts:
 
@@ -313,10 +363,10 @@ The trace shows → 7t, ↓ 4t, ↘ 4t and the buttons 0t (on the same Tick as �
 
 </details>
 
-**Check: `Success` / `SUCCESS` confirms that GC activated. Whether the move hit the opponent is a separate result.**
+**Check: `Success` / `SUCCESS` means the GC activated.**
 
 <a id="tutorial-loop"></a>
-### 5. Repeat short-dash LP and practice PB or GC
+### Step 5: Repeat short-dash LP and practice PB or GC
 
 After practicing one response at a time, change these `Dummy` settings:
 
@@ -338,7 +388,7 @@ You can practice GC against the same repeated offense. Choose PB or GC for each 
 To stop looping, open the menu and set `Loop Steps = no`. To disable counter actions too, set `Guard Action Type = None`.
 
 <a id="tutorial-save"></a>
-### 6. Save it as `Short LP`
+### Step 6: Save it as `Short LP`
 
 Save the sequence in Action Patterns for future use:
 
@@ -375,6 +425,10 @@ Enter the name in the separate window. The game pauses until you close it.
 If the emulator covers the name window, it comes back in front automatically; click it to type. FBNeo's older full-screen mode cannot show it. Enable `Video > Blitter options > Windowed Fullscreen` (see [installation](#02-install)).
 
 </details>
+
+# Part 2: Build the opponent
+
+Set up what the dummy does. Practice starts with building the opponent.
 
 <a id="04-dummy"></a>
 ## 4. Dummy defense, recovery and counter actions
@@ -636,6 +690,10 @@ Import adds to the existing list without replacing it. Imported patterns start u
 
 Naming and file dialogs are implemented for Windows. These operations have not been verified on Linux or macOS for this manual.
 
+# Part 3: Practice
+
+Try PB and GC against that opponent, read the results and adjust your input.
+
 <a id="08-pb"></a>
 ## 8. Practice PB
 
@@ -681,6 +739,15 @@ Pressing multiple buttons on the same Tick gives only one game-counted PB press.
 To judge delay, look at the interval from `Guard` to the first press and whether all six presses fit before the closing `|`. The goal is **to start as late as possible while still fitting six presses into the window**, rather than stopping as soon as PB activates.
 
 `LateMash` means **inputs after the window closes, not inputs after PB activates**. Post-activation presses inside the window count toward the training total, not LateMash. If LateMash grows, check for excessive delay or extra presses. Inputs beyond the window can cause an unwanted normal when blockstun ends.
+
+**What to try next**
+
+| What you see | Try this |
+|---|---|
+| The count stays under six and `MultiPush` is 1 or more | Simultaneous presses on one Tick count once. Press one button at a time, on different Ticks |
+| The count stays under six and `LateMash` is 1 or more | You pressed after the window closed. Start a little earlier or press faster |
+| The count stays under six and `at` ends near 14 | You started too late. Start early enough to fit six presses into the 14-Tick window |
+| Six presses fit inside the window | Delay your first press after `Guard` a little at a time and see whether you can keep all six |
 
 <a id="pb-stats"></a>
 ### 8.3 Statistics and practice conditions
@@ -744,6 +811,17 @@ The raw direction history and the sequence accepted by the game's command parser
 
 An orange highlight does not necessarily mean the attempt failed. Successful results are gold. On a button row, the unpressed dots turn orange, while pressed dots keep their light/medium/heavy colors.
 
+**What to try next**
+
+| What the trace shows | Try this |
+|---|---|
+| The trace does not update | You may not have blocked. Check the input bar for the `G` and `GC` marks ([9.3](#gc-timing)) |
+| `Cmd Expired` partway through the directions | The command broke at the red interval. Enter the next direction sooner after the last accepted one |
+| `GC Expired` after all directions were accepted | The button missed the window. Press it right after the last direction |
+| `GC Expired` with directions missing | You did not finish the command within the window. Start the first direction sooner, or begin before you block |
+| `Success` with orange numbers | It worked, but an interval of 12 Ticks or more does not always get through. Shorten it for consistency |
+| One side's per-step average in GC Stats is large | That step is where the time goes. Check the same step in the trace and shorten it ([9.4](#gc-stats)) |
+
 <a id="gc-timing"></a>
 ### 9.3 `G / GP / GC` and the one-Tick difference
 
@@ -794,10 +872,60 @@ The two rows under the table average each step of the command over `Pass` attemp
 
 **A blocked string you walked forward into also counts as an attempt.** While you hold forward, the game keeps accepting the first direction of the GC command again. If you then block, the string starts with the GC command one step in, so it ends as `Fail` unless you GC. This can count as an attempt even if you did not intend to GC. To compare your progress, keep the practice conditions consistent, including whether you walk forward before blocking.
 
-<a id="10-data"></a>
-## 10. Read move data and gaps
+<a id="11-drills"></a>
+## 10. Practice recipes
 
-### 10.1 Ticks versus displayed frames
+### A. Hit confirms and stopping on block
+
+1. Set `Guard = All Guard` and `Random Guard % = 50%`.
+2. Set `Guard Action Type = None`.
+3. Repeat the same starter, continue the combo on hit and stop on block.
+4. Then set a light normal under `Reversal - Specified` to check the gaps you leave after being blocked.
+
+### B. Can your wake-up pressure beat the opponent’s fastest response?
+
+1. Select `Guard Action Type = Reversal - Specified`, with `Random Guard Action % = 100%`.
+2. Configure the desired normal or special. See [4.3](#dummy-normal-response) for a normal example.
+3. Start with `Wakeup = None` to keep conditions fixed.
+4. Knock the dummy down and test your setup.
+5. Once consistent, vary wake-up movement and response probability.
+
+Do not judge whether a normal came out as early as possible solely by whether the game displays REVERSAL.
+
+### C. What reaches after your attack is pushblocked?
+
+1. Set `Guard = Push Block (All Light)` and `Random Guard % = 100%`.
+2. Start with `Guard Action Type = None` and examine spacing and reach after pushback.
+3. Try the same sequence against medium and heavy PB.
+4. Add a counter action and check whether your follow-up beats the dummy's response.
+
+Selecting PB under `Guard` leaves `Guard Action Type` available for the response.
+
+### D. Examine air-guard interrupts and landing situations
+
+1. Use a recording or Action Steps to prepare the dummy's air string.
+2. Enable `Show Air Guard Gaps`.
+3. Jump and block; first observe the Gap without pressing buttons.
+4. Choose one move and practice interrupting with it.
+5. `In Blockstun` means you pressed too early; `LATE` means too late; `NO GAP` suggests reconsidering the move or response.
+6. Vary your jump timing and compare when you air-blocked and how the gap changed.
+7. Also try landing without interrupting and read `Landing Advantage`. Compare jump attacks and air-dash attacks.
+
+### E. Defend against mixed offense
+
+1. Save different offensive sequences in recording slots or Action Patterns.
+2. Play each one individually and verify the intended moves.
+3. Enable several candidates and randomize playback.
+4. For repeatable spacing in recordings, use `Reset Distance Each Loop`. For Steps, check positioning and the situation after each pass separately.
+
+# Part 4: Analyze and configure
+
+Measure moves and gaps, and adjust displays and settings.
+
+<a id="10-data"></a>
+## 11. Read move data and gaps
+
+### 11.1 Ticks versus displayed frames
 
 **A Tick (`t`) is an internal game frame.** Distinguish it from a displayed frame.
 
@@ -817,7 +945,7 @@ At Turbo 3, some displayed frames contain two Ticks of game processing. You cann
 
 Match the measured side, game speed and units before comparing numbers.
 
-### 10.2 Tick Data
+### 11.2 Tick Data
 
 The original Frame Data measured displayed frames, which made its results unstable at turbo speeds. This fork’s **Tick Data** measures internal frames to avoid variation caused by turbo frames. Its **counting conventions for startup, active time, recovery and frame advantage are aligned with those used by strategy sites**. This does not guarantee a match with every published value; check move conditions and counting conventions when comparing results.
 
@@ -862,7 +990,7 @@ Keep these limits in mind:
 - Startup and active share the first hitbox Tick. For a basic single move, read `Total = Startup + Active + Recovery − 1`: startup 4, active 3 and recovery 7 give Total 13.
 
 <a id="action-timeline"></a>
-### 10.3 Action Timeline and Step Wait Ticks
+### 11.3 Action Timeline and Step Wait Ticks
 
 **Action Timeline in Tick Data** displays a sequence of actions so you can examine the total time a setup takes in Ticks, as well as individual move data.
 
@@ -876,7 +1004,7 @@ The green `ACTION TIMELINE` in Tick Data shows the stages of an action on a shar
 
 `Show Step Wait Ticks` displays the actual wait between Action Steps. `Step.2 Wait:13` is the measured interval from the preceding step. `Act` is the Ticks spent entering that step's own inputs. `Loop Wait` measures the boundary between passes. This lets you distinguish a configured timing from its measured result.
 
-### 10.4 Air Guard Gaps
+### 11.4 Air Guard Gaps
 
 **Check `Gap` for time in which you could act. A gap alone does not mean your chosen attack is fast enough.**
 
@@ -914,7 +1042,7 @@ Change the timing of your air guard against the same attack to compare gaps and 
 
 An Action Steps setting of `Auto (10)` can appear here as `Dash > 12t`. The script and the game count from different starting points. Do not compare those values as if they started from the same Tick.
 
-### 10.5 Other trainers
+### 11.5 Other trainers
 
 | Option | What it measures |
 |---|---|
@@ -927,52 +1055,6 @@ An Action Steps setting of `Auto (10)` can appear here as `Dash > 12t`. The scri
 | `Show Attack Dash Gap Trainer` | Displayed frames from attack recovery to dash start |
 | `Show Short Hop Counter (Sas)` | Consecutive Sasquatch short hops |
 | `Show Bishamon UBK Trainer` | Standing/crouching unblockable-range aid on P2 for the supported Bishamon moves |
-
-<a id="11-drills"></a>
-## 11. Practice recipes
-
-### A. Hit confirms and stopping on block
-
-1. Set `Guard = All Guard` and `Random Guard % = 50%`.
-2. Set `Guard Action Type = None`.
-3. Repeat the same starter, continue the combo on hit and stop on block.
-4. Then set a light normal under `Reversal - Specified` to check the gaps you leave after being blocked.
-
-### B. Can your wake-up pressure beat the opponent’s fastest response?
-
-1. Select `Guard Action Type = Reversal - Specified`, with `Random Guard Action % = 100%`.
-2. Configure the desired normal or special. See [4.3](#dummy-normal-response) for a normal example.
-3. Start with `Wakeup = None` to keep conditions fixed.
-4. Knock the dummy down and test your setup.
-5. Once consistent, vary wake-up movement and response probability.
-
-Do not judge whether a normal came out as early as possible solely by whether the game displays REVERSAL.
-
-### C. What reaches after your attack is pushblocked?
-
-1. Set `Guard = Push Block (All Light)` and `Random Guard % = 100%`.
-2. Start with `Guard Action Type = None` and examine spacing and reach after pushback.
-3. Try the same sequence against medium and heavy PB.
-4. Add a counter action and check whether your follow-up beats the dummy's response.
-
-Selecting PB under `Guard` leaves `Guard Action Type` available for the response.
-
-### D. Examine air-guard interrupts and landing situations
-
-1. Use a recording or Action Steps to prepare the dummy's air string.
-2. Enable `Show Air Guard Gaps`.
-3. Jump and block; first observe the Gap without pressing buttons.
-4. Choose one move and practice interrupting with it.
-5. `In Blockstun` means you pressed too early; `LATE` means too late; `NO GAP` suggests reconsidering the move or response.
-6. Vary your jump timing and compare when you air-blocked and how the gap changed.
-7. Also try landing without interrupting and read `Landing Advantage`. Compare jump attacks and air-dash attacks.
-
-### E. Defend against mixed offense
-
-1. Save different offensive sequences in recording slots or Action Patterns.
-2. Play each one individually and verify the intended moves.
-3. Enable several candidates and randomize playback.
-4. For repeatable spacing in recordings, use `Reset Distance Each Loop`. For Steps, check positioning and the situation after each pass separately.
 
 <a id="12-options"></a>
 ## 12. Display and game settings
@@ -1035,7 +1117,7 @@ To update:
 2. Close FBNeo.
 3. Copy `scripts/training_settings.json` and the entire `scripts/macro` folder elsewhere.
 4. Install the update in the separate training copy. The downloaded files may include recordings, so take care not to overwrite your own `.mis` files.
-5. Restart from the copied batch file and confirm that `Disabled` is selected under `Video > Runahead` and that your settings and recordings remain.
+5. Restart from the copied batch file and confirm that no red warning appears at the top of the screen and that your settings and recordings remain.
 
 When resetting settings for diagnosis, move the JSON aside instead of deleting it. It contains your Steps and Patterns too. To share patterns, use Export so you can send the patterns without sharing your entire settings file.
 
@@ -1046,7 +1128,7 @@ When resetting settings for diagnosis, move the JSON aside instead of deleting i
 |---|---|
 | Does not start | Whether FBNeo alone runs `vsavj`; batch/EXE placement; complete `scripts` folder; spaces or Japanese characters in the path; whether antivirus software is blocking `fcadefbneo.exe` |
 | `gd.dll` error | Check that the entire FBNeo folder was copied. If the error persists, report the full message and the action that triggered it, such as launching the game or loading the script |
-| Dummy actions or readouts behave incorrectly | Whether you launched the separate training copy and selected `Video > Runahead > Disabled` |
+| Dummy actions or readouts behave incorrectly | Whether you launched the separate training copy, and whether the red Runahead warning appears at the top of the screen. If it does, select `Video > Runahead > Disabled` and restart |
 | Menu will not open | Whether the match has started and `Lua Hotkey 1` is assigned; do not rely on Start to open the menu |
 | Dummy will not block | Check `Random Guard %` as well as `Guard`; an orange row means it is 0%. Set it to 100% |
 | Dummy will not respond | `Random Guard Action %` (an orange row means 0%), whether the required button is None, and whether a trigger occurred |
@@ -1064,7 +1146,7 @@ When resetting settings for diagnosis, move the JSON aside instead of deleting i
 | File operation appears frozen | A Windows dialog is waiting for you. If the emulator covers it, it comes back in front on its own; click it. It cannot appear over the older full-screen mode: check `Video > Blitter options > Windowed Fullscreen` |
 | Behavior did not change after updating | Fully close FBNeo and restart using the updated copy's batch file |
 
-For reports, include version, P1/P2 characters, which character is on each side, screenshots of your settings and steps to reproduce the problem. If an issue occurs with Runahead enabled, select `Video > Runahead > Disabled` in the training installation, fully restart and check again.
+For reports, include version, P1/P2 characters, which character is on each side, screenshots of your settings and steps to reproduce the problem.
 
 <a id="15-reference"></a>
 ## 15. Glossary and reference version
@@ -1093,7 +1175,7 @@ For reports, include version, P1/P2 characters, which character is on each side,
 - Documentation updated and checked for consistency: 2026-10-02. This does not include testing the procedures in an emulator.
 - Upstream comparison: [`fc2`, 92980a5](https://github.com/NBeing/VSAV_Training/tree/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6). Earliest-input limitations and existing trainers were checked in [upstream menu.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/menu.lua), and input delivery in [upstream controller.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/controller.lua).
 - The comparison covers source-level features and control methods. An emulator A/B comparison and execution of the infinite-combo definitions were not performed while preparing this manual. The infinite-combo examples reflect use cases supplied by the developer.
-- Fork version: v11.7.20.2; labels checked 2026-10-01. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
+- Fork version: v11.7.20.3; labels checked 2026-10-02. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
 - [English README](../README.md) / [English release notes](RELEASE_NOTES.md).
 - Menus/settings: [menu.lua](../scripts/menu.lua), [config.lua](../scripts/config.lua).
 - Controls: [controller.lua](../scripts/controller.lua), [position.lua](../scripts/position.lua).

@@ -6,6 +6,33 @@ Newest first. Older releases are kept below.
 
 ---
 
+## v11.7.20.3
+
+### Reorganized manuals with a map of the screen
+
+- The player manuals now run in four parts: get started, build the opponent,
+  practice, and analyze and configure. Building the opponent comes before
+  practice, since every drill needs one. Section numbers changed; existing
+  links still work
+- A new "Start here" section shows the screen while practicing PB and while
+  practicing GC, with each display numbered and explained. The README opens
+  with the same two screens
+- PB and GC each have a "what to try next" table that turns a readout into
+  the next adjustment
+- Runahead is explained once, with the red warning the tool shows while it is
+  enabled (`RUN-AHEAD DETECTED`): if the warning appears, set
+  `Video > Runahead` to `Disabled` and restart
+- The download link points to the latest release
+
+### Short LP ships as a pattern file
+
+`scripts/patterns/Sasquatch_Short_LP.json` holds the guided practice's
+short-dash LP. To try the drill before building it, import the file with
+`Import from a File` in Action Patterns while the dummy is Sasquatch. The
+tutorial still shows how to build it yourself.
+
+---
+
 ## v11.7.20.2
 
 ### GC Stats: Input t and the per-step averages now cover the same successes

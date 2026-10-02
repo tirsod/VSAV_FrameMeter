@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "trigger": "reversal",
+  "character": 10,
+  "items": [
+    {
+      "name": "Short LP",
+      "use": false,
+      "steps": [
+        { "action": "dashc.f", "wait": -1 },
+        { "action": "atk", "lever": "none", "button": "LP", "wait": -1 }
+      ]
+    }
+  ]
+}
