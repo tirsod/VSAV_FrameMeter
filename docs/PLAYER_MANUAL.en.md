@@ -308,6 +308,8 @@ You can leave PB Counter / PB Stats enabled. GC Command Trace sits to the right 
 
 This example shows a successful GC with Demitri. **Orange highlights alone do not mean failure.** Use the GC command for your own character.
 
+To track your success rate, set `Trainer > Show GC Stats = yes`. It shows attempts, successes and success rate separately for the left and right sides ([Section 9.4: GC Stats](#gc-stats)).
+
 <details>
 <summary>Read the timing values in this GC example</summary>
 
@@ -760,34 +762,34 @@ After a failure, check whether you blocked, whether the necessary directions wer
 <a id="gc-stats"></a>
 ### 9.4 Track your success rate with GC Stats
 
-`Trainer > Show GC Stats = yes` shows your GC tries and success rate, split into the 1P side and the 2P side. It appears without a title in a dark box. When `PB Stats`, `Tick Data`, `Air Guard Gaps` and `Recording GUI` are all OFF, it sits at the top left, left of the GC Command Trace; when any of them is ON, it sits at the bottom right, just above the input bar. The settings decide the position, so the box does not move during practice.
+`Trainer > Show GC Stats = yes` shows your GC attempts and success rate, split into the 1P side and the 2P side. It appears without a title in a dark box. When `PB Stats`, `Tick Data`, `Air Guard Gaps` and `Recording GUI` are all OFF, it sits at the top left, left of the GC Command Trace; when any of them is ON, it sits at the bottom right, just above the input bar. The settings decide the position, so the box does not move during practice.
 
 ![GC Stats at the top left, shown while PB Stats and the other top-left displays are off, beside the GC Command Trace](images/gc_stats.png)
 
-In this example PB Stats and the other top-left displays are off, so GC Stats appears at the top left. Demitri is on the right side of the screen, the 2P side. The `2P` row shows that 42 of the 51 tries on the 2P side succeeded (82.35%). Below the table, the step averages for the 2P side are 3.81 Ticks from ← to ↓, 3.38 from ↓ to ↙ and 0.38 from ↙ to the buttons; together they make the 7.57 shown as `Input t`. The trace on the right is the latest try: the GC window closed on the Tick the game accepted ↙ (`GC Expired 0t`), so no GC came out.
+In this example PB Stats and the other top-left displays are off, so GC Stats appears at the top left. Demitri is on the right side of the screen, the 2P side. The `2P` row shows that 42 of the 51 attempts on the 2P side succeeded (82.35%). Below the table, the step averages for the 2P side are 3.81 Ticks from ← to ↓, 3.38 from ↓ to ↙ and 0.38 from ↙ to the buttons; together they make the 7.57 shown as `Input t`. The trace on the right is the latest attempt: the GC window closed on the Tick the game accepted ↙ (`GC Expired 0t`), so no GC came out.
 
 The notation is the same as PB Stats: `Total`, `Pass`, `Fail` and `Success`, two decimals, and `-` where there is no value yet.
 
 | Column | Meaning |
 |---|---|
-| `GC Side` | The side your character was on when the try began: `1P` on the left (facing right), `2P` on the right (facing left) |
-| `Total` | The number of tries (`Pass` + `Fail`) |
+| `GC Side` | The side your character was on when the attempt began: `1P` on the left (facing right), `2P` on the right (facing left) |
+| `Total` | The number of attempts (`Pass` + `Fail`) |
 | `Pass` | Blocked strings in which a GC came out |
 | `Fail` | Blocked strings that ended without a GC |
 | `Success` | Pass divided by Total |
 | `GC t` | Ticks from the opening of the GC window to the GC. The same number as `SUCCESS Nt` in the input bar and `Success` in the trace |
 | `Input t` | Ticks from the first direction the game accepted, in the command that produced the GC, to the GC |
 
-The two rows under the table average each step of the command over `Pass` tries. They use the GC Command Trace's arrows: → ↓ ↘ on the 1P side and ← ↓ ↙ on the 2P side. Beside the second and third directions and the buttons is the average number of Ticks since the previous input. These are the trace's row numbers averaged, and the three add up to `Input t`. The first direction has no number because `Input t` starts there. Use them to see where the time goes.
+The two rows under the table average each step of the command over `Pass` attempts. They use the GC Command Trace's arrows: → ↓ ↘ on the 1P side and ← ↓ ↙ on the 2P side. Beside the second and third directions and the buttons is the average number of Ticks since the previous input. These values are averages of the input intervals shown in the trace, and the three add up to `Input t`. The first direction has no number because `Input t` starts there. Use them to see where the time goes.
 
-- **One try is one blocked string.** It becomes a try once the game accepts a direction of your GC command during the string. A command you began before blocking counts if the game was still accepting it when you blocked. Blocking alone, or being hit, does not count.
-- `Cmd Expired` and `GC Expired` partway through do not decide anything while the string continues. If you enter the command again and GC a later attack, that string is one `Pass`.
-- **`GC t` and `Input t` are averaged over `Pass` tries only.** Neither is a score where smaller is better. After an expired command, `Input t` counts from the command you entered last.
+- **One attempt is one blocked string.** It becomes an attempt once the game accepts a direction of your GC command during the string. A command you began before blocking counts if the game was still accepting it when you blocked. Blocking alone, or being hit, does not count.
+- `Cmd Expired` and `GC Expired` do not finalize the result while the blocked string continues. If you enter the command again and GC a later attack, that string is one `Pass`.
+- **`GC t` and `Input t` are averaged over `Pass` attempts only.** Neither is a score where smaller is better. After an expired command, `Input t` counts from the command you entered last.
 - Only P1 is measured. Nothing is counted while `P1 Coin` has switched your control to P2, or while a recording is controlling P1. Counting resumes when you control P1 again.
 - Nothing is counted while `Show GC Stats = no`. Switching the side you control, including during a Recording Wizard take, does not clear the counts. Loading a state, resetting positions and the end of a round discard the string in progress without counting it as `Fail`. Nothing is saved to the settings file.
 - Counts stop at 99999. Toggle it OFF then ON to reset the statistics. Returning to character select also clears them. Both work as in PB Stats.
 
-**A blocked string you walked forward into also counts as a try.** While you hold forward, the game keeps accepting the first direction of the GC command again. If you then block, the string starts with the GC command one step in, so it ends as `Fail` unless you GC. When you practice GC, do not mix in situations where you walk forward and then block.
+**A blocked string you walked forward into also counts as an attempt.** While you hold forward, the game keeps accepting the first direction of the GC command again. If you then block, the string starts with the GC command one step in, so it ends as `Fail` unless you GC. This can count as an attempt even if you did not intend to GC. To compare your progress, keep the practice conditions consistent, including whether you walk forward before blocking.
 
 <a id="10-data"></a>
 ## 10. Read move data and gaps

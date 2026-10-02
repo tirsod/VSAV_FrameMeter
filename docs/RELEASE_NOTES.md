@@ -8,13 +8,13 @@ Newest first. Older releases are kept below.
 
 ## v11.7.20.1
 
-### GC Stats: step averages, and the top left when it is free
+### GC Stats: per-step averages and automatic display placement
 
 - Under the table, one row per side averages each step of the command over
-  `Pass` tries. With the GC Command Trace's arrows, the second and third
+  `Pass` attempts. With the GC Command Trace's arrows, the second and third
   directions and the buttons each show the average number of Ticks since the
-  previous input. These are the trace's row numbers averaged, and the three
-  add up to `Input t`
+  previous input. These values are averages of the input intervals shown in the trace, and
+  the three add up to `Input t`
 - When `PB Stats`, `Tick Data`, `Air Guard Gaps` and `Recording GUI` are all
   OFF, GC Stats sits at the top left, left of the GC Command Trace. When any of
   them is ON, it stays at the bottom right. The settings decide the position,
@@ -30,22 +30,22 @@ Newest first. Older releases are kept below.
 `Trainer > Show GC Stats` tracks your GC success rate, split into the 1P side
 and the 2P side. It appears at the bottom right, just above the input bar.
 
-- One try is one blocked string. A string counts once the game accepts a
+- One attempt is one blocked string. A string counts once the game accepts a
   direction of your GC command during it: `Pass` if a GC came out anywhere in
   it, `Fail` if it ended without one. `Cmd Expired` or `GC Expired` partway
-  through decides nothing
+  through does not finalize the result
 - The 1P side and the 2P side are where your character stood: the left or the
   right of the screen
 - `GC t` is the Ticks from the opening of the GC window to the GC (the same
   number as `SUCCESS Nt` in the input bar); `Input t` is the Ticks from the
   first direction of the command that produced the GC to the GC itself. Both
-  are averaged over `Pass` tries only, and neither is a score where smaller is
+  are averaged over `Pass` attempts only, and neither is a score where smaller is
   better
 - The notation, the colors, the stop at 99999 and starting again from zero
   when toggled OFF then ON all work as in PB Stats
 - Only P1 is measured. Switching the side you control, including during a
   Recording Wizard take, does not clear the counts
-- A blocked string you walked forward into also counts as a try. See Section
+- A blocked string you walked forward into also counts as an attempt. See Section
   9.4 of the manual
 
 ### Manual updates
