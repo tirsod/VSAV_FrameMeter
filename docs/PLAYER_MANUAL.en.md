@@ -10,9 +10,7 @@ For **v11.7.20.1 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Inst
 
 [Start with installation](#02-install) · [Already set up? Try the PB / GC drill](#sasquatch-pb-tutorial) · [Scope and verification](#verification-scope)
 
-## What this fork offers
-
-**Control at the internal-frame (Tick) level lets the dummy reproduce opponent actions precisely. Practice GC, PB and interrupting air strings after blocking in the air, then use the detailed input and timing displays to identify mistakes and track your improvement.**
+See the [README](../README.md) for a feature overview. This manual explains how to set up drills and interpret the results.
 
 <details>
 <summary>Tick control and comparison with the original</summary>
@@ -279,10 +277,8 @@ Close the menu, make the dummy block your attack to trigger short-dash LP, then 
 - First fit **six valid presses inside the window**. Pressing several buttons on the same Tick counts as a single PB input.
 - Green means PB activated. Keep pressing to complete six even if it activates earlier. Post-activation presses remain in the counter so you can check that you completed the sequence.
 - Once consistent, delay your first press relative to `Guard`. Aim to **start as late as possible while fitting six presses into the 14-Tick window**.
-- `MultiPush` counts Ticks with simultaneous presses. `LateMash` counts inputs after the window closes, not post-activation inputs that are still inside it.
-- Use PB Stats' success rate and average input timing to track improvement under the same conditions.
 
-See [Section 8](#08-pb) for the full readouts and counting rules.
+If you fall short of six valid presses, check for simultaneous presses or inputs after the window closes. See [Section 8](#08-pb) for the readouts and counting rules.
 
 **Check: Complete six valid presses inside the window, even if PB activates before the sixth.**
 
@@ -302,13 +298,13 @@ You can leave PB Counter / PB Stats enabled. GC Command Trace sits to the right 
 1. Make Sasquatch block P1's attack to trigger the short-dash LP response.
 2. Block the LP and enter **the GC command for your P1 character**.
 3. Check `Success` in the trace or `SUCCESS` in the input history. **Activating GC and hitting the opponent with that move are separate outcomes.** First practice the input using the success indicator as your reference.
-4. If it fails, check whether you blocked, whether the directions were accepted in order and whether the final button was pressed in time. `Cmd Expired` means the command expired; `GC Expired` means the GC window closed. Inspect direction/button intervals and adjust one part of your input at a time.
+4. If it fails, check whether you blocked, whether the directions were accepted in order and whether the final button was pressed in time. Adjust one part of your input at a time. See [Section 9](#09-gc) for the readouts.
 
 ![Demitri guard-cancels Sasquatch's LP: the trace reads Success 14t and the input bar SUCCESS 14t](images/tut_gc_success.png)
 
 This example shows a successful GC with Demitri. **Orange highlights alone do not mean failure.** Use the GC command for your own character.
 
-To track your success rate, set `Trainer > Show GC Stats = yes`. It shows attempts, successes and success rate separately for the left and right sides ([Section 9.4: GC Stats](#gc-stats)).
+**Once comfortable, practice on both sides:** Set `Trainer > Show GC Stats = yes` and compare your success rate against the same attack on each side. Review failed attempts on your weaker side in the trace, adjust your input and try again ([Section 9.4: GC Stats](#gc-stats)).
 
 <details>
 <summary>Read the timing values in this GC example</summary>
@@ -654,7 +650,9 @@ Naming and file dialogs are implemented for Windows. These operations have not b
 
 **This feature visualizes the goal of delaying PB as much as possible while fitting six valid presses inside its window.** You can check when you started and whether you completed all six presses, as well as whether PB activated.
 
-Start against a fixed attack to stabilize your execution, then use random offense to distinguish execution problems from reactions.
+Against the same attack, first make six valid presses consistently. If you fall short, check for simultaneous presses (`MultiPush`) or inputs after the window closes (`LateMash`). Once consistent, start a little later and see whether you can still fit all six presses. Keep the attack and other conditions the same when comparing success rate and input timing in PB Stats.
+
+Then use random offense to distinguish execution problems from reactions.
 
 ### 8.2 Read PB Counter
 
@@ -719,7 +717,9 @@ The `4 / 5 / 6` choices under `Game > P1 Min PB Presses` **modify game behavior 
 5. To track your success rate as well, set `Trainer > Show GC Stats = yes` ([9.4](#gc-stats)).
 6. Block and enter your character's GC command.
 
-Start with one attack, then move on to strings that keep you blocking.
+First make GC consistent against the same single attack. Then practice on both sides and compare success rates in GC Stats. Review failed attempts on your weaker side in the trace, adjust one part of your input and repeat under the same conditions.
+
+**Shorter input time is not a goal in itself.** If input time decreases but success rate drops, review the failed attempts before treating the change as an improvement. Once comfortable, move on to strings that keep you blocking.
 
 ### 9.2 Input history versus command trace
 
