@@ -6,13 +6,13 @@ English | [日本語](README.ja.md)
 
 **A training mode for Fightcade 2 / FBNeo that reproduces opponent actions with internal-frame (Tick) precision, so you can test your offense and practice your defense.** Detailed displays of your inputs and their timing help you see why an attempt succeeded or failed and adjust your timing.
 
-This fork extends [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2). This README covers **v11.7.20.3**.
+This fork extends [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2). This README covers **v11.7.20.4**.
 
 **[Download the latest release](https://github.com/vampiresavior001/VSAV_Training/releases/latest)** · [Installation](#windows-installation) · [First PB / GC drill](#first-pb-drill) · [English manual](docs/PLAYER_MANUAL.en.md)
 
-![Practicing PB (left) and GC (right). The numbered displays are described below](docs/images/screen_map.png)
+![Practicing PB (left) and GC (right), with each display numbered](docs/images/screen_map.png)
 
-Practicing PB (left) and GC (right): 1 PB presses and where they landed · 2 Pressed buttons · 3 PB success rate and averages · 4 What the game accepted of your GC command, and the result · 5 GC success rate and input time, by side · 6 Your inputs, with guard and GC marks · 7 The dummy's inputs ([how to read the screen](docs/PLAYER_MANUAL.en.md#screen-map))
+Left: practicing PB. Right: practicing GC. See [how to read the screen](docs/PLAYER_MANUAL.en.md#screen-map) for each display.
 
 ## Reproduce, practice and improve in Ticks
 

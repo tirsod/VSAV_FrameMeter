@@ -6,13 +6,13 @@ See what the Warlord sees, and practice what the Warlord practices, in VSAV trai
 
 **内部フレーム（Tick）単位で相手の動きを再現し、攻めの検証と守りの練習に使える、Fightcade 2／FBNeo用トレーニングモードです。** 入力や攻防のタイミングを可視化し、成功・失敗の理由を確認しながら練習できます。
 
-[VSAV_Trainingのfc2ブランチ](https://github.com/NBeing/VSAV_Training/tree/fc2)を基に拡張したフォークです。本書の対象は **v11.7.20.3** です。
+[VSAV_Trainingのfc2ブランチ](https://github.com/NBeing/VSAV_Training/tree/fc2)を基に拡張したフォークです。本書の対象は **v11.7.20.4** です。
 
 **[ダウンロード（最新版）](https://github.com/vampiresavior001/VSAV_Training/releases/latest)** · [導入](#windowsでの導入) · [最初のAG・GC練習](#first-ag-drill) · [日本語マニュアル](docs/PLAYER_MANUAL.ja.md)
 
-![左はAG、右はGCを練習中の画面。番号の表示は下の説明を参照](docs/images/screen_map.png)
+![左はAG、右はGCを練習中の画面。番号は表示の種類](docs/images/screen_map.png)
 
-左がAG、右がGCの練習中の画面です。1 AGの入力回数と押した位置　2 押したボタン　3 AGの成功率と平均　4 GCコマンドの受付と結果　5 GCの成功率と入力時間（左右別）　6 自分の入力とガード・GCの印　7 ダミーの入力（[画面の見方](docs/PLAYER_MANUAL.ja.md#screen-map)）
+左：AGの練習画面。右：GCの練習画面。各表示の読み方は[画面の見方](docs/PLAYER_MANUAL.ja.md#screen-map)へ。
 
 ## Tick単位で、再現・練習・改善する
 

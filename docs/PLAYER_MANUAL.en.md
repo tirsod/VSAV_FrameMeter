@@ -6,7 +6,7 @@ Practice offense, defense and execution in Vampire Savior with repeatable dummy 
 
 This guide uses **PB (Push Block)**, matching the English UI. Menu options are shown by their on-screen names, such as `Show PB Counter`.
 
-For **v11.7.20.3 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
+For **v11.7.20.4 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
 
 [Start with installation](#02-install) · [Already set up? Try the PB / GC drill](#sasquatch-pb-tutorial) · [Scope and verification](#verification-scope)
 
@@ -268,7 +268,7 @@ This screenshot was taken after building the steps in 2, so `Reversal Action Ste
 
 ### Step 2: Build short-dash LP
 
-> **Shortcut:** To try the drill before building it, import `scripts/patterns/Sasquatch_Short_LP.json` from the release. In Step 1, set `Guard Action Type` to `Reversal - Action Patterns`, open `Reversal Action Patterns` and select the file with `Import from a File`. The imported `Short LP` arrives unchecked: press MP on it in the list, or set `Use in Random` to `Yes` on its own screen, so it shows `[x]`. The file imports only while the dummy is Sasquatch. You can then skip Step 6.
+> **Shortcut:** To try the drill before building it, import `scripts/patterns/Sasquatch_Short_LP.json` from the release. In Step 1, set `Guard Action Type` to `Reversal - Action Patterns`, open `Reversal Action Patterns` and select the file with `Import from a File`. The imported `Short LP` arrives unchecked: press MP on it in the list, or set `Use in Random` to `Yes` on its own screen, so it shows `[x]`. The file imports only while the dummy is Sasquatch. Keep `Guard Action Type` on `Reversal - Action Patterns`. Once `Short LP` shows `[x]`, **skip the manual build below** and go to [the check](#tutorial-check). You can skip Step 6 as well.
 
 Open `Reversal Action Steps` with Right or LP and create **only these two steps**. To preserve an existing definition, save it in [Action Patterns](#07-patterns) first.
 
@@ -283,6 +283,7 @@ Open `Reversal Action Steps` with Right or LP and create **only these two steps*
 
 ![The finished list: Auto (Fastest) Dash : Forward Cancel, then Auto (8) Attack : LP](images/tut_steps_list.png)
 
+<a id="tutorial-check"></a>
 Close the menu, make Sasquatch block a ground attack from P1, then immediately block his response.
 
 **Check: Setup is complete when the dummy responds with short-dash LP. Try either PB or GC next.**
@@ -390,7 +391,7 @@ To stop looping, open the menu and set `Loop Steps = no`. To disable counter act
 <a id="tutorial-save"></a>
 ### Step 6: Save it as `Short LP`
 
-Save the sequence in Action Patterns for future use:
+Save the sequence in Action Patterns for future use. If you imported `Short LP` through the shortcut, skip this step.
 
 1. Make sure you have selected `Save` in Action Steps.
 2. Switch `Dummy > Guard Action Type` to `Reversal - Action Patterns`.
@@ -746,7 +747,7 @@ To judge delay, look at the interval from `Guard` to the first press and whether
 |---|---|
 | The count stays under six and `MultiPush` is 1 or more | Simultaneous presses on one Tick count once. Press one button at a time, on different Ticks |
 | The count stays under six and `LateMash` is 1 or more | You pressed after the window closed. Start a little earlier or press faster |
-| The count stays under six and `at` ends near 14 | You started too late. Start early enough to fit six presses into the 14-Tick window |
+| The count stays under six and `at` ends near 14 | Check where your first press landed and how far apart your presses are. Start a little earlier or press faster, and check whether simultaneous presses reduced the valid count |
 | Six presses fit inside the window | Delay your first press after `Guard` a little at a time and see whether you can keep all six |
 
 <a id="pb-stats"></a>
@@ -786,7 +787,12 @@ The `4 / 5 / 6` choices under `Game > P1 Min PB Presses` **modify game behavior 
 
 First make GC consistent against the same single attack. Then practice on both sides and compare success rates in GC Stats. Review failed attempts on your weaker side in the trace, adjust one part of your input and repeat under the same conditions.
 
-**Shorter input time is not a goal in itself.** If input time decreases but success rate drops, review the failed attempts before treating the change as an improvement. Once comfortable, move on to strings that keep you blocking.
+**A GC is better the earlier it comes out, as long as it succeeds.** If rushing lowers your success rate, review the failed attempts in the trace. Once comfortable, move on to strings that keep you blocking.
+
+**Getting a GC out faster after a single block**
+
+1. **Start the dragon-punch motion as soon as you block.** The earlier you start, the better. After you release back to neutral, the guard pose holds for a short time (guard persistence, shown as `G-Persist n` in the trace and `GP n` on the input bar). Once you have confirmed that you can block in neutral, return to neutral early and start the motion from there. Holding forward (→) during persistence makes you walk and drops your guard, so enter → after contact.
+2. **Press the button together with the last down-forward.** Press it at the same time as down-forward and release it right away. Even if the button lands first, aim to complete the command on the release; this makes the fastest timing easier to hit.
 
 ### 9.2 Input history versus command trace
 
@@ -817,10 +823,10 @@ An orange highlight does not necessarily mean the attempt failed. Successful res
 |---|---|
 | The trace does not update | You may not have blocked. Check the input bar for the `G` and `GC` marks ([9.3](#gc-timing)) |
 | `Cmd Expired` partway through the directions | The command broke at the red interval. Enter the next direction sooner after the last accepted one |
-| `GC Expired` after all directions were accepted | The button missed the window. Press it right after the last direction |
-| `GC Expired` with directions missing | You did not finish the command within the window. Start the first direction sooner, or begin before you block |
-| `Success` with orange numbers | It worked, but an interval of 12 Ticks or more does not always get through. Shorten it for consistency |
-| One side's per-step average in GC Stats is large | That step is where the time goes. Check the same step in the trace and shorten it ([9.4](#gc-stats)) |
+| `GC Expired` after all directions were accepted | The button missed the window. Press it together with down-forward (tip 2 above) |
+| `GC Expired` with directions missing | You did not finish the command within the window. Start the motion as soon as you block (tip 1 above) |
+| `Success` with orange numbers | It worked. Orange marks an interval of 12 Ticks or more, which does not always get through. If failures increase, check this interval first |
+| One side's per-step average in GC Stats is large | That step is where the time goes; speeding it up speeds up the whole GC. The averages describe successful attempts, so look for the cause of failures in the trace of a failed attempt ([9.4](#gc-stats)) |
 
 <a id="gc-timing"></a>
 ### 9.3 `G / GP / GC` and the one-Tick difference
@@ -862,7 +868,7 @@ The two rows under the table average each step of the command over `Pass` attemp
 
 - **One attempt is one blocked string.** It becomes an attempt once the game accepts a direction of your GC command during the string. A command you began before blocking counts if the game was still accepting it when you blocked. Blocking alone, or being hit, does not count.
 - `Cmd Expired` and `GC Expired` do not finalize the result while the blocked string continues. If you enter the command again and GC a later attack, that string is one `Pass`.
-- **Time averages cover `Pass` attempts only.** None of them is a score where smaller is better.
+- **Time averages cover `Pass` attempts only.** Smaller means a faster GC. Read them together with the success rate.
   - `Input t` and the per-step averages come from the successful attempts whose whole input was measured; both use the same attempts. A success whose input started before it could be measured, such as right after the script starts or a state loads, still counts as a `Pass` but is left out of these averages.
   - `GC t` comes from the successful attempts whose GC window opening was measured, so it can cover a different number of attempts than `Input t`.
   - If you enter the command again after it expires and then succeed, timing starts from the command that produced the GC.
@@ -1175,7 +1181,7 @@ For reports, include version, P1/P2 characters, which character is on each side,
 - Documentation updated and checked for consistency: 2026-10-02. This does not include testing the procedures in an emulator.
 - Upstream comparison: [`fc2`, 92980a5](https://github.com/NBeing/VSAV_Training/tree/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6). Earliest-input limitations and existing trainers were checked in [upstream menu.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/menu.lua), and input delivery in [upstream controller.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/controller.lua).
 - The comparison covers source-level features and control methods. An emulator A/B comparison and execution of the infinite-combo definitions were not performed while preparing this manual. The infinite-combo examples reflect use cases supplied by the developer.
-- Fork version: v11.7.20.3; labels checked 2026-10-02. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
+- Fork version: v11.7.20.4; labels checked 2026-10-02. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
 - [English README](../README.md) / [English release notes](RELEASE_NOTES.md).
 - Menus/settings: [menu.lua](../scripts/menu.lua), [config.lua](../scripts/config.lua).
 - Controls: [controller.lua](../scripts/controller.lua), [position.lua](../scripts/position.lua).

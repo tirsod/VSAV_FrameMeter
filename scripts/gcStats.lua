@@ -61,8 +61,9 @@
 -- the same logs the window had closed before all 267 stun ends that were not
 -- a cancel, so this only waits where it has to.
 --
--- THE AVERAGES ARE OVER THE PASSES ONLY. Neither is a score - a smaller number
--- is not a better guard cancel.
+-- THE AVERAGES ARE OVER THE PASSES ONLY. Smaller is a faster guard cancel, and
+-- for a guard cancel faster is better (user, 2026-10-02: 早ければ早いほど良い)
+-- - as long as it still comes out, which is what the success rate is for.
 --
 --   GC t     ticks from the window opening to the cancel. The number the
 --            input bar draws beside SUCCESS and the trace beside Success.

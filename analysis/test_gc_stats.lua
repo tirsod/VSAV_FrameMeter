@@ -539,7 +539,7 @@ do
 	local desc = menu:sub(sa or 1, menu:find(NL, sa or 1, true))
 	for _, w in ipairs({ "1P / 2P", "on the left, facing right, is 1P", "Passes only",
 	                     "Pass:", "Fail:",
-	                     "GC t:", "Input t:", "smaller is not better",
+	                     "GC t:", "Input t:", "Smaller is a faster GC.",
 	                     "Off and on starts at 0." }) do
 		want("説明に: " .. w, desc:find(w, 1, true) ~= nil, true)
 	end

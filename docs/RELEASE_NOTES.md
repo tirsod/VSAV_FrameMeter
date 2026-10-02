@@ -6,6 +6,30 @@ Newest first. Older releases are kept below.
 
 ---
 
+## v11.7.20.4
+
+### GC: earlier is better, with two tips for a faster GC
+
+- A GC is better the earlier it comes out, as long as it succeeds. GC Stats
+  now reads that way: smaller `GC t` and `Input t` mean a faster GC. The
+  in-game description of `Show GC Stats` says so too
+- Section 9.1 of the manual has two tips for getting a GC out faster after a
+  single block: start the dragon-punch motion as soon as you block, using
+  guard persistence (`G-Persist n` / `GP n`) to return to neutral early
+  (holding forward during persistence makes you walk and drops your guard),
+  and press the button together with the last down-forward, then release it
+- The PB and GC "what to try next" tables no longer name a single cause where
+  the readout cannot tell one apart
+
+### Clearer guided practice and README
+
+- After importing the bundled `Short LP`, the tutorial says to skip the manual
+  build and go straight to the check, and that Step 6 is not needed
+- The README's caption under the two screens is shorter and points to the
+  manual's "The screen" section
+
+---
+
 ## v11.7.20.3
 
 ### Reorganized manuals with a map of the screen
