@@ -243,7 +243,7 @@ LP＝弱P、MP＝中P、HP＝強P、LK＝弱K、MK＝中K、HK＝強Kです。
 
 サスカッチにショートダッシュ小Pをさせて、AG（アドバンシングガード）とGC（ガードキャンセル）を練習します。導入と操作設定がまだなら、先に[1章](#02-install)を済ませてください。
 
-- **まず一度試す：** ステップ1〜2で動きを作り、[AG（ステップ3）](#tutorial-ag)か[GC（ステップ4）](#tutorial-gc)を試します。ここまでで練習を始められます。
+- **まず一度試す：** ステップ1〜2で同梱パターンを取り込むか自分で動きを作り、[AG（ステップ3）](#tutorial-ag)か[GC（ステップ4）](#tutorial-gc)を試します。**ここまでで練習を始められます。**
 - **慣れたら繰り返す：** [ステップ5](#tutorial-loop)で連発させます。
 - **次回も使う：** [ステップ6](#tutorial-save)で名前を付けて保存します。
 
@@ -268,7 +268,19 @@ LP＝弱P、MP＝中P、HP＝強P、LK＝弱K、MK＝中K、HK＝強Kです。
 
 ### ステップ2：ショートダッシュ小Pを作る
 
-> **近道：** 組む前にまず試したいときは、配布物の`scripts/patterns/Sasquatch_Short_LP.json`を取り込めます。ステップ1の`Guard Action Type`を`Reversal - Action Patterns`にして`Reversal Action Patterns`を開き、`Import from a File`でこのファイルを選びます。取り込んだ`Short LP`は使用チェックがOFFなので、一覧でMPを押すか、個別画面の`Use in Random`を`Yes`にして`[x]`にしてください。ダミーがサスカッチのときだけ取り込めます。`Guard Action Type`は`Reversal - Action Patterns`のまま使います。取り込んで`[x]`にしたら、**下の手動の作成は飛ばして**[動作の確認](#tutorial-check)へ進んでください。ステップ6の保存も不要です。
+**同梱パターンを使う場合（近道）**
+
+ステップ1でダミーをサスカッチにした状態で進めます。
+
+1. `Guard Action Type`を`Reversal - Action Patterns`にし、`Reversal Action Patterns`を開きます。
+2. `Import from a File`で、配布物の`scripts/patterns/Sasquatch_Short_LP.json`を取り込みます。
+3. 一覧の`Short LP`でMPを押し、使用チェックを`[x]`にします。ほかのパターンが選ばれていればチェックを外します。
+
+`Guard Action Type`は`Reversal - Action Patterns`のまま、[動作の確認](#tutorial-check)へ進んでください。下の手動作成とステップ6の保存は不要です。個別画面の`Use in Random = Yes`でも使用チェックを付けられます。
+
+**自分で作る場合**
+
+`Guard Action Type = Reversal - Action Steps`のまま、次の手順で作ります。
 
 `Reversal Action Steps`を右またはLPで開き、次の**2ステップだけ**を作ります。既存の定義がある場合は、先に[Action Patterns](#07-patterns)へ保存しておくと残せます。
 
@@ -279,7 +291,7 @@ LP＝弱P、MP＝中P、HP＝強P、LK＝弱K、MK＝中K、HK＝強Kです。
 
 1. 1ステップ目は`Action > Dash > Forward Cancel`を選びます。Waitは初期値の`Auto (Fastest)`のままにします。
 2. `+ Add Step`で2ステップ目を追加します。Waitでは**`Fastest (8)`を選択**してください。編集後は`Auto (8)`と表示されます。数値の`8 Ticks`を手入力する設定とは異なります。
-3. 次の一覧になったら、**`Save`**します。
+3. 両ステップの`Random Delay = 0`を確認し、次の一覧になったら**`Save`**します。
 
 ![完成した一覧。1がAuto (Fastest) Dash : Forward Cancel、2がAuto (8) Attack : LP](images/tut_steps_list.png)
 
@@ -389,18 +401,16 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 
 止めるときはメニューを開き、`Loop Steps = no`にします。反撃自体も止めたい場合は`Guard Action Type = None`にします。
 
-**慣れたらタイミングをばらつかせる：** 固定のタイミングで安定したら、`Random Start Wait` で始動をばらつかせます。攻撃を出す時期への対応を練習するなら、始動の設定を0に戻し、攻撃ステップの `Random Delay` を少しずつ増やします。まず一方だけを変え、狙った攻撃が出ることを確認してください。取り込んだパターンを使っている場合は、そのパターンを編集します（[7章](#07-patterns)）。
-
 <a id="tutorial-save"></a>
 ### ステップ6：`Short LP`として保存する
 
-作った動きを今後も使えるよう、Action Patternsへ取り込みます。近道で`Short LP`を取り込んだ場合、このステップは不要です。
+タイミングを固定した基本形を、`Short LP`として保存します。近道で取り込んだ場合は保存済みなので、[応用](#tutorial-varied-timing)へ進めます。
 
-1. Action Stepsを`Save`済みであることを確認します。
+1. 2ステップとも`Random Delay = 0`にしてAction Stepsを`Save`し、`Random Start Wait = 0`も確認します。
 2. `Dummy > Guard Action Type = Reversal - Action Patterns`に切り替えます。
 3. `Reversal Action Patterns`を開き、**`Add from current Steps`**を選びます。
 4. 別に開く名前入力ウィンドウで **`Short LP`** と入力して確定します。保存済みの現在のStepsがコピーされます。
-5. 一覧で`Short LP`が`[x]`になっていることを確認します。MPで使用チェックを切り替えられます。
+5. 一覧で`Short LP`だけを`[x]`にします。MPで使用チェックを切り替えられます。
 6. `Random Guard Action % = 100%`のまま、こちらの技をガードさせて動作を確認します。一回ずつなら`Loop Steps = no`、連続練習なら`yes`と`Auto (Landing)`を使います。
 
 ![パターン一覧に[x] 01 Short LPが並ぶ](images/tut_patterns_ticked.png)
@@ -409,7 +419,7 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 
 コピーなので、後からパターンを編集しても元のAction Stepsは変わりません。Loopの設定はこの2ステップとは別に確認してください。
 
-**`Short LP`一つだけを選択した場合、毎回同じ動きが出ます。** 別の攻めもパターンとして登録して複数を`[x]`にすると、反撃の機会ごとに候補から一つをランダムに実行できます。固定の動きへのAG・GC練習から、異なる攻めを見て対応する練習へ発展させられます。
+**追加のランダム待ちを0にし、`Short LP`一つだけを選択すれば、固定のタイミングで練習できます。** 別の攻めもパターンとして登録して複数を`[x]`にすると、反撃の機会ごとに候補から一つをランダムに実行できます。固定の動きへのAG・GC練習から、異なる攻めを見て対応する練習へ発展させられます。
 
 <details>
 <summary>取り込み画面・名前入力で困ったとき</summary>
@@ -429,6 +439,18 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 名前入力がエミュレーターの裏に隠れても自動で手前に戻るので、クリックして入力してください。FBNeoの古い形式の全画面では表示できません。`Video > Blitter options > Windowed Fullscreen`にチェックを入れてください（[1章](#02-install)）。
 
 </details>
+
+<a id="tutorial-varied-timing"></a>
+### 応用：タイミングを変えた攻めに対応する
+
+固定のタイミングで安定したら、一方だけを変えて試します。
+
+- **始動をばらつかせる：** `Short LP`を使い、`Random Start Wait`を少しずつ増やします。パターン自体の編集は不要です。
+- **小Pを出す時期をばらつかせる：** `Random Start Wait = 0`に戻します。Action Patternsの`Copy`で`Short LP`を複製し、`Short LP Varied`などの名前を付けます。コピーの攻撃ステップだけ`Random Delay`を少しずつ増やし、保存してください。
+
+コピーを使うときは、それだけを`[x]`にして元の`Short LP`は外します。狙ったショートダッシュ小Pが出ることを確認してから、AG・GCを練習します。詳しい設定の使い分けは[4.4](#dummy-button-timing)へ。
+
+固定の練習に戻すときは、`Random Start Wait = 0`にし、元の`Short LP`だけを`[x]`にします。
 
 # 第2部　相手を作る
 

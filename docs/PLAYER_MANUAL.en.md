@@ -244,7 +244,7 @@ You can also use `Dummy > Position`. In its diagram, `1` is you, `2` is the dumm
 
 Make Sasquatch perform short-dash LP, then practice PB (Push Block) and GC (Guard Cancel) against it. Complete [installation and input mapping](#02-install) first.
 
-- **Try it once:** Build the action in steps 1–2, then try [PB (step 3)](#tutorial-pb) or [GC (step 4)](#tutorial-gc). You can start practicing at this point.
+- **Try it once:** Import the included pattern or build the action yourself in steps 1–2, then try [PB (step 3)](#tutorial-pb) or [GC (step 4)](#tutorial-gc). **You can start practicing at this point.**
 - **Repeat when ready:** Enable looping in [step 5](#tutorial-loop).
 - **Keep it for next time:** Name and save the sequence in [step 6](#tutorial-save).
 
@@ -269,7 +269,19 @@ Nothing has been built yet, so `Reversal Action Steps` reads `Empty`. Rows past 
 
 ### Step 2: Build short-dash LP
 
-> **Shortcut:** To try the drill before building it, import `scripts/patterns/Sasquatch_Short_LP.json` from the release. In Step 1, set `Guard Action Type` to `Reversal - Action Patterns`, open `Reversal Action Patterns` and select the file with `Import from a File`. The imported `Short LP` arrives unchecked: press MP on it in the list, or set `Use in Random` to `Yes` on its own screen, so it shows `[x]`. The file imports only while the dummy is Sasquatch. Keep `Guard Action Type` on `Reversal - Action Patterns`. Once `Short LP` shows `[x]`, **skip the manual build below** and go to [the check](#tutorial-check). You can skip Step 6 as well.
+**Use the included pattern (shortcut)**
+
+Keep Sasquatch as the dummy, as set in Step 1.
+
+1. Set `Guard Action Type` to `Reversal - Action Patterns` and open `Reversal Action Patterns`.
+2. Choose `Import from a File` and import `scripts/patterns/Sasquatch_Short_LP.json` from the release.
+3. Press MP on `Short LP` in the list to mark it `[x]`. Uncheck any other selected patterns.
+
+Keep `Guard Action Type` on `Reversal - Action Patterns` and go to [the check](#tutorial-check). Skip the manual build below and the save procedure in Step 6. You can also enable the pattern with `Use in Random = Yes` on its individual screen.
+
+**Build it yourself**
+
+Keep `Guard Action Type = Reversal - Action Steps` and follow the steps below.
 
 Open `Reversal Action Steps` with Right or LP and create **only these two steps**. To preserve an existing definition, save it in [Action Patterns](#07-patterns) first.
 
@@ -280,7 +292,7 @@ Open `Reversal Action Steps` with Right or LP and create **only these two steps*
 
 1. For step one, select `Action > Dash > Forward Cancel`. Leave Wait at its default, `Auto (Fastest)`.
 2. Use `+ Add Step` to add step two. Under Wait, **select `Fastest (8)`**. It will appear as `Auto (8)` after editing. This is different from manually entering a fixed `8 Ticks` wait.
-3. When your list matches the one below, select **`Save`**.
+3. Check that both steps have `Random Delay = 0`. When your list matches the one below, select **`Save`**.
 
 ![The finished list: Auto (Fastest) Dash : Forward Cancel, then Auto (8) Attack : LP](images/tut_steps_list.png)
 
@@ -391,18 +403,16 @@ You can practice GC against the same repeated offense. Choose PB or GC for each 
 
 To stop looping, open the menu and set `Loop Steps = no`. To disable counter actions too, set `Guard Action Type = None`.
 
-**Once consistent, vary the timing:** Use `Random Start Wait` to vary when the offense starts. To practice against variations in attack timing, set the start wait back to 0 and gradually increase the attack step's `Random Delay`. Change only one at first, and check that the intended attack still comes out. If you imported a pattern, edit that pattern ([Section 7](#07-patterns)).
-
 <a id="tutorial-save"></a>
 ### Step 6: Save it as `Short LP`
 
-Save the sequence in Action Patterns for future use. If you imported `Short LP` through the shortcut, skip this step.
+Save the sequence with fixed timing as your base pattern, `Short LP`. If you imported it through the shortcut, it is already saved; skip to [the optional timing drill](#tutorial-varied-timing).
 
-1. Make sure you have selected `Save` in Action Steps.
+1. Set `Random Delay = 0` on both steps and select `Save` in Action Steps. Also check that `Random Start Wait = 0`.
 2. Switch `Dummy > Guard Action Type` to `Reversal - Action Patterns`.
 3. Open `Reversal Action Patterns` and choose **`Add from current Steps`**.
 4. Enter **`Short LP`** in the separate name window and confirm. This copies your currently saved Steps.
-5. Check that `Short LP` is marked `[x]` in the list. MP toggles whether a pattern is selected.
+5. Mark only `Short LP` as `[x]` in the list. MP toggles whether a pattern is selected.
 6. Keep `Random Guard Action % = 100%` and make the dummy block your attack to test it. Use `Loop Steps = no` for individual responses, or `yes` with `Auto (Landing)` for repeated practice.
 
 ![The pattern list showing [x] 01 Short LP](images/tut_patterns_ticked.png)
@@ -411,7 +421,7 @@ Save the sequence in Action Patterns for future use. If you imported `Short LP` 
 
 This is a copy: editing the pattern later does not change the original Action Steps. Check Loop settings separately from these two steps.
 
-**With only `Short LP` selected, the dummy performs the same sequence every time.** Save other offensive sequences and mark several `[x]` to select one at random for each time the dummy has an opportunity to respond. This takes the drill from PB and GC against a known action to reacting to different attack sequences.
+**With random waits set to 0 and only `Short LP` selected, you can practice against fixed timing.** Save other offensive sequences and mark several `[x]` to select one at random for each time the dummy has an opportunity to respond. This takes the drill from PB and GC against a known action to reacting to different attack sequences.
 
 <details>
 <summary>Show import screens and help with the name window</summary>
@@ -431,6 +441,18 @@ Enter the name in the separate window. The game pauses until you close it.
 If the emulator covers the name window, it comes back in front automatically; click it to type. FBNeo's older full-screen mode cannot show it. Enable `Video > Blitter options > Windowed Fullscreen` (see [installation](#02-install)).
 
 </details>
+
+<a id="tutorial-varied-timing"></a>
+### Optional: Practice against varied timing
+
+Once consistent against fixed timing, change one of the following at a time.
+
+- **Vary the start:** Use `Short LP` and gradually increase `Random Start Wait`. You do not need to edit the pattern.
+- **Vary the LP timing:** Set `Random Start Wait = 0`. Use `Copy` in Action Patterns to duplicate `Short LP` and give it a name such as `Short LP Varied`. Gradually increase `Random Delay` on the copy's attack step only, then save it.
+
+When using the copy, mark only that pattern `[x]` and uncheck the original `Short LP`. Confirm that the intended short-dash LP still comes out before practicing PB or GC. See [Section 4.4](#dummy-button-timing) for the settings.
+
+To return to fixed timing, set `Random Start Wait = 0` and select only the original `Short LP`.
 
 # Part 2: Build the opponent
 

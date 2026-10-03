@@ -23,7 +23,7 @@ A Tick is an internal game frame. This fork controls the dummy's inputs on that 
 | Normal | One displayed frame = one Tick |
 | Turbo 3 | Three displayed frames = four Ticks |
 
-1. **Reproduce the opponent.** Define actions and timing in Action Steps to reproduce execution you could not perform yourself: a dash followed by an attack, both as early as possible, or crouching medium kick canceled into Tenraiha. On wake-up, after blocking and after landing, you can specify **light attacks, throws, jumps and dashes** as well as special-move reversals. For actions you can perform yourself, [Recording Wizard](docs/PLAYER_MANUAL.en.md#05-recording) records them quickly (recording and playback run in displayed frames).
+1. **Reproduce the opponent.** Define actions and timing in Action Steps to reproduce execution you could not perform yourself: a dash followed by an attack, both as early as possible, or crouching medium kick canceled into Tenraiha. On wake-up, after blocking and after landing, you can specify **light attacks, throws, jumps and dashes** as well as special-move reversals.
 2. **Practice.** Make the dummy repeat the same offense and try PB, GC or an interrupt after air guarding.
 3. **Read the result and adjust.** See where your inputs landed in the window and where you were late, then adjust your next attempt. PB Stats and GC Stats track your success rate and input time.
 
@@ -34,7 +34,7 @@ See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions require
 | Goal | How to use the tool |
 |---|---|
 | **Test when your offense works** | Make the dummy respond with a light normal, throw, jump or dash, then test whether your pressure or wake-up setup beats it |
-| **Take away a fixed rhythm** | Randomize the timing of each execution: `Random Start Wait` delays when a response starts, and `Random Delay` when a Specified response presses its button or when each Action Steps step comes out |
+| **Practice against varied timing** | Vary when the same offense starts or when an attack within it comes out. Practice PB and GC without relying on a fixed rhythm. See [which setting to use](docs/PLAYER_MANUAL.en.md#dummy-button-timing) |
 | **Reproduce strings and combos precisely** | Define Tick-based actions with Action Steps; save, randomize and share them with Action Patterns. You can even define sequences that complete infinite combos for Bulleta (B.B. Hood) or Bishamon |
 | **Measure setup timing** | Use Action Timeline in Tick Data to measure the time spent setting up wake-up pressure, or how far away you can start a walk-up throw and still perform it within 15 displayed frames (20 Ticks at Turbo 3) |
 | **Practice PB (Push Block)** | Delay input while fitting six valid presses inside the window. Inspect timing, simultaneous presses, inputs after the window closes, averages and success rate |
