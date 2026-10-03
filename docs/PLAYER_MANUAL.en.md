@@ -144,7 +144,7 @@ If you also play matches through Fightcade, **copy the entire `emulator/fbneo` f
 7. Fully close FBNeo, start it again through the copied batch file and confirm that `Disabled` is selected under `Video > Runahead`.
 8. Open `Input > Map Game Inputs` and assign game controls and the functions below.
 
-If Runahead is still enabled when a match starts, this red warning flashes at the top of the screen. If you see it, select `Video > Runahead > Disabled` and restart FBNeo.
+If Runahead is still enabled, this red warning flashes at the top of the screen once the match has been running for a moment. It is inferred from the number of re-run Ticks, so it does not appear right after launch; check the setting in the menu itself. If you see the warning, select `Video > Runahead > Disabled` and restart FBNeo.
 
 ![The warning shown while Runahead is enabled: RUN-AHEAD DETECTED and the share of Ticks being re-run](images/runahead_warning.png)
 
@@ -448,7 +448,7 @@ If the emulator covers the name window, it comes back in front automatically; cl
 Once consistent against fixed timing, change one of the following at a time.
 
 - **Vary the start:** Use `Short LP` and gradually increase `Random Start Wait`. You do not need to edit the pattern.
-- **Vary the LP timing:** Set `Random Start Wait = 0`. Use `Copy` in Action Patterns to duplicate `Short LP` and give it a name such as `Short LP Varied`. Gradually increase `Random Delay` on the copy's attack step only, then save it.
+- **Vary the LP timing:** Set `Random Start Wait = 0`. Use `Copy` in Action Patterns to duplicate `Short LP`. The copy appears right under the original with the same name and the same `[x]`; use `Rename` to call it something like `Short LP Varied`. Gradually increase `Random Delay` on the copy's attack step only, then save it.
 
 When using the copy, mark only that pattern `[x]` and uncheck the original `Short LP`. Confirm that the intended short-dash LP still comes out before practicing PB or GC. See [Section 4.4](#dummy-button-timing) for the settings.
 
@@ -541,7 +541,7 @@ With `Reversal - Specified` and `Counter Attack - Specified`, three rows decide 
 | `Button Wait` | The wait between the motion and the button press, in Ticks, up to 60. `Auto` is offered only for a dash and uses character-specific attack timing |
 | `Random Delay` | The indented row under `Button Wait`. Every reversal or counter draws a fresh number from 0 up to the setting and adds it to `Button Wait` (0–60; 0 is off) |
 
-This Random Delay only delays the button press: for a dash into an attack, the dash itself is not delayed. `Random Start Wait` ([4.2](#dummy-guard-action)) delays the whole response instead, and the two can be combined.
+`Button Wait` and `Random Delay` delay only the button press: for a dash into an attack, the dash itself is not delayed. `Random Start Wait` ([4.2](#dummy-guard-action)) delays the whole response instead, and the two can be combined.
 
 - Dash attack: `Forward Dash` + `HP` with `Button Wait = Auto` and `Random Delay` at `0-5` adds a newly drawn 0–5 Ticks to the Auto timing.
 - Jump attack: with `Up Forward` + a button, put the Tick to start pressing in `Button Wait` and the spread in `Random Delay`, and you can vary the height at which the jump attack comes out.

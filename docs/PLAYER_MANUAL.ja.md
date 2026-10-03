@@ -144,7 +144,7 @@ Fightcadeで対戦もする場合は、設定の切り替え忘れを防ぐた�
 7. FBNeoを完全に終了して複製先のバッチから起動し直し、`Video > Runahead`で`Disabled`が選ばれていることを確認します。
 8. FBNeoの `Input > Map Game Inputs` を開き、ゲーム操作と下表の機能を割り当てます。
 
-Runaheadが有効なまま試合を始めると、画面の上に次の赤い警告が点滅します。出たら`Video > Runahead > Disabled`を選び、FBNeoを起動し直してください。
+Runaheadが有効なまま試合が進むと、画面の上に次の赤い警告が点滅します。この警告は再実行されたTickの数から推定して出すもので、起動直後には出ません。設定はメニューの表示で確認し、警告が出たら`Video > Runahead > Disabled`を選び、FBNeoを起動し直してください。
 
 ![Runaheadが有効なときに出る警告。RUN-AHEAD DETECTEDと、再実行されたTickの割合](images/runahead_warning.png)
 
@@ -446,7 +446,7 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 固定のタイミングで安定したら、一方だけを変えて試します。
 
 - **始動をばらつかせる：** `Short LP`を使い、`Random Start Wait`を少しずつ増やします。パターン自体の編集は不要です。
-- **小Pを出す時期をばらつかせる：** `Random Start Wait = 0`に戻します。Action Patternsの`Copy`で`Short LP`を複製し、`Short LP Varied`などの名前を付けます。コピーの攻撃ステップだけ`Random Delay`を少しずつ増やし、保存してください。
+- **小Pを出す時期をばらつかせる：** `Random Start Wait = 0`に戻します。Action Patternsの`Copy`で`Short LP`を複製します。同じ名前のコピーが元のすぐ下にでき、`[x]`もそのまま写ります。`Rename`で`Short LP Varied`などに変えます。コピーの攻撃ステップだけ`Random Delay`を少しずつ増やし、保存してください。
 
 コピーを使うときは、それだけを`[x]`にして元の`Short LP`は外します。狙ったショートダッシュ小Pが出ることを確認してから、AG・GCを練習します。詳しい設定の使い分けは[4.4](#dummy-button-timing)へ。
 
@@ -539,7 +539,7 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 | `Button Wait` | モーションの後、ボタンを押すまでの待ち。単位はTickで、上限は60。`Auto` はダッシュのときだけ選べ、キャラクターごとの攻撃タイミングを使う |
 | `Random Delay` | `Button Wait` の下に字下げして出る行。反撃やカウンタのたびに0から設定値までの乱数を引き直し、`Button Wait` に足す（0〜60、0は使わない） |
 
-このRandom Delayで遅れるのはボタンだけです。たとえばダッシュ＋攻撃では、ダッシュ自体は遅れません。反撃全体の開始を遅らせるのは `Random Start Wait`（[4.2](#dummy-guard-action)）で、両方を同時に使えます。
+`Button Wait` と `Random Delay` で遅れるのはボタンだけです。たとえばダッシュ＋攻撃では、ダッシュ自体は遅れません。反撃全体の開始を遅らせるのは `Random Start Wait`（[4.2](#dummy-guard-action)）で、両方を同時に使えます。
 
 - ダッシュ攻撃：`Forward Dash`＋`HP`、`Button Wait = Auto`、`Random Delay` を `0-5` にすると、Autoのタイミングに0〜5 Tickを抽選して加えます。
 - ジャンプ攻撃：`Up Forward`＋ボタンで、`Button Wait` に押し始めのTick、`Random Delay` に散らす幅を入れると、ジャンプ攻撃を出す高さをばらつかせられます。
