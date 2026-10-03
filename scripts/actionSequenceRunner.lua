@@ -1538,6 +1538,8 @@ end
 --   lever     the Reversal/Counter Button Lever row, as names, or nil
 --   auto_dash the dash motion's name when Guard Action Delay is Auto
 --             (Specified only) - see DASH_ACTION_ID
+--   delay_extra  with auto_dash, the button's Random Delay draw (v11.7.21.2),
+--             which `delay` already holds but the Auto swap would drop
 --
 -- The step waits until the dummy can act on the ground, then goes in on the
 -- tick clock aimed so the press lands `wait` Ticks after the tick the arm would
@@ -1628,7 +1630,9 @@ local function start_steps(src, o)
 	if o.auto_dash ~= nil and DASH_ACTION_ID[o.auto_dash] ~= nil then
 		local n = M.auto_ticks_for({ action = DASH_ACTION_ID[o.auto_dash] },
 		                           { action = "atk" })
-		if n ~= nil then bwait = n end
+		-- The Random Delay on the button (v11.7.21.2) was added to the arm's
+		-- number in `delay`; it goes back on top of the step's own.
+		if n ~= nil then bwait = n + (o.delay_extra or 0) end
 	end
 	local b = {
 		sequence = { e },

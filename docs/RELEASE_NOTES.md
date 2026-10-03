@@ -6,6 +6,46 @@ Newest first. Older releases are kept below.
 
 ---
 
+## v11.7.21.2
+
+### Button Wait, and a Random Delay on the button
+
+- `Guard Action Delay (Ticks)` is now called `Button Wait`. For Reversal /
+  Counter Attack - Specified it is the wait between the motion and the button;
+  the motion still comes out at the earliest moment. For Push Block and PB
+  Recording it is the wait before the presses start. Saved values carry over
+- Its ceiling is 60 Ticks. The menu used to go to 50 while 31-50 actually ran
+  as 30
+- A new `Random Delay` row, indented under it (game Ticks, 0 to 60; 0 is off).
+  Every reversal or counter adds a fresh random 0 up to the setting to the
+  Button Wait, so a dash attack or jump attack is pressed at a different point
+  each time. It rides on Auto too: `Forward Dash` + `HP`, Auto, `0-5` spreads
+  the fastest dash attack over five Ticks
+- Too late and the game decides: a special's command is kept 14-19 Ticks, then
+  a normal comes out; after a dash or jump is over there is no dash or jump
+  attack. The direction stays held while the button waits, so a jump may jump
+  again after landing
+
+### Fix: a counter after being hit pressed its button twice when it waited long
+
+- With the button more than about 12 Ticks after the dummy could act, a
+  clean-up step sent the motion's last entry, button included, before the
+  real press: a dash-cancel LP came out as a dash LP and then a standing LP. It
+  now waits for the real press. Earlier versions had the same problem with a
+  long Guard Action Delay (read from the code, not tested on those versions)
+
+### Manual
+
+- Random Start Wait and Random Delay are now covered everywhere they apply:
+  the Tick table, loops, pattern files, troubleshooting and the recipes that
+  assume the fastest timing
+- New section 4.4 for Button Lever, Button Wait and Random Delay, with the dash
+  attack and jump attack examples
+- The tutorial's Dummy tab screenshots are retaken with the Random Start Wait
+  row (five images)
+
+---
+
 ## v11.7.21.1
 
 ### Random Delay: a random extra on top of each step's Wait

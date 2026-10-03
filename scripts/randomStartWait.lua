@@ -43,4 +43,26 @@ function M.roll()
 	return math.random(0, n)
 end
 
+-- RANDOM DELAY ON THE BUTTON (v11.7.21.2).
+--
+-- Reversal / Counter Attack - Specified only: the row under Reversal/Counter
+-- Button Wait. Unlike the start wait above it moves nothing but the button -
+-- the motion still goes in at once - so a dash or jump attack is pressed at a
+-- different point of the dash or jump each time. Same range, same clamp, same
+-- draw; it lives here so the two random timings read the same way.
+function M.button_limit()
+	local v = training_settings and training_settings.button_random_delay
+	v = tonumber(v) or 0
+	v = math.floor(v)
+	if v < 0 then v = 0 end
+	if v > M.MAX then v = M.MAX end
+	return v
+end
+
+function M.roll_button()
+	local n = M.button_limit()
+	if n <= 0 then return 0 end
+	return math.random(0, n)
+end
+
 return M

@@ -3300,6 +3300,11 @@ end
 
 local function kd_delay_ticks()
 	local _d = globals and globals.options and globals.options.gc_delay
+	local _ga = globals and globals.dummy and globals.dummy.guard_action
+	-- THE CEILING (v11.7.21.2). The menu stopped at 50 while this stopped at
+	-- 30, so 31-50 quietly ran as 30. Both are 60 now, the ceiling every other
+	-- timing row has. Step one's Wait keeps 30: the editor never offers more.
+	local _cap = 60
 	-- IN SEQUENCE MODE THE FIRST STEP'S WAIT IS THIS DELAY (v300).
 	--
 	-- "Dragon punch on the fifth tick after the guard" is exactly what this
@@ -3311,9 +3316,10 @@ local function kd_delay_ticks()
 	-- The two agree on Auto without conversion: the editor stores -1 and
 	-- everything below already reads negative as "the per-character dash
 	-- value".
-	if globals and globals.dummy and globals.dummy.guard_action == 'sequence' then
+	if _ga == 'sequence' then
 		local _w = actionSequenceRunnerModule.first_wait("reversal")
 		if _w ~= nil then _d = _w end
+		_cap = 30
 	end
 	if type(_d) ~= "number" then return 0 end
 	-- NEGATIVE IS "Auto", NOT A DELAY (v198).
@@ -3325,7 +3331,15 @@ local function kd_delay_ticks()
 	if _d < 0 then
 		_d = dash_attack_ticks() or 0
 	end
-	if _d > 30 then _d = 30 end
+	if _d > _cap then _d = _cap end
+	-- RANDOM DELAY, ON TOP AND OUTSIDE THE CEILING (v11.7.21.2). Specified
+	-- only, drawn once per reversal or counter where it is queued
+	-- (GA.btn_rd_roll), so every call for the same press reads the same draw.
+	-- On Auto it rides the dash number, the way the editor's Random Delay
+	-- rides a Wait.
+	if _ga == 'reversal' or _ga == 'counter' then
+		_d = _d + (GA.btn_rd or 0)
+	end
 	return _d
 end
 
@@ -7622,7 +7636,17 @@ local function service_held_reversal()
 		-- window branch below and put a second button press on the dummy
 		-- while the reversal is still coming out.
 		_seq.tick_owned = true
-		if memory.readbyte(0xFF8805) == 0x00 then
+		-- NOT WHILE THE HOOK STILL OWES THE PRESS (v11.7.21.2).
+		--
+		-- This cleanup assumes the button has gone in by the time the dummy
+		-- has been free for eight frames. A Button Wait plus Random Delay can
+		-- put the press far later than that, and then this released the held
+		-- last entry first: the controller sent forward+LP during the dash
+		-- cancel and the hook's own LP followed, two swings (user, 2026-10-03;
+		-- kd_c0A_s02: free at lg 236, release at 248, press_now at 281). While
+		-- fast_press_lg is set the hook has a deferred press outstanding, so
+		-- the count waits; the press drops the sequence itself (v144).
+		if memory.readbyte(0xFF8805) == 0x00 and fast_press_lg == nil then
 			-- RELEASE, not drop. Releasing lets the controller emit the final
 			-- entry of the motion - down-forward + button - which is what
 			-- draws the last column of the dragon punch in P2's input
@@ -7716,6 +7740,20 @@ function GA.rsw_draw()
 	return _m.roll()
 end
 
+-- One draw of the Random Delay on the button (v11.7.21.2), for Reversal /
+-- Counter Attack - Specified; 0 for everything else. Called where the guard
+-- action is queued and kept in GA.btn_rd, which kd_delay_ticks adds: the press
+-- is placed by the tick hook later, sometimes more than once for one press
+-- (a rewound tick is run again), and every one of those has to see the same
+-- number.
+function GA.btn_rd_roll()
+	local _ga = globals and globals.dummy and globals.dummy.guard_action
+	if _ga ~= 'reversal' and _ga ~= 'counter' then return 0 end
+	local _ok, _m = pcall(require, "./scripts/randomStartWait")
+	if not _ok or type(_m) ~= "table" or _m.roll_button == nil then return 0 end
+	return _m.roll_button()
+end
+
 -- RANDOM START WAIT FOR THE GUARD ACTIONS THE ARM PLACES (user, 2026-10-02).
 --
 -- Reversal / Counter Attack - Specified, Action Steps and Action Patterns. The
@@ -7760,7 +7798,12 @@ function GA.rsw_defer()
 		-- Guard Action Delay = Auto. kd_delay_ticks has already turned it into
 		-- the arm's dash number; the runner swaps in its own measured one.
 		local _gd = globals.options and globals.options.gc_delay
-		if type(_gd) == "number" and _gd < 0 then _o.auto_dash = GA.stick() end
+		if type(_gd) == "number" and _gd < 0 then
+			_o.auto_dash = GA.stick()
+			-- The Random Delay is inside `delay` too, and that swap drops it
+			-- with the arm's number - so it goes along on its own.
+			_o.delay_extra = GA.btn_rd or 0
+		end
 	end
 	-- button_lever_bits(), as names: the walker turns names into bits on the
 	-- tick it writes them, when the facing is known.
@@ -8114,6 +8157,12 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 		else
 			_armed = (arm_edge or hs_arm_edge or BLK.edge)
 		end
+		-- RANDOM DELAY ON THE BUTTON (v11.7.21.2): one draw for each reversal
+		-- or counter that goes out, ahead of rsw_defer and the arm, which both
+		-- read it through kd_delay_ticks.
+		if _armed and _defender.pending_input_sequence == nil then
+			GA.btn_rd = GA.btn_rd_roll()
+		end
 		if _armed and _defender.pending_input_sequence == nil
 		   and GA.rsw_defer() then
 			-- RANDOM START WAIT: handed to the runner instead of armed (see
@@ -8287,6 +8336,9 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 				-- delay, so no blanks in front of the motion (v179).
 				_stick = globals.dummy.counter_attack_stick
 				_button = globals.dummy.counter_attack_button
+				-- A fresh Random Delay here too: this reversal never passed
+				-- the arm's draw, and the last one belongs to another press.
+				GA.btn_rd = GA.btn_rd_roll()
 				_defender.counter.sequence = ga_sequence(_stick, _button, delay_type, 0)
 			end
 		else

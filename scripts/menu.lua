@@ -1085,8 +1085,18 @@ counter_attack_lever_menu_item.is_disabled = check_for_counter_attack_disabled
 -- only exists for a dash - for every other guard action it behaves as 0. The
 -- point is that a dash attack works without the user looking anything up,
 -- while still being a number they can take over at any time.
+--
+-- RENAMED IN v11.7.21.2, from Guard Action Delay (Ticks). That name read as
+-- "the whole guard action starts later", which is Random Start Wait's job; what
+-- this does is wait in front of the BUTTON - after the motion for Specified,
+-- before the presses for Push Block and PB Recording, which read the same
+-- setting - so it is named after the button, and as a Wait, the word the step
+-- editor uses for the same thing. One name for every type (user, 2026-10-03).
+-- The key stays gc_delay so saved settings read as before. The top is 60 like
+-- every other timing row (it was 50 here against 30 in guardCancel).
+local GAD_NAME = "Button Wait"
 local guard_action_delay_menu_item = integer_menu_item(
-      "Guard Action Delay (Ticks)", training_settings, "gc_delay", -1, 50, false, -1, 0,
+      GAD_NAME, training_settings, "gc_delay", -1, 60, false, -1, 0,
       "How long after the MOTION the button is pressed, in game Ticks. The motion still\ncomes out at the earliest moment: Forward Dash + HP with 14 gives the fastest\ndash, then HP 14 Ticks later.\nAuto uses the character's own dash attack timing, and only means anything for a\ndash - anything else treats it as 0. Three displayed frames are four Ticks.\nMeasured after a GUARD; after a HIT it is not always enough (Morrigan, Jedah)."
     )
 -- Auto EXISTS ONLY FOR THE FOUR DASH MOTIONS (v199).
@@ -1155,6 +1165,32 @@ guard_action_delay_menu_item.is_disabled = function()
           -- the same thing is how they end up disagreeing.
           training_settings.guard_action == 0xB or
           training_settings.guard_action == 0xC
+end
+
+-- RANDOM DELAY ON THE BUTTON (v11.7.21.2; user: press dash attacks and jump
+-- attacks later). A fresh 0..N on top of the row above for every reversal or
+-- counter; the motion is not moved. Indented under that row, the way the step
+-- editor puts its Random Delay under Wait, and written 0-N like Random Start
+-- Wait. Specified only: Push Block reads the row above too, but nothing asked
+-- for its presses to wander.
+local button_random_delay_item = integer_menu_item("Random Delay", training_settings,
+      "button_random_delay", 0, 60, false, 0, nil,
+      "A random 0 to this many Ticks on top of the Button Wait above, drawn again\nfor every reversal or counter. 0 is off. The motion still goes in at once and\nonly the button moves, so a dash or jump attack lands at a different point.\nToo late and the game decides: a special's motion is kept 14-19 Ticks, then a\nnormal comes out; once a dash or jump is over there is no dash or jump attack.")
+function button_random_delay_item:draw(_x, _y, _selected)
+  local _c = text_default_color
+  local _prefix, _suffix = "", ""
+  if _selected then
+    _c = text_selected_color
+    _prefix, _suffix = "< ", " >"
+  end
+  local _v = tonumber(self.object[self.property_name]) or 0
+  local _label = (_v > 0) and ("0-" .. _v) or "0"
+  gui.text(_x + 8, _y, _prefix .. self.name .. " : " .. _label .. _suffix, _c,
+           text_default_border_color)
+end
+button_random_delay_item.is_disabled = function()
+  local _ga = training_settings.guard_action
+  return _ga ~= 6 and _ga ~= 8
 end
 
 -- GC専用の任意フレーム入力ディレイ。共用の guard_action_delay_menu_item
@@ -1746,7 +1782,7 @@ return {
               "Specify an action to be performed after the dummy blocks or is hit.\nSame timing machinery as Reversal, minus the wake-up.",
               "A recording will be played after the opponent finishes guarding.\nThe recording played can be set in the 'Recording' tab.\nThis can be specified or random.",
               "Play recording after pushblock",
-              "Runs the list of steps set in 'Reversal Action Steps', in order.\nEach step is one action and one answer to when it starts.\nThe first step's Wait replaces Guard Action Delay, so that row is off.",
+              "Runs the list of steps set in 'Reversal Action Steps', in order.\nEach step is one action and one answer to when it starts.\nThe first step's Wait replaces Button Wait, so that row is off.",
               -- 12, Reversal - Action Patterns. Without it the row fell back to
               -- the default line below, which says nothing about patterns.
               "Runs one of the patterns ticked in 'Reversal Action Patterns'.\nWith several ticked, one is picked at random each time.\nRandom Guard Action % decides whether it runs at all.",
@@ -1761,6 +1797,7 @@ return {
             pb_button_menu_item,
             pb_rev_button_menu_item,
             guard_action_delay_menu_item,
+            button_random_delay_item,
             gc_input_delay_menu_item,
             p2_reversal_list_menu_item,
             p2_reversal_strength_menu_item,

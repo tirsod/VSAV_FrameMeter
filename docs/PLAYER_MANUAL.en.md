@@ -6,7 +6,7 @@ Practice offense, defense and execution in Vampire Savior with repeatable dummy 
 
 This guide uses **PB (Push Block)**, matching the English UI. Menu options are shown by their on-screen names, such as `Show PB Counter`.
 
-For **v11.7.21.1 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
+For **v11.7.21.2 / Fightcade 2's FBNeo / Japanese `vsavj` (970519 Japan)**. Installation instructions are for Windows. Unless stated otherwise, you control P1 and the dummy is P2.
 
 [Start with installation](#02-install) · [Already set up? Try the PB / GC drill](#sasquatch-pb-tutorial) · [Scope and verification](#verification-scope)
 
@@ -27,7 +27,7 @@ For PB, you can check whether you delayed your input while still fitting six pre
 
 | Feature | Original | This fork |
 |---|---|---|
-| Counter actions and reversals | Specified inputs and character-specific move activation, with limitations on earliest timing at turbo speed and delays from entering motions | Input control in internal frames, with improved wake-up, post-block and landing timing |
+| Counter actions and reversals | Specified inputs and character-specific move activation, with limitations on earliest timing at turbo speed and delays from entering motions | Input control in internal frames, with improved wake-up, post-block and landing timing; the start and the button press can also be varied at random each time |
 | Move data | Frame Data uses displayed frames, giving unstable measurements at turbo speeds | Tick Data measures internal frames, with startup, active time, recovery and advantage conventions aligned with strategy sites |
 | Building dummy behavior | Recording playback and individual counter actions | Recording Wizard simplifies recording; Action Steps defines Tick-based sequences, and Action Patterns saves, selects and shares them |
 | PB practice | Input counter and success/failure statistics | Tick-by-Tick window history, simultaneous presses, late inputs and counts that include presses after activation; PB Stats shows averages and the success rate |
@@ -258,11 +258,12 @@ Choose your character for P1 and **Sasquatch** for the P2 dummy. Face each other
 | `Random Guard %` | `100%` |
 | `Guard Action Type` | `Reversal - Action Steps` |
 | `Random Guard Action %` | `100%` |
+| `Random Start Wait` | `0` (the default: fastest) |
 | `Loop Steps` | `no` (start with one response at a time) |
 
 ![The Dummy tab set up for the drill](images/tut_dummy_setup.png)
 
-This screenshot was taken after building the steps in 2, so `Reversal Action Steps` already reads `2 steps`; until then it reads `Empty`.
+Nothing has been built yet, so `Reversal Action Steps` reads `Empty`. Rows past the eleventh go to the right-hand column, which is why `Loop Wait` is at the top right.
 
 `Random Guard %` controls blocking probability; `Random Guard Action %` controls the response probability. Set both to 100% to keep the drill consistent.
 
@@ -378,6 +379,8 @@ After practicing one response at a time, change these `Dummy` settings:
 
 ![Loop Steps : yes and Loop Wait : Auto (Landing), with the description of both Auto choices](images/tut_loop_landing.png)
 
+`Loop Wait` is the row after `Loop Steps`. When the tab shows many rows, it appears at the top of the right-hand column, beside `Position`.
+
 Close the menu and make the dummy block another attack to start the first response. **Enabling Loop alone does not start the first pass.**
 
 Landing wait enters the required directions before the dummy lands, timing the final dash input to coincide with landing. Use it to practice against repeated short-dash LPs starting as early as possible on landing. `Auto (After)` starts inputs only once the dummy can act and does not produce the same timing. See [Section 6](#06-steps) for conditions that can prevent landing prediction.
@@ -458,6 +461,7 @@ For consistent testing with `Stand Block`, `All Guard` or `Push Block (All …)`
 
 **A probability setting turns orange when 0% prevents the selected action from running.** While `Guard` is `Stand Block`, `All Guard` or `Push Block (All …)` and `Random Guard %` is `0%`, the `Random Guard %` row turns orange. With the cursor on `Guard` or `Random Guard %`, the right side of the bottom line reads `Random Guard % is 0%: the dummy never blocks.` The value is not changed for you, because 0% can be intentional.
 
+<a id="dummy-guard-action"></a>
 ### 4.2 Actions after blocking, being hit or waking up
 
 Selecting `Guard Action Type` reveals the settings for that type. Start with **`Random Guard Action % = 100%`** to verify behavior, then lower it to 25–75% to practice against a dummy that sometimes responds and sometimes does not. At `0%` the action never runs: the `Random Guard Action %` row turns orange, and with the cursor on `Guard Action Type` or that row the right side of the bottom line reads `Random Guard Action % is 0%: it never runs.`
@@ -490,17 +494,35 @@ Here the cursor is on `Guard Action Type`: the `Random Guard Action %` row below
 
 1. Set `Guard = All Guard` and `Random Guard % = 100%`.
 2. Set `Guard Action Type = Reversal - Specified`.
-3. Set `Random Guard Action % = 100%`.
+3. Set `Random Guard Action % = 100%` and `Random Start Wait = 0`.
 4. Set `Reversal/Counter Input Motion = None`.
 5. Set `Reversal/Counter Button = LP`.
-6. Set `Reversal/Counter Button Lever = Neutral` and `Guard Action Delay (Ticks) = 0`.
+6. Set `Reversal/Counter Button Lever = Neutral`, `Button Wait = 0` and `Random Delay = 0`.
 7. Have the dummy block an attack, then test whether your pressure beats its LP after blockstun.
 
-For a crouching normal, select the appropriate downward direction. For a special, match `Input Motion` and the button to the move.
+For a crouching normal, select the appropriate downward direction. For a special, match `Input Motion` and the button to the move. To press the button later, or at a different point each time, see [4.4](#dummy-button-timing).
 
-**`Guard Action Delay (Ticks)` primarily delays the button after the motion.** For a dash into an attack, it does not delay the dash itself. Dash `Auto` uses character-specific attack timing. A timing measured after blocking may not also work after being hit.
+<a id="dummy-button-timing"></a>
+### 4.4 Delay the button press or vary it
 
-`Button Lever = As Is` keeps the motion's final direction; `Neutral` releases it at the button press. Changing the direction for a dash cancel can overwrite the reverse direction needed for the cancel.
+With `Reversal - Specified` and `Counter Attack - Specified`, three rows decide the moment the button goes in, on top of the motion and the button.
+
+| Option | What it does |
+|---|---|
+| `Reversal/Counter Button Lever` | The lever at the moment of the press. `As Is` keeps the motion's final direction (on a dash, the dash attack); `Neutral` releases it |
+| `Button Wait` | The wait between the motion and the button press, in Ticks, up to 60. `Auto` is offered only for a dash and uses character-specific attack timing |
+| `Random Delay` | The indented row under `Button Wait`. Every reversal or counter draws a fresh number from 0 up to the setting and adds it to `Button Wait` (0–60; 0 is off) |
+
+The motion still comes out at the earliest moment and only the button waits: for a dash into an attack, the dash itself is not delayed. `Random Start Wait` ([4.2](#dummy-guard-action)) delays the whole response instead, and the two can be combined.
+
+- Dash attack: `Forward Dash` + `HP` with `Button Wait = Auto` and `Random Delay` at `0-5` spreads it from the fastest dash attack to 5 Ticks later each time.
+- Jump attack: with `Up Forward` + a button, put the Tick to start pressing in `Button Wait` and the spread in `Random Delay`, and the jump attack comes out at a different height each time.
+
+What happens when the press comes too late is up to the game. A special's command is kept for only 14–19 Ticks, so a normal comes out instead. Once a dash or jump is over, there is no dash attack or jump attack. The direction stays held while the button waits, so a jump may jump again after landing.
+
+A timing measured after blocking may not also work after being hit. Changing the `Button Lever` direction on a dash cancel can overwrite the reverse direction needed for the cancel.
+
+`Button Wait` was `Guard Action Delay (Ticks)` up to v11.7.21.1, and saved values carry over. With `Guard Action Type` set to `Push Block` or `PB Recording`, the same setting is the wait before the presses start.
 
 <a id="05-recording"></a>
 ## 5. Record opponent actions
@@ -655,7 +677,7 @@ Set `Dummy > Loop Steps = yes` and configure `Loop Wait`.
 - `Auto (Landing)`: can enter the command before touchdown so the next pass's first action comes out on the landing Tick. Useful for repeating jumps or air attacks after dashing as soon as the dummy lands. See the conditions in [6.3](#steps-wait).
 - A number: Ticks from the final step to the first step of the next pass.
 
-With `Random Start Wait` above 0, each pass also starts that many Ticks later after `Loop Wait`, drawn again for every pass.
+With `Random Start Wait` above 0, each pass also starts that many Ticks later after `Loop Wait`, drawn again for every pass. Each step's `Random Delay` is drawn again on every pass too.
 
 The first pass still requires a response trigger. Subsequent passes use `Loop Wait` at the boundary rather than simply reusing step one's Wait.
 
@@ -697,6 +719,8 @@ Use `Edit / Rename / Copy / Move / Delete` to manage the list. Naming opens a se
 The game pauses until you close the file dialog. If the emulator covers it, it comes back in front on its own; click it to use it.
 
 Import adds to the existing list without replacing it. Imported patterns start unchecked; review them before enabling them. A file identifying a different dummy character is rejected.
+
+Exported files include each step's `Random Delay`. Importing into v11.7.21 or earlier ignores that value alone.
 
 Naming and file dialogs are implemented for Windows. These operations have not been verified on Linux or macOS for this manual.
 
@@ -899,11 +923,11 @@ The two rows under the table average each step of the command over `Pass` attemp
 
 ### B. Can your wake-up pressure beat the opponent’s fastest response?
 
-1. Select `Guard Action Type = Reversal - Specified`, with `Random Guard Action % = 100%`.
+1. Select `Guard Action Type = Reversal - Specified`, with `Random Guard Action % = 100%` and `Random Start Wait = 0`.
 2. Configure the desired normal or special. See [4.3](#dummy-normal-response) for a normal example.
 3. Start with `Wakeup = None` to keep conditions fixed.
 4. Knock the dummy down and test your setup.
-5. Once consistent, vary wake-up movement and response probability.
+5. Once consistent, vary wake-up movement and response probability. Spreading the response with `Random Start Wait` or `Random Delay` checks that the setup does not rely on one fixed timing.
 
 Do not judge whether a normal came out as early as possible solely by whether the game displays REVERSAL.
 
@@ -954,7 +978,7 @@ At Turbo 3, some displayed frames contain two Ticks of game processing. You cann
 | Measured in Ticks | Measured in displayed frames |
 |---|---|
 | Tick Data, Action Timeline | Recording/playback and recording `Loop Interval (Frames)` |
-| Action Steps Wait, Loop Wait, Random Start Wait | Show Jump In Trainer |
+| Action Steps Wait, Loop Wait, Random Start Wait, Button Wait, Random Delay | Show Jump In Trainer |
 | PB/GC windows and histories | Show Dashes Interval, Show Dash Time |
 | Air Guard Gaps, Frame Trap Trainer | Dash Attack Cancel / Attack Dash Gap Trainer |
 
@@ -1147,6 +1171,7 @@ When resetting settings for diagnosis, move the JSON aside instead of deleting i
 | Menu will not open | Whether the match has started and `Lua Hotkey 1` is assigned; do not rely on Start to open the menu |
 | Dummy will not block | Check `Random Guard %` as well as `Guard`; an orange row means it is 0%. Set it to 100% |
 | Dummy will not respond | `Random Guard Action %` (an orange row means 0%), whether the required button is None, and whether a trigger occurred |
+| Response or step timing changes every time, or is never the fastest | Whether `Random Start Wait` (one setting shared by Dummy and Recording), the Specified `Random Delay` and each step's `Random Delay` are 0 |
 | Steps will not run | `Guard Action Type`, `Random Guard Action %`, whether you saved, and whether this is the current dummy's list |
 | Patterns will not run | At least one `[x]`, the correct dummy character and `Random Guard Action %` above 0% |
 | Crouch duration is wrong | This step's Wait is the delay before it; Hold and the next Wait determine duration |
@@ -1187,10 +1212,10 @@ For reports, include version, P1/P2 characters, which character is on each side,
 
 > This manual was checked against the target version's source code and release notes. The procedures were not tested in an emulator during preparation of this document. Example drills do not guarantee success with every character or setup.
 
-- Documentation updated and checked for consistency: 2026-10-02. This does not include testing the procedures in an emulator.
+- Documentation updated and checked for consistency: 2026-10-03. This does not include testing the procedures in an emulator.
 - Upstream comparison: [`fc2`, 92980a5](https://github.com/NBeing/VSAV_Training/tree/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6). Earliest-input limitations and existing trainers were checked in [upstream menu.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/menu.lua), and input delivery in [upstream controller.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/controller.lua).
 - The comparison covers source-level features and control methods. An emulator A/B comparison and execution of the infinite-combo definitions were not performed while preparing this manual. The infinite-combo examples reflect use cases supplied by the developer.
-- Fork version: v11.7.21.1; labels checked 2026-10-03. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
+- Fork version: v11.7.21.2; labels checked 2026-10-03. First checked at [351e310 (v11.7.16)](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20).
 - [English README](../README.md) / [English release notes](RELEASE_NOTES.md).
 - Menus/settings: [menu.lua](../scripts/menu.lua), [config.lua](../scripts/config.lua).
 - Controls: [controller.lua](../scripts/controller.lua), [position.lua](../scripts/position.lua).

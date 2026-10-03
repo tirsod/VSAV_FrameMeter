@@ -58,13 +58,15 @@ local function find_row(_name)
 	return nil, nil
 end
 
-local ras, delay, loop
+local ras, delay, loop, brd
 local pob, pobat, loopat
 for _i, e in ipairs(player.entries) do
 	local _ = _i
 	if e.name == "Loop Wait" then loopat = _i end
 	if e.name == "Reversal Action Steps" then ras = e end
-	if e.name == "Guard Action Delay (Ticks)" then delay = e end
+	-- Renamed in v11.7.21.2 (was Guard Action Delay (Ticks)).
+	if e.name == "Button Wait" then delay = e end
+	if e.name == "Random Delay" then brd = e end
 	if e.name == "Loop Wait" then loop = e end
 	if e.name == "Loop Steps" then loopsw = e end
 	if e.name == "Pit of Blame" then pob = e end
@@ -113,6 +115,29 @@ want("Loop Steps at 1 -> disabled", loopsw.is_disabled(), true)
 -- The existing gate is untouched: the Delay row stays off in sequence mode.
 training_settings.guard_action = 0xB
 want("Delay row still disabled at 0xB", delay.is_disabled(), true)
+
+-- RANDOM DELAY ON THE BUTTON (v11.7.21.2): Specified only, Reversal and
+-- Counter. The Button Wait row above it also serves Push Block and PB
+-- Recording; this one does not.
+assert(delay, "Button Wait entry not found")
+assert(brd, "Random Delay entry not found")
+for _, c in ipairs({
+	{ 6, false, false }, { 8, false, false },     -- Specified
+	{ 3, false, true }, { 10, false, true },      -- push block types
+	{ 1, true, true }, { 2, true, true }, { 4, true, true }, { 5, true, true },
+	{ 7, true, true }, { 9, true, true }, { 0xB, true, true }, { 0xC, true, true },
+}) do
+	training_settings.guard_action = c[1]
+	want("Button Wait at " .. c[1], delay.is_disabled(), c[2])
+	want("Random Delay at " .. c[1], brd.is_disabled(), c[3])
+end
+-- Directly under the Button Wait row, so the two read as one setting.
+local _di, _bi
+for _i, e in ipairs(player.entries) do
+	if e == delay then _di = _i end
+	if e == brd then _bi = _i end
+end
+want("Random Delay は Button Wait のすぐ下", _bi, _di and _di + 1)
 
 -- PIT OF BLAME: アナカリスのときだけ出る行。
 --

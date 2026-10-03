@@ -76,7 +76,7 @@
 -- FBNeo/Fightcade not fully restarted after an edit, so the OLD bytecode is
 -- still running - shows up immediately as an old version number in the next
 -- batch of logs, instead of looking like a silent logic bug.
-local SCRIPT_VERSION = "v11.7.21.1"
+local SCRIPT_VERSION = "v11.7.21.2"
 
 local LOG_DIR   = "reversal_logs"
 
@@ -568,6 +568,10 @@ local function write_out()
       -- 5" could not be checked against the traces because nothing in them
       -- said which span was which delay.
       gc_delay              = globals.options and globals.options.gc_delay,
+      -- The Random Delay on the button (v11.7.21.2): the setting, and the
+      -- draw that the press_defer offset already includes.
+      button_random_delay   = globals.options and globals.options.button_random_delay,
+      btn_rd                = guard_action_input and guard_action_input.btn_rd,
       gc_input_delay        = globals.options and globals.options.gc_input_delay,
       guard_action          = globals.options and globals.options.guard_action,
       -- Which push block was asked for. Its absence meant the last batch had

@@ -116,6 +116,10 @@ local default_training_settings = {
   -- each recording playback waits a fresh draw of 0..this before it starts.
   -- 0 is off. Shown on both the Dummy and the Recording tab (randomStartWait.lua).
   random_start_wait = 0,
+  -- Random Delay under Button Wait (Reversal / Counter Specified only), game
+  -- Ticks, 0-60. Every reversal or counter adds a fresh 0..this to the wait
+  -- between the motion and the button. 0 is off (randomStartWait.lua).
+  button_random_delay = 0,
   loop_interval_before_frames = 0,
   loop_interval_after_frames = 0,
   restore_recorded_position = false,

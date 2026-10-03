@@ -6,7 +6,7 @@
 
 本書では **AG（アドバンシングガード）** と表記します。英語UIの **Push Block／PB** は同じ機能を指します。設定を探せるよう、`Show PB Counter` などの実際の項目名は変更せず記載します。
 
-対象：**v11.7.21.1／Fightcade 2 の FBNeo／日本版 `vsavj`（970519 Japan）**。導入手順は Windows 向けです。基本は自分が P1、ダミーが P2 の状態で説明します。
+対象：**v11.7.21.2／Fightcade 2 の FBNeo／日本版 `vsavj`（970519 Japan）**。導入手順は Windows 向けです。基本は自分が P1、ダミーが P2 の状態で説明します。
 
 [初めて使う方は導入から](#02-install) · [設定済みならAG・GCの実践へ](#sasquatch-ag-tutorial) · [対象環境・確認範囲](#verification-scope)
 
@@ -27,7 +27,7 @@
 
 | 機能 | フォーク元 | 本フォーク |
 |---|---|---|
-| 反撃・リバーサル | 指定入力・キャラ別の技発動などを搭載。ただしターボ時の最速入力やコマンド入力の遅れに制約あり | 内部フレームで入力を制御し、起き上がり・ガード後・着地後のタイミング指定を改良 |
+| 反撃・リバーサル | 指定入力・キャラ別の技発動などを搭載。ただしターボ時の最速入力やコマンド入力の遅れに制約あり | 内部フレームで入力を制御し、起き上がり・ガード後・着地後のタイミング指定を改良。開始やボタンを押す時期を毎回ランダムにずらすことも可能 |
 | 技の性能測定 | Frame Dataは表示フレーム単位で、ターボ時に測定値が不安定 | Tick Dataで内部フレーム単位に測定。発生・持続・戻り・有利不利の数え方・考え方を攻略サイトに合わせる |
 | ダミーの動作作成 | 記録の再生と単発の反撃指定 | Recording Wizardで記録を簡略化。Tick単位の動作はAction Stepsで構築し、Action Patternsで保存・選択・共有 |
 | AG練習 | 入力カウンター、成功・失敗集計 | 受付の内部フレーム履歴、同時押し、受付終了後の入力、成立後も含めた入力回数を確認。PB Statsで平均と成功率も確認 |
@@ -257,11 +257,12 @@ LP＝弱P、MP＝中P、HP＝強P、LK＝弱K、MK＝中K、HK＝強Kです。
 | `Random Guard %` | `100%` |
 | `Guard Action Type` | `Reversal - Action Steps` |
 | `Random Guard Action %` | `100%` |
+| `Random Start Wait` | `0`（初期値。最速のまま） |
 | `Loop Steps` | `no`（最初は一回ずつ） |
 
 ![練習用に設定したDummyタブ](images/tut_dummy_setup.png)
 
-この画像は2で動きを作った後に撮ったため、`Reversal Action Steps`は`2 steps`と出ています。作る前は`Empty`です。
+動きを作る前なので、`Reversal Action Steps`は`Empty`です。行が11を超えると右の列に回るため、`Loop Wait`は右上に出ます。
 
 `Random Guard %`はガードする確率、`Random Guard Action %`は反撃を行う確率です。ここでは両方100%にして、同じ条件で練習します。
 
@@ -376,6 +377,8 @@ PB Counter／PB StatsはONのままで構いません。GC Command TraceはPB St
 
 ![Loop Steps : yesとLoop Wait : Auto (Landing)。説明文に2つのAutoの違いが出る](images/tut_loop_landing.png)
 
+`Loop Wait` は `Loop Steps` の次の行です。表示される行が多いときは、右の列の一番上（`Position` の右）に出ます。
+
 メニューを閉じ、もう一度こちらの技をガードさせて最初の反撃を始めます。**LoopをONにしただけでは初回は始まりません。**
 
 Landing待ちは着地に次のダッシュの入力完成を合わせるため、必要な方向入力を着地前から入れます。これを使って、着地から最速でショートダッシュ小Pを繰り返す練習をします。`Auto (After)`は動けるようになってから入力を始めるので、同じタイミングにはなりません。着地予測が得られない場合などの制約は[6章](#06-steps)を参照してください。
@@ -456,6 +459,7 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 
 **選んだガードを0%が止めているときは、オレンジ色で知らせます。** `Guard` が `Stand Block`、`All Guard`、`Push Block (All …)` で `Random Guard %` が `0%` のとき、`Random Guard %` の行がオレンジ色になります。`Guard` か `Random Guard %` にカーソルを合わせると、最下行の右側に `Random Guard % is 0%: the dummy never blocks.` と表示されます。0%を意図して使うこともあるため、値は自動では変えません。
 
+<a id="dummy-guard-action"></a>
 ### 4.2 ガード後・被弾後・起き上がりの行動
 
 `Guard Action Type` を選ぶと、その種類に必要な設定が表示されます。まず **`Random Guard Action % = 100%`** にして動作を確認し、その後25～75%に下げると、反撃するかどうかの読み合いを練習できます。`0%` では実行されません。このとき `Random Guard Action %` の行がオレンジ色になり、`Guard Action Type` かその行にカーソルを合わせると、最下行の右側に `Random Guard Action % is 0%: it never runs.` と表示されます。
@@ -488,17 +492,35 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 
 1. `Guard = All Guard`、`Random Guard % = 100%`。
 2. `Guard Action Type = Reversal - Specified`。
-3. `Random Guard Action % = 100%`。
+3. `Random Guard Action % = 100%`、`Random Start Wait = 0`。
 4. `Reversal/Counter Input Motion = None`。
 5. `Reversal/Counter Button = LP`。
-6. `Reversal/Counter Button Lever = Neutral`、`Guard Action Delay (Ticks) = 0`。
+6. `Reversal/Counter Button Lever = Neutral`、`Button Wait = 0`、`Random Delay = 0`。
 7. 攻撃をガードさせ、硬直後の弱Pに自分の連係が勝てるか試します。
 
-しゃがみ技は対応する下方向を指定します。必殺技なら `Input Motion` とボタンをその技に合わせます。
+しゃがみ技は対応する下方向を指定します。必殺技なら `Input Motion` とボタンをその技に合わせます。ボタンを押す時期を遅らせる・ばらつかせる方法は[4.4](#dummy-button-timing)を参照してください。
 
-**`Guard Action Delay (Ticks)` は、基本的にモーション後のボタンを遅らせる設定です。** たとえばダッシュ＋攻撃では、ダッシュ自体を遅らせる設定ではありません。ダッシュの `Auto` はキャラクターごとの攻撃タイミングを使用します。ガード後に合わせた値が、被弾後にも必ず成立するとは限りません。
+<a id="dummy-button-timing"></a>
+### 4.4 ボタンを押す時期を遅らせる・ばらつかせる
 
-`Button Lever = As Is` はモーションの最後の方向を使い、`Neutral` はボタンを押すときに方向を離します。ダッシュキャンセルで方向を変えると、キャンセルに必要な逆方向を上書きすることがあります。
+`Reversal - Specified` と `Counter Attack - Specified` では、モーションとボタンに加えて、ボタンを押す瞬間を次の3行で決めます。
+
+| 項目 | 内容 |
+|---|---|
+| `Reversal/Counter Button Lever` | ボタンを押す瞬間のレバー。`As Is` はモーションの最後の方向のまま（ダッシュならダッシュ攻撃）、`Neutral` は方向を離す |
+| `Button Wait` | モーションの後、ボタンを押すまでの待ち。単位はTickで、上限は60。`Auto` はダッシュのときだけ選べ、キャラクターごとの攻撃タイミングを使う |
+| `Random Delay` | `Button Wait` の下に字下げして出る行。反撃やカウンタのたびに0から設定値までの乱数を引き直し、`Button Wait` に足す（0〜60、0は使わない） |
+
+モーションは最速のまま出て、ボタンだけが遅れます。たとえばダッシュ＋攻撃では、ダッシュ自体は遅れません。反撃全体の開始を遅らせるのは `Random Start Wait`（[4.2](#dummy-guard-action)）で、両方を同時に使えます。
+
+- ダッシュ攻撃：`Forward Dash`＋`HP`、`Button Wait = Auto`、`Random Delay` を `0-5` にすると、最速のダッシュ攻撃から5 Tick遅いところまで毎回ばらつきます。
+- ジャンプ攻撃：`Up Forward`＋ボタンで、`Button Wait` に押し始めのTick、`Random Delay` に散らす幅を入れると、ジャンプ攻撃を出す高さが毎回変わります。
+
+遅すぎたときにどうなるかはゲームが決めます。必殺技はコマンドが14〜19 Tickしか保持されないため、通常技になります。ダッシュやジャンプが終わった後では、ダッシュ攻撃・ジャンプ攻撃になりません。待っている間も方向は入れたままなので、ジャンプは着地した後にもう一度跳ぶことがあります。
+
+ガード後に合わせた値が、被弾後にも必ず成立するとは限りません。ダッシュキャンセルで `Button Lever` の方向を変えると、キャンセルに必要な逆方向を上書きすることがあります。
+
+`Button Wait` は v11.7.21.1 までの `Guard Action Delay (Ticks)` で、保存した値はそのまま使えます。`Guard Action Type` が `Push Block` か `PB Recording` のときも同じ設定で、押し始めるまでの待ちになります。
 
 <a id="05-recording"></a>
 ## 5. 相手の動きを記録する
@@ -653,7 +675,7 @@ Waitの選択画面では `After / Landing / Rapid / Chain / Cancel / Late Cance
 - `Auto (Landing)`：着地フレーム（内部フレーム）に次の周の1ステップ目が出るよう、必要なコマンドを着地前から先行入力できます。最速着地ダッシュからジャンプ・空中技を繰り返す練習に使います。着地予測などの条件は[6.3](#steps-wait)を参照してください。
 - 数値：最後のステップから、次の周の1ステップ目までのティック数です。
 
-`Random Start Wait` が1以上なら、各周の開始も `Loop Wait` の後に、周ごとに引き直した乱数の分だけ遅れます。
+`Random Start Wait` が1以上なら、各周の開始も `Loop Wait` の後に、周ごとに引き直した乱数の分だけ遅れます。各ステップの `Random Delay` も、周ごとに引き直します。
 
 最初の一周を始めるには反撃のきっかけが必要です。ループ境界では `Loop Wait` が使われ、単純に1ステップ目のWaitを毎回繰り返すわけではありません。
 
@@ -695,6 +717,8 @@ Action Stepsが一つの動作一覧なのに対し、Action Patternsは名前�
 ファイル選択ウィンドウを閉じるまでゲームは止まります。エミュレーターの裏に隠れても自動で手前に戻るので、クリックして操作してください。
 
 インポートは既存一覧への追加で、置き換えません。追加されたパターンは使用チェックがOFFです。内容を確認してから有効にしてください。キャラクター情報が現在のダミーと異なるファイルは拒否されます。
+
+書き出したファイルには、各ステップの `Random Delay` も入ります。v11.7.21 以前の版で取り込むと、この値だけが無視されます。
 
 名前入力・ファイル入出力はWindows向けの実装です。Linux／macOSで同じ操作が使えるとは本書では確認していません。
 
@@ -897,11 +921,11 @@ Avg   PB 4.22  at 5.89-11.50t
 
 ### B. 起き攻めが最速暴れに勝つか
 
-1. `Guard Action Type = Reversal - Specified`、`Random Guard Action % = 100%`。
+1. `Guard Action Type = Reversal - Specified`、`Random Guard Action % = 100%`、`Random Start Wait = 0`。
 2. 相手に使わせたい通常技・必殺技を設定します。通常技の例は[4.3](#dummy-normal-response)を参照。
 3. 最初は `Wakeup = None` で条件を固定します。
 4. ダウンを取り、起き攻めを試します。
-5. 安定したら移動起き上がりや反撃頻度を変えます。
+5. 安定したら移動起き上がりや反撃頻度を変えます。`Random Start Wait` や `Random Delay` で暴れのタイミングを散らすと、決まったタイミングに頼らない起き攻めかを確かめられます。
 
 ゲーム内のREVERSAL表示の有無だけで、通常技の最速入力を判定しないでください。
 
@@ -952,7 +976,7 @@ AGを `Guard` 側で設定することで、`Guard Action Type` を反撃用に�
 | ティックで見るもの | 表示フレームで見るもの |
 |---|---|
 | Tick Data、Action Timeline | 記録・再生、記録の `Loop Interval (Frames)` |
-| Action StepsのWait、Loop Wait、Random Start Wait | Show Jump In Trainer |
+| Action StepsのWait、Loop Wait、Random Start Wait、Button Wait、Random Delay | Show Jump In Trainer |
 | AG／GCの受付と履歴 | Show Dashes Interval、Show Dash Time |
 | Air Guard Gaps、Frame Trap Trainer | Dash Attack Cancel／Attack Dash Gap Trainer |
 
@@ -1145,6 +1169,7 @@ Action Steps側の `Auto (10)` が、この表示では `Dash > 12t` となる�
 | メニューが開かない | 試合開始後か、`Lua Hotkey 1` を割り当てたか。Startボタンはメニュー操作として当てにしない |
 | ダミーがガードしない | `Guard` に加えて `Random Guard %`。行がオレンジ色なら0%なので100%へ |
 | ダミーが反撃しない | `Random Guard Action %`（行がオレンジ色なら0%）、対応ボタンがNoneでないか、反撃のきっかけが発生したか |
+| 反撃やステップのタイミングが毎回ずれる・最速にならない | `Random Start Wait`（DummyとRecordingで共通の設定）、Specifiedの `Random Delay`、各ステップの `Random Delay` が0か |
 | Stepsが動かない | `Guard Action Type`、`Random Guard Action %`、Save済みか、現在のダミーの一覧か |
 | Patternsが動かない | 少なくとも一つ `[x]` があるか、現在のダミー用か、`Random Guard Action %` が0%でないか |
 | しゃがむ時間が意図と違う | 自分のWaitは開始までの待ち。保持はHoldと次のステップのWaitで指定 |
@@ -1185,10 +1210,10 @@ Action Steps側の `Auto (10)` が、この表示では `Dash > 12t` となる�
 
 > 本書は対象版のソースコードとリリースノートを照合して作成しています。本書作成時のエミュレーター上での操作確認は未実施です。特定キャラクター・組み合わせでの成功を保証する練習レシピではありません。
 
-- 文書更新・整合性確認日：2026-10-02（エミュレーター上の操作確認は含みません）。
+- 文書更新・整合性確認日：2026-10-03（エミュレーター上の操作確認は含みません）。
 - 比較対象のフォーク元：[`fc2`、92980a5](https://github.com/NBeing/VSAV_Training/tree/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6)。最速入力の制約と既存トレーナーは[元のmenu.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/menu.lua)、入力列の処理は[元のcontroller.lua](https://github.com/NBeing/VSAV_Training/blob/92980a561a10f81fdaf7c8e8b4e4b956bd1316c6/scripts/controller.lua)と照合。
 - 比較はソースに基づく機能・制御方式の確認。両版の実機比較および上記の永久コンボ定義の実行は本書作成時には未実施。永久コンボの例は開発者から提供された用途説明に基づく。
-- 対象：v11.7.21.1（項目名は2026-10-03に確認）。最初の確認：[351e310（v11.7.16）](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20)。
+- 対象：v11.7.21.2（項目名は2026-10-03に確認）。最初の確認：[351e310（v11.7.16）](https://github.com/vampiresavior001/VSAV_Training/tree/351e31034a3e4eb067e60c4f74f17ec59277ca20)。
 - [README](../README.ja.md)／[日本語リリースノート](RELEASE_NOTES.ja.md)。
 - メニュー・設定：[menu.lua](../scripts/menu.lua)、[config.lua](../scripts/config.lua)。
 - 基本操作：[controller.lua](../scripts/controller.lua)、[position.lua](../scripts/position.lua)。

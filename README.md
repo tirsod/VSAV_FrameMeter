@@ -6,7 +6,7 @@ English | [日本語](README.ja.md)
 
 **A training mode for Fightcade 2 / FBNeo that reproduces opponent actions with internal-frame (Tick) precision, so you can test your offense and practice your defense.** Detailed displays of your inputs and their timing help you see why an attempt succeeded or failed and adjust your timing.
 
-This fork extends [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2). This README covers **v11.7.21.1**.
+This fork extends [VSAV_Training's fc2 branch](https://github.com/NBeing/VSAV_Training/tree/fc2). This README covers **v11.7.21.2**.
 
 **[Download the latest release](https://github.com/vampiresavior001/VSAV_Training/releases/latest)** · [Installation](#windows-installation) · [First PB / GC drill](#first-pb-drill) · [English manual](docs/PLAYER_MANUAL.en.md)
 
@@ -34,6 +34,7 @@ See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions require
 | Goal | How to use the tool |
 |---|---|
 | **Test when your offense works** | Make the dummy respond with a light normal, throw, jump or dash, then test whether your pressure or wake-up setup beats it |
+| **Take away a fixed rhythm** | Make the dummy's timing differ every time: `Random Start Wait` delays when a response starts, and `Random Delay` when a Specified response presses its button or when each Action Steps step comes out |
 | **Reproduce strings and combos precisely** | Define Tick-based actions with Action Steps; save, randomize and share them with Action Patterns. You can even define sequences that complete infinite combos for Bulleta (B.B. Hood) or Bishamon |
 | **Measure setup timing** | Use Action Timeline in Tick Data to measure the time spent setting up wake-up pressure, or how far away you can start a walk-up throw and still perform it within 15 displayed frames (20 Ticks at Turbo 3) |
 | **Practice PB (Push Block)** | Delay input while fitting six valid presses inside the window. Inspect timing, simultaneous presses, inputs after the window closes, averages and success rate |
