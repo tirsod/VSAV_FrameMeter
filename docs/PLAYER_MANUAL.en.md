@@ -180,7 +180,7 @@ Configure P2's game inputs as well as P1's; check these if input behavior is unu
 
 ### 1.3 First check
 
-Start the copied training installation. Before proceeding, make sure no red warning appears at the top of the screen.
+Start the copied training installation. Before proceeding, confirm that `Disabled` is selected under `Video > Runahead`.
 
 1. Choose your character and the dummy, then wait for the match to begin. After P1 is selected, P1's controls can also select P2.
 2. Open the menu with `Lua Hotkey 1`.
@@ -258,7 +258,7 @@ Choose your character for P1 and **Sasquatch** for the P2 dummy. Face each other
 | `Random Guard %` | `100%` |
 | `Guard Action Type` | `Reversal - Action Steps` |
 | `Random Guard Action %` | `100%` |
-| `Random Start Wait` | `0` (the default: fastest) |
+| `Random Start Wait` | `0` (default: no additional random wait) |
 | `Loop Steps` | `no` (start with one response at a time) |
 
 ![The Dummy tab set up for the drill](images/tut_dummy_setup.png)
@@ -391,6 +391,8 @@ You can practice GC against the same repeated offense. Choose PB or GC for each 
 
 To stop looping, open the menu and set `Loop Steps = no`. To disable counter actions too, set `Guard Action Type = None`.
 
+**Once consistent, vary the timing:** Use `Random Start Wait` to vary when the offense starts. To practice against variations in attack timing, set the start wait back to 0 and gradually increase the attack step's `Random Delay`. Change only one at first, and check that the intended attack still comes out. If you imported a pattern, edit that pattern ([Section 7](#07-patterns)).
+
 <a id="tutorial-save"></a>
 ### Step 6: Save it as `Short LP`
 
@@ -470,7 +472,11 @@ Selecting `Guard Action Type` reveals the settings for that type. Start with **`
 
 Here the cursor is on `Guard Action Type`: the `Random Guard Action %` row below it is orange, and the reason is on the right of the bottom line. With the cursor on the orange row itself, the row shows the cursor color instead.
 
-**`Random Start Wait` varies when the response starts.** It is in Ticks, 0–60, and sits right under `Random Guard Action %`. Each time the dummy responds, it draws a number from 0 up to the setting and comes out that many Ticks later; `0` is off, the fastest timing as before. It applies to every Reversal and Counter Attack type (Specified, Character Specific, Recording, Action Steps, Action Patterns) and to each `Loop Steps` pass. Guarding, Push Block, guard cancel and throw tech never wait. A response that waits starts its input once the dummy can act, so with a small value it never comes out sooner than its input takes. The row is hidden for `None`, `Guard Cancel` and `Push Block`, and it is the same setting as `Random Start Wait` on the Recording tab.
+**`Random Start Wait` varies when the response starts.** It is in Ticks, 0–60, directly under `Random Guard Action %`. Each execution draws an integer from 0 up to the setting; the same value can occur consecutively. `0` adds no wait from this setting and preserves the timing set elsewhere. Button Wait and each step's Wait or Random Delay still apply.
+
+It applies to every Reversal and Counter Attack type (Specified, Character Specific, Recording, Action Steps, Action Patterns) and to each `Loop Steps` pass. Guarding, Push Block, guard cancel and throw tech never wait. **A response whose initial draw is above 0 begins its input once the dummy can act.** Even with a small draw, the motion takes time to enter, so the move does not necessarily activate exactly that many Ticks later than it would without the random wait.
+
+The row is hidden for `None`, `Guard Cancel` and `Push Block`. It shares its setting with `Random Start Wait` on the Recording tab.
 
 | Type | Purpose |
 |---|---|
@@ -513,16 +519,26 @@ With `Reversal - Specified` and `Counter Attack - Specified`, three rows decide 
 | `Button Wait` | The wait between the motion and the button press, in Ticks, up to 60. `Auto` is offered only for a dash and uses character-specific attack timing |
 | `Random Delay` | The indented row under `Button Wait`. Every reversal or counter draws a fresh number from 0 up to the setting and adds it to `Button Wait` (0–60; 0 is off) |
 
-The motion still comes out at the earliest moment and only the button waits: for a dash into an attack, the dash itself is not delayed. `Random Start Wait` ([4.2](#dummy-guard-action)) delays the whole response instead, and the two can be combined.
+This Random Delay only delays the button press: for a dash into an attack, the dash itself is not delayed. `Random Start Wait` ([4.2](#dummy-guard-action)) delays the whole response instead, and the two can be combined.
 
-- Dash attack: `Forward Dash` + `HP` with `Button Wait = Auto` and `Random Delay` at `0-5` spreads it from the fastest dash attack to 5 Ticks later each time.
-- Jump attack: with `Up Forward` + a button, put the Tick to start pressing in `Button Wait` and the spread in `Random Delay`, and the jump attack comes out at a different height each time.
+- Dash attack: `Forward Dash` + `HP` with `Button Wait = Auto` and `Random Delay` at `0-5` adds a newly drawn 0–5 Ticks to the Auto timing.
+- Jump attack: with `Up Forward` + a button, put the Tick to start pressing in `Button Wait` and the spread in `Random Delay`, and you can vary the height at which the jump attack comes out.
 
 What happens when the press comes too late is up to the game. A special's command is kept for only 14–19 Ticks, so a normal comes out instead. Once a dash or jump is over, there is no dash attack or jump attack. The direction stays held while the button waits, so a jump may jump again after landing.
 
 A timing measured after blocking may not also work after being hit. Changing the `Button Lever` direction on a dash cancel can overwrite the reverse direction needed for the cancel.
 
 `Button Wait` was `Guard Action Delay (Ticks)` up to v11.7.21.1, and saved values carry over. With `Guard Action Type` set to `Push Block` or `PB Recording`, the same setting is the wait before the presses start.
+
+**Choose which part of the timing to vary.**
+
+| Practice goal | Setting |
+|---|---|
+| Make the start of the offense less predictable | `Random Start Wait` |
+| Vary when an attack comes out during the same dash or jump | Specified's `Button Wait` and the `Random Delay` beneath it |
+| Delay one particular attack within a sequence | That Action Step's `Random Delay` ([6.2](#steps-fields)) |
+
+Change one setting at a time at first, and check that the intended attack still comes out.
 
 <a id="05-recording"></a>
 ## 5. Record opponent actions
@@ -603,6 +619,7 @@ To reliably trigger from a block, also set `Guard = All Guard` and `Random Guard
 
 Edits do not take effect until `Save`. `Back Without Saving` discards changes. If you close the menu while editing, check whether you are saving or discarding. Step lists are stored per dummy character.
 
+<a id="steps-fields"></a>
 ### 6.2 Fields
 
 | Field | Meaning |
@@ -618,7 +635,9 @@ Edits do not take effect until `Save`. `Back Without Saving` discards changes. I
 
 `Clear All Steps` returns the list to one empty step and asks for confirmation.
 
-Use `Random Delay` to reproduce the wobble in a human's timing. For example, `0-5` on top of the fastest dash attack `Auto (11)` spreads it from the fastest to 5 Ticks later each time. It counts from the moment the Wait's condition is met, whatever the Wait is (a number, After, Auto, Landing, Chain/Cancel). On Chain or Cancel a large value can miss the window, and the step then comes out on its own. Step one's value is drawn together with `Random Start Wait`, so a turn that draws above 0 starts its input once the dummy can act. The time actually waited is included in the Wait shown by `Show Step Wait Ticks`.
+Use `Random Delay` to simulate variation in human input timing. For an attack after a dash, setting it to `0-5` adds a newly drawn 0–5 Ticks to the displayed `Auto (N)` timing. N depends on the character and action sequence. The same random value can occur consecutively.
+
+The extra wait is counted from the moment the Wait condition is met, whether it is a number, After, Auto, Landing or Chain/Cancel. On Chain or Cancel, a large value can miss the window, and the step then comes out on its own. For step one, its draw is added to the `Random Start Wait` draw. If the sum is above 0, input begins once the dummy can act, so even a small value is subject to the time needed to enter the motion ([4.2](#dummy-guard-action)). The actual wait is included in the Wait value shown by `Show Step Wait Ticks`.
 
 <a id="steps-wait"></a>
 ### 6.3 Read Wait settings
@@ -1156,7 +1175,7 @@ To update:
 2. Close FBNeo.
 3. Copy `scripts/training_settings.json` and the entire `scripts/macro` folder elsewhere.
 4. Install the update in the separate training copy. The downloaded files may include recordings, so take care not to overwrite your own `.mis` files.
-5. Restart from the copied batch file and confirm that no red warning appears at the top of the screen and that your settings and recordings remain.
+5. Restart from the copied batch file and confirm that `Disabled` is selected under `Video > Runahead` and that your settings and recordings remain.
 
 When resetting settings for diagnosis, move the JSON aside instead of deleting it. It contains your Steps and Patterns too. To share patterns, use Export so you can send the patterns without sharing your entire settings file.
 
@@ -1167,7 +1186,7 @@ When resetting settings for diagnosis, move the JSON aside instead of deleting i
 |---|---|
 | Does not start | Whether FBNeo alone runs `vsavj`; batch/EXE placement; complete `scripts` folder; spaces or Japanese characters in the path; whether antivirus software is blocking `fcadefbneo.exe` |
 | `gd.dll` error | Check that the entire FBNeo folder was copied. If the error persists, report the full message and the action that triggered it, such as launching the game or loading the script |
-| Dummy actions or readouts behave incorrectly | Whether you launched the separate training copy, and whether the red Runahead warning appears at the top of the screen. If it does, select `Video > Runahead > Disabled` and restart |
+| Dummy actions or readouts behave incorrectly | Whether you launched the separate training copy and selected `Video > Runahead > Disabled`. The absence of a warning does not confirm that Runahead is disabled. If a red warning appears, recheck the setting and installation, then restart |
 | Menu will not open | Whether the match has started and `Lua Hotkey 1` is assigned; do not rely on Start to open the menu |
 | Dummy will not block | Check `Random Guard %` as well as `Guard`; an orange row means it is 0%. Set it to 100% |
 | Dummy will not respond | `Random Guard Action %` (an orange row means 0%), whether the required button is None, and whether a trigger occurred |

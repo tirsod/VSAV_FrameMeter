@@ -34,7 +34,7 @@ See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions require
 | Goal | How to use the tool |
 |---|---|
 | **Test when your offense works** | Make the dummy respond with a light normal, throw, jump or dash, then test whether your pressure or wake-up setup beats it |
-| **Take away a fixed rhythm** | Make the dummy's timing differ every time: `Random Start Wait` delays when a response starts, and `Random Delay` when a Specified response presses its button or when each Action Steps step comes out |
+| **Take away a fixed rhythm** | Randomize the timing of each execution: `Random Start Wait` delays when a response starts, and `Random Delay` when a Specified response presses its button or when each Action Steps step comes out |
 | **Reproduce strings and combos precisely** | Define Tick-based actions with Action Steps; save, randomize and share them with Action Patterns. You can even define sequences that complete infinite combos for Bulleta (B.B. Hood) or Bishamon |
 | **Measure setup timing** | Use Action Timeline in Tick Data to measure the time spent setting up wake-up pressure, or how far away you can start a walk-up throw and still perform it within 15 displayed frames (20 Ticks at Turbo 3) |
 | **Practice PB (Push Block)** | Delay input while fitting six valid presses inside the window. Inspect timing, simultaneous presses, inputs after the window closes, averages and success rate |
@@ -67,7 +67,7 @@ The target game is **Vampire Savior - the lord of vampire (970519 Japan / `vsavj
 2. Copy Fightcade's entire `emulator/fbneo` folder to another location, for example `C:/VSAV_Training/fbneo`.
 3. Download and extract the [latest release zip](https://github.com/vampiresavior001/VSAV_Training/releases/latest). Put `run_vsav_training.bat` and the entire `scripts` folder in the **copied fbneo folder**, with the batch file next to `fcadefbneo.exe`.
 4. Launch the copied batch file and select **`Video > Runahead > Disabled`** in FBNeo itself. Copying the folder also copies settings; it does not disable Runahead by itself.
-5. Fully close FBNeo and relaunch through the same batch file. Start a match: if no red warning (`RUN-AHEAD DETECTED`) appears at the top of the screen, the setting is correct.
+5. Fully close FBNeo and relaunch through the same batch file. Confirm that `Disabled` is selected under `Video > Runahead`. If `RUN-AHEAD DETECTED` appears during a match, recheck the setting and which FBNeo installation you launched.
 6. Use `Input > Map Game Inputs` to configure game controls and the functions below. Configure P2 game inputs too.
 
 To play in full screen, check `Video > Blitter options > Windowed Fullscreen` first. The older full-screen mode cannot show the windows used to name, export and import patterns.
@@ -139,7 +139,7 @@ Save your edits before closing FBNeo, then back up:
 | Settings, Action Steps and Action Patterns | `scripts/training_settings.json` |
 | Recordings | Entire `scripts/macro` folder |
 
-Update the separate training installation. The downloaded files may include recordings, so take care not to overwrite your own. Fully restart FBNeo afterward and make sure no red warning appears at the top of the screen.
+Update the separate training installation. The downloaded files may include recordings, so take care not to overwrite your own. Fully restart FBNeo afterward and confirm that `Disabled` is selected under `Video > Runahead`.
 
 ## Release history and reports
 
@@ -147,7 +147,7 @@ Update the separate training installation. The downloaded files may include reco
 - [日本語リリースノート](docs/RELEASE_NOTES.ja.md)
 - [This fork's Issues](https://github.com/vampiresavior001/VSAV_Training/issues)
 
-When reporting a problem, include the version, P1/P2 characters, which character is on each side, screenshots of your settings and steps to reproduce the problem. Also check whether the red Runahead warning appears at the top of the screen.
+When reporting a problem, include the version, P1/P2 characters, which character is on each side, screenshots of your settings and steps to reproduce the problem. Confirm that `Disabled` is selected under `Video > Runahead`, and mention any red Runahead warning in your report.
 
 ## Original project and credits
 

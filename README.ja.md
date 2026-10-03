@@ -34,7 +34,7 @@ Tickはゲームの内部フレームです。本フォークは、この内部�
 | 目的 | 使い方 |
 |---|---|
 | **攻めが通る条件を調べる** | ダミーに小技・投げ・ジャンプ・ダッシュで対応させ、連係や起き攻めがそれらに勝つか検証する |
-| **決まったリズムをなくす** | ダミーのタイミングを毎回ずらす。`Random Start Wait` で反撃の開始を、`Random Delay` でSpecifiedのボタンを押す時期やAction Stepsの各ステップを遅らせる |
+| **決まったリズムをなくす** | 実行ごとに待ち時間を抽選する。`Random Start Wait` で反撃の開始を、`Random Delay` でSpecifiedのボタンを押す時期やAction Stepsの各ステップを遅らせる |
 | **連係やコンボを正確に再現する** | Action StepsでTick単位の動きを定義し、Action Patternsで保存・ランダム実行・共有する。バレッタやビシャモンの永久コンボを完遂するような定義も可能 |
 | **セットプレイの時間を調べる** | Tick DataのAction Timelineで、起き攻めのフレーム消費や、15表示フレーム（ターボ3では20 Tick）以内に歩き投げを仕掛けられる開始距離を検証する |
 | **AG（アドバンシングガード）を練習する** | なるべく遅らせて受付内に6回の有効入力を収める練習。入力タイミング・同時押し・受付終了後の入力と、平均・成功率を確認する |
@@ -67,7 +67,7 @@ Tickはゲームの内部フレームです。本フォークは、この内部�
 2. Fightcadeの`emulator/fbneo`フォルダー全体を、別の場所へコピーします。例：`C:/VSAV_Training/fbneo`。
 3. [最新版のzip](https://github.com/vampiresavior001/VSAV_Training/releases/latest)をダウンロードして展開し、`run_vsav_training.bat`と`scripts`フォルダー全体を、**複製先のfbneoフォルダー**へ配置します。バッチファイルは`fcadefbneo.exe`と同じ階層に置きます。
 4. 複製先の`run_vsav_training.bat`を起動し、FBNeo本体の **`Video > Runahead > Disabled`** を選びます。元の設定もコピーされるため、複製するだけでは無効になりません。
-5. FBNeoを完全終了して同じバッチから再起動します。試合を始めて、画面の上に赤い警告（`RUN-AHEAD DETECTED`）が出なければ設定できています。
+5. FBNeoを完全終了して同じバッチから再起動します。`Video > Runahead`で`Disabled`が選ばれていることを確認します。試合中に`RUN-AHEAD DETECTED`の警告が出たら、設定と起動先を再確認してください。
 6. `Input > Map Game Inputs`でゲーム操作と下表の機能を割り当てます。P2側のゲーム入力も設定してください。
 
 全画面で遊ぶときは、先に`Video > Blitter options > Windowed Fullscreen`にチェックを入れてください。古い形式の全画面では、パターンの名前入力やExport・Importのウィンドウを表示できません。
@@ -138,7 +138,7 @@ FBNeoを終了する前に編集内容を保存し、次のファイルをバッ
 | 設定・Action Steps・Action Patterns | `scripts/training_settings.json` |
 | 記録 | `scripts/macro`フォルダー全体 |
 
-更新はトレーニング専用の複製先へ行います。配布物に記録ファイルが含まれる場合があるため、自分の記録を不用意に上書きしないでください。更新後はFBNeoを完全に再起動し、画面の上に赤い警告が出ないことを確認します。
+更新はトレーニング専用の複製先へ行います。配布物に記録ファイルが含まれる場合があるため、自分の記録を不用意に上書きしないでください。更新後はFBNeoを完全に再起動し、`Video > Runahead`で`Disabled`が選ばれていることを確認します。
 
 ## 変更履歴・不具合報告
 
@@ -146,7 +146,7 @@ FBNeoを終了する前に編集内容を保存し、次のファイルをバッ
 - [Release notes (English)](docs/RELEASE_NOTES.md)
 - [このフォークのIssues](https://github.com/vampiresavior001/VSAV_Training/issues)
 
-不具合を報告する際は、バージョン、P1／P2キャラクター、左右配置、設定画面、再現手順を添えてください。画面の上に赤いRunaheadの警告が出ていないかも確認してください。
+不具合を報告する際は、バージョン、P1／P2キャラクター、左右配置、設定画面、再現手順を添えてください。`Video > Runahead`で`Disabled`を確認し、赤いRunaheadの警告が出た場合はその旨も添えてください。
 
 ## フォーク元・クレジット
 

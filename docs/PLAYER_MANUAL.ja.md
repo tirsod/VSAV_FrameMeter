@@ -180,7 +180,7 @@ P1だけでなくP2側のゲーム入力も設定してください。入力が�
 
 ### 1.3 最初の動作確認
 
-トレーニング専用の複製先から起動します。画面の上に赤い警告が出ていないことを確認してから進めます。
+トレーニング専用の複製先から起動します。`Video > Runahead`で`Disabled`が選ばれていることを確認してから進めます。
 
 1. 自分とダミーのキャラクターを選び、試合開始まで待ちます。キャラクター選択ではP1決定後、P1側の操作でP2も選べるようになります。
 2. `Lua Hotkey 1` でメニューを開きます。
@@ -257,7 +257,7 @@ LP＝弱P、MP＝中P、HP＝強P、LK＝弱K、MK＝中K、HK＝強Kです。
 | `Random Guard %` | `100%` |
 | `Guard Action Type` | `Reversal - Action Steps` |
 | `Random Guard Action %` | `100%` |
-| `Random Start Wait` | `0`（初期値。最速のまま） |
+| `Random Start Wait` | `0`（初期値。ランダムな追加待ちなし） |
 | `Loop Steps` | `no`（最初は一回ずつ） |
 
 ![練習用に設定したDummyタブ](images/tut_dummy_setup.png)
@@ -389,6 +389,8 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 
 止めるときはメニューを開き、`Loop Steps = no`にします。反撃自体も止めたい場合は`Guard Action Type = None`にします。
 
+**慣れたらタイミングをばらつかせる：** 固定のタイミングで安定したら、`Random Start Wait` で始動をばらつかせます。攻撃を出す時期への対応を練習するなら、始動の設定を0に戻し、攻撃ステップの `Random Delay` を少しずつ増やします。まず一方だけを変え、狙った攻撃が出ることを確認してください。取り込んだパターンを使っている場合は、そのパターンを編集します（[7章](#07-patterns)）。
+
 <a id="tutorial-save"></a>
 ### ステップ6：`Short LP`として保存する
 
@@ -468,7 +470,11 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 
 この画像ではカーソルが `Guard Action Type` にあり、その下の `Random Guard Action %` の行がオレンジ、理由が最下行の右側に出ています。オレンジの行そのものにカーソルを合わせると、その行はカーソルの色になります。
 
-**`Random Start Wait` で、反撃の開始を毎回ずらせます。** 単位はTickで0〜60、`Random Guard Action %` のすぐ下にあります。反撃のたびに0からその値までの乱数を引き、その分だけ遅れて出ます。`0` は使わない設定で、従来どおり最速です。対象はReversalとCounter Attackのすべての種類（Specified、Character Specific、Recording、Action Steps、Action Patterns）と、`Loop Steps` の各周です。ガード、AG（Push Block）、GC、投げ抜けは遅らせません。1以上を引いた反撃は、ダミーが動けるようになってから入力を始めるため、値が小さいときは入力にかかる分より早くは出ません。`Guard Action Type` が `None`、`Guard Cancel`、`Push Block` のときは表示されません。Recordingタブの `Random Start Wait` と同じ設定です。
+**`Random Start Wait` で、反撃の開始タイミングをばらつかせられます。** 単位はTickで0〜60、`Random Guard Action %` のすぐ下にあります。実行ごとに0から設定値までの整数を抽選します。同じ値が続くこともあります。`0` はこの設定による追加待ちなしで、元の設定どおりのタイミングです。Button Waitや各ステップのWait・Random Delayなどによる待ちは残ります。
+
+対象はReversalとCounter Attackのすべての種類（Specified、Character Specific、Recording、Action Steps、Action Patterns）と、`Loop Steps` の各周です。ガード、AG（Push Block）、GC、投げ抜けは遅らせません。**始動時に1以上を引いた反撃は、行動可能になってから入力を始めます。** 小さい抽選値でもコマンド入力に必要な時間より早くは出せないため、元の発動時点から抽選値だけ遅れるとは限りません。
+
+`Guard Action Type` が `None`、`Guard Cancel`、`Push Block` のときは表示されません。Recordingタブの `Random Start Wait` と同じ設定です。
 
 | 種類 | 用途 |
 |---|---|
@@ -511,16 +517,26 @@ GCも同じ反復で練習できます。一回の試行ではAGかGCのどち�
 | `Button Wait` | モーションの後、ボタンを押すまでの待ち。単位はTickで、上限は60。`Auto` はダッシュのときだけ選べ、キャラクターごとの攻撃タイミングを使う |
 | `Random Delay` | `Button Wait` の下に字下げして出る行。反撃やカウンタのたびに0から設定値までの乱数を引き直し、`Button Wait` に足す（0〜60、0は使わない） |
 
-モーションは最速のまま出て、ボタンだけが遅れます。たとえばダッシュ＋攻撃では、ダッシュ自体は遅れません。反撃全体の開始を遅らせるのは `Random Start Wait`（[4.2](#dummy-guard-action)）で、両方を同時に使えます。
+このRandom Delayで遅れるのはボタンだけです。たとえばダッシュ＋攻撃では、ダッシュ自体は遅れません。反撃全体の開始を遅らせるのは `Random Start Wait`（[4.2](#dummy-guard-action)）で、両方を同時に使えます。
 
-- ダッシュ攻撃：`Forward Dash`＋`HP`、`Button Wait = Auto`、`Random Delay` を `0-5` にすると、最速のダッシュ攻撃から5 Tick遅いところまで毎回ばらつきます。
-- ジャンプ攻撃：`Up Forward`＋ボタンで、`Button Wait` に押し始めのTick、`Random Delay` に散らす幅を入れると、ジャンプ攻撃を出す高さが毎回変わります。
+- ダッシュ攻撃：`Forward Dash`＋`HP`、`Button Wait = Auto`、`Random Delay` を `0-5` にすると、Autoのタイミングに0〜5 Tickを抽選して加えます。
+- ジャンプ攻撃：`Up Forward`＋ボタンで、`Button Wait` に押し始めのTick、`Random Delay` に散らす幅を入れると、ジャンプ攻撃を出す高さをばらつかせられます。
 
 遅すぎたときにどうなるかはゲームが決めます。必殺技はコマンドが14〜19 Tickしか保持されないため、通常技になります。ダッシュやジャンプが終わった後では、ダッシュ攻撃・ジャンプ攻撃になりません。待っている間も方向は入れたままなので、ジャンプは着地した後にもう一度跳ぶことがあります。
 
 ガード後に合わせた値が、被弾後にも必ず成立するとは限りません。ダッシュキャンセルで `Button Lever` の方向を変えると、キャンセルに必要な逆方向を上書きすることがあります。
 
 `Button Wait` は v11.7.21.1 までの `Guard Action Delay (Ticks)` で、保存した値はそのまま使えます。`Guard Action Type` が `Push Block` か `PB Recording` のときも同じ設定で、押し始めるまでの待ちになります。
+
+**どのタイミングを変えるかで選びます。**
+
+| 練習したいこと | 使う設定 |
+|---|---|
+| 攻めが始まるタイミングを読ませない | `Random Start Wait` |
+| 同じダッシュ・ジャンプから、攻撃を出す時期を変える | Specifiedの `Button Wait`＋その下の `Random Delay` |
+| 連係途中の特定の攻撃だけを遅らせる | そのAction Stepの `Random Delay`（[6.2](#steps-fields)） |
+
+最初は一つの設定だけを変え、狙った攻撃が出ることを確認します。
 
 <a id="05-recording"></a>
 ## 5. 相手の動きを記録する
@@ -601,6 +617,7 @@ Action Stepsは「いつ」「何をするか」を一つずつ並べ、ダミ�
 
 編集内容は `Save` するまで反映されません。`Back Without Saving` は変更を捨てます。編集途中でメニューを閉じる場合も、保存するかどうかを確認してください。ステップ一覧はダミーのキャラクター別に保持されます。
 
+<a id="steps-fields"></a>
 ### 6.2 各項目の意味
 
 | 項目 | 意味 |
@@ -616,7 +633,9 @@ Action Stepsは「いつ」「何をするか」を一つずつ並べ、ダミ�
 
 `Clear All Steps` は一覧を空の1ステップへ戻す操作です。確認が出ます。
 
-`Random Delay` は、人間の入力のぶれを再現するときに使います。たとえば最速のダッシュ攻撃 `Auto (11)` に `0-5` を足すと、最速から5 Tick遅いところまで毎回ばらつきます。Wait の種類（数値、After、Auto、Landing、Chain／Cancel 系）を問わず、条件がそろった時点から数えます。Chain や Cancel では値を大きくすると受付を外れ、単発の技として出ます。1ステップ目の値は `Random Start Wait` と合わせて引くため、0より大きく引いた回はダミーが動けるようになってから入力します。実際に待った量は `Show Step Wait Ticks` の Wait に含まれて表示されます。
+`Random Delay` は、人間の入力タイミングのばらつきを再現するときに使います。たとえばダッシュ後の攻撃で、画面に表示された `Auto (N)` に `0-5` を足すと、そのタイミングに0〜5 Tickを抽選して加えます。Nはキャラクターや動作の組み合わせによって変わります。同じ抽選値が続くこともあります。
+
+Wait の種類（数値、After、Auto、Landing、Chain／Cancel 系）を問わず、条件がそろった時点から数えます。Chain や Cancel では値を大きくすると受付を外れ、単発の技として出ます。1ステップ目は、そのステップの抽選値と `Random Start Wait` の抽選値を合計します。合計が1以上なら行動可能になってから入力するため、小さい値でも入力に必要な時間の制約を受けます（[4.2](#dummy-guard-action)）。実際に待った量は `Show Step Wait Ticks` の Wait に含まれて表示されます。
 
 <a id="steps-wait"></a>
 ### 6.3 Waitの読み方
@@ -1154,7 +1173,7 @@ Action Steps側の `Auto (10)` が、この表示では `Dash > 12t` となる�
 2. FBNeoを終了します。
 3. `scripts/training_settings.json` と `scripts/macro` 全体を別の場所へコピーします。
 4. 新版のファイルをトレーニング専用の複製先へ配置します。配布物に記録ファイルが含まれる場合があるため、自分の `.mis` を不用意に上書きしないでください。
-5. 複製先のバッチからFBNeoを起動し直し、画面の上に赤い警告が出ないこと、設定と記録が残っていることを確認します。
+5. 複製先のバッチからFBNeoを起動し直し、`Video > Runahead`で`Disabled`が選ばれていること、設定と記録が残っていることを確認します。
 
 設定を初期化して切り分けたいときも、JSONを削除せず退避してから行ってください。このファイルには自分で作ったSteps・Patternsも入っています。共有用途では個人設定ファイル全体を配るより、パターンのExportを使う方が範囲を限定できます。
 
@@ -1165,7 +1184,7 @@ Action Steps側の `Auto (10)` が、この表示では `Dash > 12t` となる�
 |---|---|
 | 起動しない | FBNeo単体で `vsavj` が動くか、バッチとEXEの位置、`scripts` 全体、パスの空白・日本語、ウイルス対策ソフトが `fcadefbneo.exe` を止めていないか |
 | `gd.dll` のエラー | FBNeoフォルダー全体をコピーできているか確認。解消しなければ、エラー全文と発生した操作（ゲーム起動時／スクリプト読み込み時など）を添えて報告 |
-| ダミー操作や表示の挙動がおかしい | トレーニング専用の複製先から起動したか、画面の上に赤いRunaheadの警告が出ていないかを最初に確認。出ていれば`Video > Runahead > Disabled`にして起動し直す |
+| ダミー操作や表示の挙動がおかしい | トレーニング専用の複製先から起動したか、`Video > Runahead`が`Disabled`かを確認。警告が出ないだけでは無効とは確認できない。赤い警告が出たら設定と起動先を再確認し、起動し直す |
 | メニューが開かない | 試合開始後か、`Lua Hotkey 1` を割り当てたか。Startボタンはメニュー操作として当てにしない |
 | ダミーがガードしない | `Guard` に加えて `Random Guard %`。行がオレンジ色なら0%なので100%へ |
 | ダミーが反撃しない | `Random Guard Action %`（行がオレンジ色なら0%）、対応ボタンがNoneでないか、反撃のきっかけが発生したか |
