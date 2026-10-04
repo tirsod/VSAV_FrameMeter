@@ -8,7 +8,7 @@
 
 ### Links:
 
-|| 📦 [Get scripts.zip](https://github.com/tirsod/VSAV_FrameMeter/releases/download/v0.3/scripts.zip) `Trainer11.7.1 + Meter0.3`
+|| 📦 [Get scripts.zip](https://github.com/tirsod/VSAV_FrameMeter/releases/download/v0.4/scripts.zip) `Trainer11.7.21.2 + Meter0.4`
  
 || 🗃️ [See releases](https://github.com/tirsod/VSAV_FrameMeter/releases)
 
