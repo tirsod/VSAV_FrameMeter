@@ -732,16 +732,18 @@ function draw_input_history_entry(_entry, _x, _y, color, step)
 						_entry.buttons[5] == false and
 						_entry.buttons[6] == false 
 
-  -- skip_release_displays: Can be toggled with "Hide Button Release Icons".
+  -- tirsod: [skip_release_displays] Can be toggled with "Hide Button Release Icons".
   -- Hackily invalidates all "released" input events, resulting in the input history showing
   -- only the Pressed, Held, and No_buttons states.
   -- Forcing the [no_buttons = false] state or 
 
-  if globals.options.skip_release_displays > 1 then
-		for i = 1, 6 do
-			_entry.released[i] = false
-		end
-  end
+  --[[
+    if globals.options.skip_release_displays > 1 then
+      for i = 1, 6 do
+        _entry.released[i] = false
+      end
+    end
+  ]]
 
 	-- A release frame has no buttons held, but still needs the button area
 	-- drawn so the hollow marker is visible - otherwise the shortcuts below

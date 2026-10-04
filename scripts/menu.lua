@@ -1809,51 +1809,6 @@ return {
         }
     },
     {
-      name = "Display",
-      entries = {
-        -- checkbox_menu_item("Use Custom Palettes *at your own risk*", training_settings, "enable_custom_palette", "Shows Health and Meter values"),
-        -- integer_menu_item("P1 Char Palette", training_settings, "p1_char_palette", 0, 255, false, 0,0,"Scroll through these on char select to see if you like one\nMany do not look good"),
-        -- integer_menu_item("P2 Char Palette", training_settings, "p2_char_palette", 0, 255, false, 0,0,"Scroll through these on char select to see if you like one\nMany do not look good"),
-
-        checkbox_menu_item("HUD (Life / Meter)", training_settings, "display_hud", true, "Red and white life for both players at the top of the screen, the meter, and\nthe character specific readouts - curse, Dark Force timer, tech hit.\nThe trainers and the input bar are not part of this; they have their own rows."),
-        checkbox_menu_item("Movelist", training_settings, "display_movelist", false,"Shows a character specific move list"),
-        checkbox_menu_item("Display Hitboxes", training_settings, "display_hitbox_default",1, "Display hitboxes for P1 and P2"),
-        child_of("display_hitbox_default", checkbox_menu_item("Display Pushbox X Center", training_settings, "display_pushbox_axis", false, "Display the x center of the pushbox")),
-        list_menu_item("Show Pushbox Distance", training_settings, "show_x_distance", { "Off", "X Only", "X,Y,Triangle"},1,"Gives a numerical / visual representation of the distances between characters"),
-        checkbox_menu_item("Show Damage Calc (on P2)", training_settings, "show_damage_calc", false, "This shows a damage calculation.\nDamage calculations are recalculated on hit"),
-        checkbox_menu_item("Recording GUI", training_settings, "display_recording_gui", false, "Shows the current recording staet"),
-        checkbox_menu_item("Show Scrolling Input", training_settings, "show_scrolling_input",1, "The input bar along the bottom of the screen: YOUR inputs, newest at the right.\nShow P2 Inputs is the same thing for the dummy, down the right edge.\nThe three rows under this one all draw into this bar and come off with it."),
-        child_of("show_scrolling_input", integer_menu_item("Scrolling Input History",training_settings, "inp_history_scroll", 0, 80, false, 0,0,"How far back into the Scrolling Input bar above to look. 0 is the newest input.\nRaising it slides the bar along so inputs that have gone off the left come\nback into view. It does not pause anything - new inputs still arrive.")),
-        -- child_of("show_scrolling_input", checkbox_menu_item("Hide Negative Edge Inputs", training_settings, "skip_nedge_displays", false, "Reduce clutter in the input history by idle input frames.")),
-        -- Negative Edge display consolidated into skip_release_displays
-        child_of("show_scrolling_input", list_menu_item("Negative Edge", training_settings, "skip_release_displays", { "Show Button Release", "Don't Show Release", "Don't Show Negative Inputs"},1,"Reduce clutter in the input history by hiding button release icons,\nor choose to hide idle frames altogether.")),
-        child_of("show_scrolling_input", checkbox_menu_item("Show GC Trainer", training_settings, "show_gc_trainer", true,"This option shows the GC window in the input viewer.\nThe Green GC shows when the window begins,\nand Red when it is performed or ends.")),
-        checkbox_menu_item("Show P2 Inputs", training_settings, "display_p2_inputs", 1, "The dummy's inputs, as icons down the right edge of the screen.\nShow Scrolling Input above is the same thing for YOUR side, along the bottom.\nThis used to come off only with the whole HUD."),
-      }
-    },
-    {
-      name = "Trainer",
-      entries = {
-        checkbox_menu_item("Tick Data", training_settings, "mo_enable_frame_data", false, "Startup, active, recovery, advantage, total, hitstun, hitfreeze - in Ticks.\nThe first three come from the ATTACK HITBOX, the box the hitbox display draws,\nso they do not move with distance. They add up to Total and exclude the\nattacker's own hitfreeze; * means the attacker was not frozen."),
-        child_of("mo_enable_frame_data",
-          checkbox_menu_item("  Show Action Timeline", training_settings, "display_action_timeline", false, "ACTION TIMELINE (third row, green): one action on a clock, each entry stamped\nwith its Tick. LP..HK and Action Steps names. 1t PreJump > 4t Air > 10t MP.")
-      ),
-        checkbox_menu_item("Show Step Wait Ticks", training_settings, "display_step_wait_ticks", false,"Shows what each Action Step actually waited, in game Ticks.\nThe Wait row names a mode - Auto (After), Auto (Chain) - without saying how\nlong it came to. This measures it: Step.2 Wait:13 is step two connecting 13 Ticks\nafter step one. Act is the Ticks that step spends entering its own inputs.\nLoop Wait is the gap a loop restart waited, which is not step one own wait.\nMeasured only - what the row is set to is on the row."),
-        checkbox_menu_item("Show PB Counter", training_settings, "display_pb_counter",1, "How many push block presses the game has counted in its window ($170), plus any\nyou make after it grants - the game stops counting there, so a lucky three\nwould otherwise read three however hard you mash.\nGreen once the push block is granted. The count carries across the hits of a\nblocked string, the same as the game's own.\nWhen the dummy is set to Push Block its count is shown beside yours as P2."),
-        checkbox_menu_item("Show PB Stats", training_settings, "display_pb_stats", false,"Displays your succeeded, failed and total attempts at pushblocking.\n Turning this feature off and on will reset the data to 0"),
-        checkbox_menu_item("Show GC Frequency Counter", training_settings, "display_gc_freq_counter", 0, "Counts what Guard Action Frequency actually did.\nopp = chances the dummy had, roll+ = how many the roll allowed,\narm = guard actions started, seq = later sequence steps sent.\nGreen when roll+/opp matches the setting. seq above opp means\nleftover steps from an earlier chance are still coming out."),
-        checkbox_menu_item("Show Frame Trap Trainer", training_settings, "display_frame_trap_trainer", false,"Shows the gap between p2 recovering from hit or block stun\nand the next one, in game Ticks."),
-        checkbox_menu_item("Show Jump In Trainer", training_settings, "display_jump_in_trainer", false,"Displays the gap between p2 getting hit and your character landing,\nin DISPLAYED frames - not game Ticks."),
-        checkbox_menu_item("Show IAD Trainer", training_settings, "display_airdash_trainer", 0,"This option shows the HEIGHT of your last few aidashes.\nGreen is best! Red is Worst!"),
-        checkbox_menu_item("Show Dashes Interval", training_settings, "display_dash_interval_trainer", 0,"Shows how many DISPLAYED frames between dashes - not game Ticks.\nGreen is best! Red is Worst!"),
-        checkbox_menu_item("Show Dash Time", training_settings, "display_dash_length_trainer", 0,"Shows how many DISPLAYED frames you dashed for - not game Ticks.\nIf Sas then Smileys describe short hop success.\nGreen is best! Red is Worst!"),
-        checkbox_menu_item("Show Dash Attack Cancel Trainer", training_settings, "display_dash_attack_cancel_trainer", false,"Shows the DISPLAYED frames between starting a dash\nand the start of an attack - not game Ticks.\nThis is printed under Dash ATK in the gui."),
-        checkbox_menu_item("Show Attack Dash Gap Trainer", training_settings, "display_attack_dash_gap_trainer", false,"Shows the DISPLAYED frames between an attack recovering\nand the start of a dash - not game Ticks.\nThis is printed under Gap BTW ATK Dash in the gui."),
-        checkbox_menu_item("Show Short Hop Counter (Sas)", training_settings, "display_short_hop_counter", false,"Shows how many short hops you.\nhave done in a row on Sasquatch"),
-        checkbox_menu_item("Show Bishamon UBK Trainer", training_settings, "display_bishamon_ubk_trainer", false,"Overlays onto P2 whether you are in a crouch or standing\n unblockable distance for Karame Dama or Bricks"),
-      }
-    },
-    {
       name = "Game",
       entries = {
         integer_menu_item("Game Speed", training_settings, "game_speed", 0, 3, false, 3, 0, "Change the game speed\n0 = normal, 1-3 = turbo 1-3"),
@@ -1902,7 +1857,8 @@ return {
         checkbox_menu_item("Show Scrolling Input", training_settings, "show_scrolling_input",1, "The input bar along the bottom of the screen: YOUR inputs, newest at the right.\nShow P2 Inputs is the same thing for the dummy, down the right edge.\nThe four rows under this one all draw into this bar and come off with it."),
         child_of("show_scrolling_input", integer_menu_item("Scrolling Input History", training_settings, "inp_history_scroll", 0, 80, false, 0,0,"How far back into the Scrolling Input bar above to look. 0 is the newest input.\nRaising it slides the bar along so inputs that have gone off the left come\nback into view. It does not pause anything - new inputs still arrive.")),
         child_of("show_scrolling_input", checkbox_menu_item("Show Button Releases", training_settings, "show_button_releases", true, "Draws a hollow marker on the frame a button is let go, in its own one-frame\ncolumn. Off leaves presses and holds only, and a release just ends the column\nthe button was held in - the way the input bar read before the marker existed.\nHide Negative Edge Inputs below does not touch these columns.")),
-        child_of("show_scrolling_input", checkbox_menu_item("Hide Negative Edge Inputs", training_settings, "skip_nedge_displays", true, "Hides the columns that carry nothing new: same direction as the one before and\nno button newly pressed - the clutter a release leaves behind.\nNot the release marker itself. Show Button Releases above owns that, and this\nrow leaves those columns alone.")),
+        -- tirsod: Part of the nedge_display hack. Does no longer work.  
+        -- child_of("show_scrolling_input", checkbox_menu_item("Hide Negative Edge Inputs", training_settings, "skip_nedge_displays", true, "Hides the columns that carry nothing new: same direction as the one before and\nno button newly pressed - the clutter a release leaves behind.\nNot the release marker itself. Show Button Releases above owns that, and this\nrow leaves those columns alone.")),
         child_of("show_scrolling_input", checkbox_menu_item("Show GC Trainer", training_settings, "show_gc_trainer", true,"This option shows the GC window in the input viewer.\nThe Green GC shows when the window begins,\nand Red when it is performed or ends.\nG / GP n on the tick before it: the block landed there\n(GP n: tick n of the persistence, the tick back is let go being 1).")),
         checkbox_menu_item("Show P2 Inputs", training_settings, "display_p2_inputs", 1, "The dummy's inputs, as icons down the right edge of the screen.\nShow Scrolling Input above is the same thing for YOUR side, along the bottom.\nThis used to come off only with the whole HUD."),
         child_of("display_hud", checkbox_menu_item("Show Character Specific", training_settings, "display_char_specific", false, "Two readouts that exist for one character each, from before this menu had rows\nfor them: Anakaris's swallowed projectile, and Aulbath's Direct Scissors with\nits command lighting up green as 2,2 + PP goes in.\nNothing on screen says what either one is, which is why they ship off.\nPart of the HUD row above - it comes off with that as well.")),
@@ -1913,6 +1869,9 @@ return {
       name = "Trainer",
       entries = {
         checkbox_menu_item("Tick Data", training_settings, "mo_enable_frame_data", false, "Startup, active, recovery, advantage, total, hitstun, hitfreeze - in Ticks.\nThe first three come from the ATTACK HITBOX, so they do not move with distance.\nStartup and active share the tick the box appears: 4 + 3 + 7 - 1 = 13 Total.\nTotal includes gaps between hits, minus the attacker's hitfreeze; * = not frozen.\nACTION TIMELINE (third row, green): one action on a clock, each entry stamped\nwith its Tick. LP..HK and Action Steps names. 1t PreJump > 4t Air > 10t MP."),
+        child_of("mo_enable_frame_data", -- tirsod: Toggle to remove action timeline from frame data display to declutter view.
+          checkbox_menu_item("  Show Action Timeline", training_settings, "display_action_timeline", false, "ACTION TIMELINE (third row, green): one action on a clock, each entry stamped\nwith its Tick. LP..HK and Action Steps names. 1t PreJump > 4t Air > 10t MP.")
+        ),
         child_of("mo_enable_frame_data", list_menu_item("Tick Data Side", training_settings, "mo_frame_data_side", { "P1", "P2" }, 1, "WHICH PLAYER the rows above measure. P1 is you.\nP2 measures the DUMMY: its move gets Startup / Active / Recovery, the Action\nTimeline follows what the DUMMY did, and YOUR side supplies the hit or guard\nit ran into. This is how to see what a recorded Action Steps pattern really\ncame out as.\nOne side at a time. Both readouts say P2 while it is on.")),
         checkbox_menu_item("Show Step Wait Ticks", training_settings, "display_step_wait_ticks", false,"Shows what each Action Step actually waited, in game Ticks.\nThe Wait row names a mode - Auto (After), Auto (Chain) - without saying how\nlong it came to. This measures it: Step.2 Wait:13 is step two connecting 13 Ticks\nafter step one. Act is the Ticks that step spends entering its own inputs.\nLoop Wait is the gap a loop restart waited, which is not step one own wait.\nMeasured only - what the row is set to is on the row."),
         checkbox_menu_item("Show PB Counter", training_settings, "display_pb_counter",1, "Push block presses the game counted ($170), plus any after it grants - a lucky\nthree would read three however hard you mash. Green once granted; the count\ncarries a blocked string. Right: the TICK timeline of the last window (Guard\nopens it, | closes it, digit = buttons that tick; 2+ red is simultaneous).\nMultiPush counts those. LateMash: buttons pressed AFTER the 14 ticks - they\nLEAK A NORMAL when guard stun ends. Cap 14t. The dummy shows as P2."),
