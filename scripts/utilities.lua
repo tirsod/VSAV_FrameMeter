@@ -161,18 +161,26 @@ end
 function read_object_from_json_file(_file_path)
 	local _f = io.open(_file_path, "r")
 	if _f == nil then
-	  return nil
+	  return nil, "the file could not be opened"
 	end
-  
+
 	local _object
 	local _pos, _err
+	-- THE ERROR IS IN _err, NOT err. This used to test `if (err)` - a global
+	-- that is always nil - so a missing file AND a broken file both came back
+	-- as silent nil, and the caller could only say "that is not a pattern
+	-- file" with no way to tell which. The second return value carries the
+	-- reason; every existing caller reads only the first, so this stays
+	-- compatible with all of them.
 	_object, _pos, _err = json.decode(_f:read("*all"))
 	_f:close()
-  
-	if (err) then
-	  print(string.format("Failed to find json file \"%s\" : %s", _file_path, _err))
+
+	if _object == nil then
+	  print(string.format("Failed to read json file \"%s\" : %s",
+		_file_path, tostring(_err or "no value")))
+	  return nil, tostring(_err or "no value")
 	end
-  
+
 	return _object
   end
   
@@ -383,27 +391,36 @@ local function get_character(base_addr)
     elseif char_id == 0x12 	then return "Dark Gallon"
     elseif char_id == 0x18 	then return "Oboro" end
 end
--- HAS THIS PLAYER CHOSEN A CHARACTER YET?
+-- HAS THIS PLAYER PICKED A CHARACTER? ANSWERED FROM $04 ON THE SELECT SCREEN.
 --
--- $3BD alone cannot say. The ROM copies the character id into it
--- (0x020AC8: move.b ($382,A6), ($3bd,A6)), and BULLETA IS 0x00 - so "chose
--- Bulleta" and "chose nobody" are the same byte. That is the whole of the bug
--- where the arcade-stick mirror never handed control to P2 for her, and only
--- for her: she is the only character numbered zero (user, 2026-09-11).
+-- MEASURED, 2026-09-24 (six select-screen visits, both players, logged on every
+-- change of $04/$05):
 --
--- $3E1 is written at the same moment and is NOT the id. Measured on the select
--- screen (analysis/select_probe.log, 2026-09-12): both players read 0x00 there
--- until each locked in, and then P1 read 0x01 having chosen Demitri while P2
--- read 0x03 having chosen Bishamon - different values for different players,
--- neither of them the character. The ROM pairs it with $3AE the same way it
--- pairs $3E0 with $382 (0x009BC0 and 0x009BD0 copy the two pairs together).
+--     $04 $05
+--     00  00   before the screen accepts picks - it is still sliding in
+--     00  02   picking; the cursor is live
+--     02  06   the confirm press was taken (one frame)
+--     04  00   confirmed
 --
--- Either one is enough. $3E1 is what answers for Bulleta; $3BD is kept because
--- it is what every working case has been answering with, and no case that
--- works today may start failing because of this.
+-- Three things this settles at once:
+--
+--   * Bulleta picked with LP: $3BD and $3E1 both stay 0 - the hole this
+--     function has always had - but $04 still goes to 04.
+--   * A button pressed BEFORE the screen accepts picks leaves $04 at 00 -
+--     three early presses logged. The press latch that stood here fired on
+--     exactly those and drove both cursors with one stick.
+--   * $3BD is STALE. Coming back to the select screen, it still holds the
+--     last match's pick while $04 has already gone back to 00. So $3BD never
+--     meant "chosen this time" at all.
+--
+-- The latch tried before this produced three regressions in one day; see the
+-- handoff for the list. None of them can happen here: this reads what the
+-- game decided, and holds no state of its own.
+--
+-- Only meaningful on the select screen ($FF8009 == 2). Every caller already
+-- asks only there; in a match $04 is the character's own state byte.
 local function char_chosen(base_addr)
-	return memory.readbyte(base_addr + 0x3BD) ~= 0
-		or memory.readbyte(base_addr + 0x3E1) ~= 0
+	return memory.readbyte(base_addr + 0x04) ~= 0
 end
 
 utilitiesModule = {

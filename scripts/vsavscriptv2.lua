@@ -54,7 +54,15 @@ local function hud()
 		end
 		
 		--Tech Hit
-		if memory.readbyte(0xff85ab) > 0 then
+		-- OFF BY DEFAULT, AND ITS OWN ROW SINCE 2026-09-23.
+		--
+		-- Timer and Mash are $1AB and $170 straight out of the game, drawn at a
+		-- fixed spot low on the screen - which is under the characters' feet most
+		-- of the time. Show PB Counter reads the same two bytes and draws them as
+		-- a history, so this was the same information twice, and Mash: 0 sat there
+		-- every time a window opened (user, 2026-09-23).
+		if globals.options.display_tech_hit == true
+		   and memory.readbyte(0xff85ab) > 0 then
 		gui.text(130,198,"Timer: " .. memory.readbyte(0xff85ab))
 		gui.text(130,190,"Mash: " .. memory.readbyte(0xff8570))
 		end
@@ -85,7 +93,9 @@ local function hud()
 		end
 		
 		--Tech Hit
-		if memory.readbyte(0xff89ab) > 0 then
+		-- Same switch as P1 above; the reason is written there.
+		if globals.options.display_tech_hit == true
+		   and memory.readbyte(0xff89ab) > 0 then
 		gui.text(208,198,"Timer: " .. memory.readbyte(0xff89ab))
 		gui.text(208,190,"Mash: " .. memory.readbyte(0xff8970))
 		end
@@ -3331,6 +3341,14 @@ function p2life()
 end
 
 vsavScriptModule = {
+	-- A CHARACTER SELECT CLEARS THE ICON COLUMNS, as a restart would (user,
+	-- 2026-09-27) - the same fresh tables registerLoad falls back to.
+	["clear"] = function()
+		inp  = { [1] = {}, [2] = {} }
+		idle = { [1] =  0, [2] =  0 }
+		lastframe = {}
+		if globals ~= nil then globals.p2_tick_inputs = {} end
+	end,
     ["registerAfter"] = function()
 		margin[1] = margin_p1x*effective_width
 		margin[2] = (emu.screenwidth and emu.screenwidth() or screenwidth)  - margin_p2x*effective_width
@@ -3390,7 +3408,13 @@ vsavScriptModule = {
 			movelist()
 		end 
 		if globals.options.display_hud == true then
-			charaspecfic()
+			-- OFF BY DEFAULT AND ON ITS OWN SWITCH. Two readouts for one
+			-- character each - Anakaris's swallowed projectile and Aulbath's
+			-- Direct Scissors progress - which appeared with nothing to say
+			-- what they were (user, 2026-09-23).
+			if globals.options.display_char_specific == true then
+				charaspecfic()
+			end
 		end
 		-- P2's INPUT COLUMN IS ITS OWN SWITCH, NOT PART OF THE HUD.
 		--

@@ -432,7 +432,8 @@ local function cleanup(reason)
 				ml.stop_temporary_recording()
 			end
 		end
-		if st.playing and ml.stop_macro_playback ~= nil then ml.stop_macro_playback() end
+		-- starting: a playback still waiting out its Random Start Wait.
+		if (st.playing or st.starting) and ml.stop_macro_playback ~= nil then ml.stop_macro_playback() end
 	end
 	if ml ~= nil and ml.end_temporary_playback ~= nil then ml.end_temporary_playback() end
 	restore_control()
@@ -470,7 +471,7 @@ local function start()
 	local ml = macro()
 	if ml ~= nil and ml.get_recording_status ~= nil then
 		local st = ml.get_recording_status()
-		if st.playing then
+		if st.playing or st.starting then
 			if ml.stop_macro_playback ~= nil then ml.stop_macro_playback() end
 			if ml.end_temporary_playback ~= nil then ml.end_temporary_playback() end
 		end
@@ -557,7 +558,7 @@ local function guiRegister()
 		local _ml = macro()
 		if _ml ~= nil and _ml.get_recording_status ~= nil then
 			local _st = _ml.get_recording_status()
-			if _st.playing then
+			if _st.playing or _st.starting then
 				if _ml.stop_macro_playback ~= nil then _ml.stop_macro_playback() end
 				if _ml.end_temporary_playback ~= nil then _ml.end_temporary_playback() end
 			end

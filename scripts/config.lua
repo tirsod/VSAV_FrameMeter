@@ -35,9 +35,21 @@ local default_training_settings = {
   fm_movement_data=true,
   fm_input_p1=false,
   fm_hitstop=false,
+  -- 1 = P1, 2 = P2. A 1-based index into the list on the menu row, and P1 is
+  -- how the readout has always behaved.
+  mo_frame_data_side = 1,
   display_recording_gui= false,
   display_hitbox_default = true,
   display_hud=true,
+  -- OFF. Two hand-written readouts for one character each, with nothing
+  -- on screen to say what they are (user, 2026-09-23).
+  display_char_specific = false,
+  -- OFF. A readout for working on guard cancels, not something to have up
+  -- all the time.
+  display_gc_command_trace = false,
+  -- OFF. Show PB Counter reads the same two bytes and gives them a
+  -- history; this is the raw pair drawn by the characters' feet.
+  display_tech_hit = false,
   input_event_type = 0,
   inp_history_scroll = 0,
   graph_data_index = 0,
@@ -65,13 +77,22 @@ local default_training_settings = {
   pb_type_rec = 1,   -- 1 is None; 0 was out of range for the list
   anak_projectile = 1,
   lei_lei_stun_item = 0,
-  show_move_strength = 0,
-  show_pb_pushback_timer = 0,
-  show_pb_timer = 0,
-  show_throw_invuln_timer = 0,
-  show_mash_timer = 0,
+  -- THESE SHIP false, NOT 0.
+  --
+  -- Every one of them is read as `if globals.options.X then`, and IN LUA ZERO IS
+  -- TRUE. Shipping 0 turned the whole Analysis tab on for anyone who unzipped a
+  -- build without carrying a settings file over - which is the fresh install,
+  -- and exactly the case nobody tests. Reported 2026-09-19 as "why do these
+  -- lines appear after deleting scripts and setting up again".
+  --
+  -- The menu rows already declare false; only this table said 0.
+  show_move_strength = false,
+  show_pb_pushback_timer = false,
+  show_pb_timer = false,
+  show_throw_invuln_timer = false,
+  show_mash_timer = false,
   show_pursuit_indicator = false,
-  show_invuln_timer = 0,
+  show_invuln_timer = false,
   display_airdash_trainer = 0,
   show_x_distance = 1,
   display_dash_interval_trainer = false,
@@ -80,7 +101,7 @@ local default_training_settings = {
   display_dash_attack_cancel_trainer = false,
   display_attack_dash_gap_trainer = false,
   display_frame_trap_trainer = false,
-  show_projectile_count_limiter = 0,
+  show_projectile_count_limiter = false,
   display_bishamon_ubk_trainer = false,
   use_recording_savestate = false,
   -- Per-trigger action sequences, keyed "guard"/"counter"/"reversal". Written
@@ -93,13 +114,24 @@ local default_training_settings = {
   -- Game ticks from the last step to the next pass's first one. -1 is Auto,
   -- the same promise a step's own Wait makes.
   action_steps_loop_wait = -1,
-  -- Pit of Blame. 1 = None, 2 = Normal, 3 = ES - list_menu_item indices, not
-  -- values. The row only appears while the dummy is Anakaris.
+  -- Pit of Blame. 1 = None, 2 = Normal, 3 = ES, 4 = Random (one of the three
+  -- per knockdown) - list_menu_item indices, not values. The row only appears
+  -- while the dummy is Anakaris.
   pit_of_blame = 1,
+  -- Random Start Wait, game Ticks, 0-60. Each of the dummy's own actions and
+  -- each recording playback waits a fresh draw of 0..this before it starts.
+  -- 0 is off. Shown on both the Dummy and the Recording tab (randomStartWait.lua).
+  random_start_wait = 0,
+  -- Random Delay under Button Wait (Reversal / Counter Specified only), game
+  -- Ticks, 0-60. Every reversal or counter adds a fresh 0..this to the wait
+  -- between the motion and the button. 0 is off (randomStartWait.lua).
+  button_random_delay = 0,
   loop_interval_before_frames = 0,
   loop_interval_after_frames = 0,
   restore_recorded_position = false,
   display_pb_stats = false,
+  -- OFF, like the GC Command Trace it sits with. Counting runs either way.
+  display_gc_stats = false,
   display_jump_in_trainer = false,
   game_speed = 3,
   bgm_on = false,
@@ -117,8 +149,16 @@ local default_training_settings = {
   show_curse_timer = false,
   lilith_gps = 0,
   min_pb_inputs = 1,
-  skip_nedge_displays = false, -- Now unused, as skip_release_displays handles it as [1 = release+idle] [2 = idle] [3 = no negative edge] 
-  skip_release_displays = 1,
+  -- skip_release_displays = 1, -- (tirsod: My solution to nedge displays), got to see how it works before returning it
+  -- ON since the release marker got its own switch. All this can remove now
+  -- is a column carrying nothing new - a direction change, a new press, a
+  -- release and anything holding a GC or PB event are all kept - and with
+  -- columns per tick there are more of those leftovers to clear.
+  skip_nedge_displays = true,
+  -- ON, so the input bar looks the way it already did. A settings file written
+  -- before this key existed keeps this value: load_training_data() lays the
+  -- saved JSON OVER these defaults rather than replacing them.
+  show_button_releases = true,
   -- Both of these were read but never declared here, so a fresh install had
   -- them as nil - off, but nowhere written down. Stated at the value the
   -- tool has always shipped with.
@@ -127,10 +167,18 @@ local default_training_settings = {
   -- Measured Action Step waits, on the Trainer tab. Off: it is a readout
   -- for building a list, not something to train under.
   display_step_wait_ticks = false,
+  -- Air Guard Gaps, on the Trainer tab. Off like the other trainers.
+  display_air_guard_gap = false,
   -- OFF for a release. It writes a JSON trace per recovery into
   -- scripts/reversal_logs, which is what the timing work was built on and
   -- is pure cost for anyone just training. Toggle it in the Analysis tab.
   knockdown_logger_enable = false,
+  -- The folder of the last ACCEPTED Export/Import dialog, remembered across
+  -- sessions. One for the whole tool, not per character. Empty means no
+  -- memory yet and the dialog opens where it always did; a folder that has
+  -- since been deleted falls back the same way, inside the dialog itself.
+  -- Written by the Action Pattern Library's file transfer, never shipped.
+  pattern_dir = "",
 }
 
 local configModule = {

@@ -10,32 +10,28 @@
 !/run_vsav_training.sh
 !/training_modes.json
 !/README.md
-!/CLAUDE.md
-# Shipped in every release but authored upstream, so they were never in here -
-# the zip carried them forward from the previous zip instead. That chain broke
-# the moment the Downloads folder was cleared: the files existed nowhere else
-# and a rebuild would have quietly dropped them. Tracked now.
-!/handoff_VSAV_investigation.md
-# Handoff notes are authored here and are the first thing a new session
-# reads. Whitelisted by pattern so the next one does not have to remember
-# to add itself - the last one was only tracked because someone noticed.
-!/handoff_*.md
+# The README's Japanese twin and the player manual, both languages
+# (2026-09-29). Without these two lines the /* above swallows them silently,
+# as it did the design notes.
+!/README.ja.md
+!/docs/
+# The UI review the manual was written alongside is a working note, not for
+# players: kept on this machine, out of the public tree (user, 2026-09-29).
+/docs/PLAYER_UX_REVIEW.*.md
+# The project instructions live in docs/development/CLAUDE.md. The root
+# CLAUDE.md is only a one-line loader for Claude Code on this machine
+# (@docs/development/CLAUDE.md) and stays out of the public tree (user,
+# 2026-09-30).
+# Development documents and release notes live under the tracked docs/ tree.
 !/run_vsav_training_flatpak.sh
+# The IPS patches ship in the release zip, so they are tracked too (user,
+# 2026-09-30): a clean clone builds the same zip. Only support/ips - the rest
+# of support/ is FBNeo's own install. The vsavj files are the upstream fc2
+# branch's, byte for byte; ssf2xjr1 came with them on this machine.
+!/support/
+/support/*
+!/support/ips/
 !/vsav_training_flatpak.desktop
-# Same story, found the hard way: these two are shipped in every zip but were
-# never whitelisted, so the folder overwrite took them and git had no copy.
-# Recovered from the v11.3.3 zip.
-!/VSAV_TRAINING_v11.3.2_CHANGES.md
-!/wakeup_reversal_behavior_v11.3.2.md
-# Release notes live in the repo as well as on the page. Both languages.
-!/RELEASE_NOTES.md
-!/RELEASE_NOTES.ja.md
-# The engine notes. The header above says these are authored here and belong in
-# the repo, and they never were - 36 KB of measurements (the camera and its
-# 16 px rule, the free-1 signature, $21 holding its value for one tick, the air
-# dash at +8) existed on disk only. Every edit made to this file since it was
-# created was never committed. Third time this class of miss has been found.
-!/VSAV_MEMORY_NOTES.md
 
 # Bulk data, at any depth. These stay on disk - reversal_logs_archive is the
 # evidence base and must never be deleted (see analysis/archive_logs.py) - but
@@ -43,6 +39,18 @@
 # committed at all.
 reversal_logs/
 reversal_logs_archive/
+
+# Probe logs. Measurement records from the investigations, cited by name in
+# the source comments, so they stay on disk where those citations point - but
+# they are 14 MB of traces that nobody installing the tool has a use for, and
+# one of them carried a Windows user name into the published tree (2026-09-20).
+/analysis/*_probe_*.log
+
+# The Action Pattern Library stages its export here for PowerShell to copy,
+# and reads an import back out of it. Written and deleted inside one menu
+# action - it is never meant to survive, and it holds whatever the player
+# last sent or received.
+/scripts/action_patterns_transfer.json
 mame_code/
 mame_roms/
 __pycache__/
@@ -54,11 +62,15 @@ __pycache__/
 
 # ツールが実行のたびに書き出す。設定そのものは履歴に残っているが、
 # 以後の差分は追わない(2026-08-14 の指示)。
-/scripts/training_settings.json
-
+#
 # Per-user state, not source. A used copy of this leaked into a release once,
 # carrying a debugging configuration and the knockdown logger switched on.
-training_settings.json
+#
+# MATCH THE FAMILY, NOT ONE SPELLING. This listed the exact name, and a
+# hand-made backup called training_settings_pre_action_patterns.json walked
+# straight past it into the repo - 329 lines of the author's own configuration,
+# found on the way to a release (2026-09-19).
+training_settings*.json
 
 # gen_max_steps.py parks the real settings here while a load test is loaded in
 # their place. Same reason as above, and it must not be mistaken for source.
@@ -83,3 +95,20 @@ training_settings.json
 # Builds live outside the repo now (../../dist); this line is here so the
 # intent is stated and not just an accident of the whitelist.
 VSAV_Training_*.zip
+scripts/action_pattern_trace.log
+
+# The dated copies of the same thing. The port was abandoned and is being
+# redesigned from the UI instead (design_action_pattern_library.md), so these
+# sixteen files - one of them 49,912 lines, every name a dead end like
+# eleventh_hook_dead - say nothing to anyone reading the published tree, which
+# they reached on 2026-09-19.
+#
+# Dated probe logs that led somewhere stay tracked on purpose: the
+# landing_predict ones are the evidence behind Auto (Landing).
+analysis/action_pattern_trace_*.log
+analysis/landing_predict_probe.log
+# Measurement output, not authored here. Probe logs and the landing trace are
+# produced by running the tool, run to hundreds of KB, and must never reach a
+# release zip. Kept on disk so a past measurement can be re-read.
+/analysis/archive/
+/scripts/land_trace.log

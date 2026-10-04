@@ -1,4 +1,10 @@
 local tech_hit_inputs = require './tech-hit-inputs'
+-- Show PB Stats (Trainer tab). The master script requires the same path to
+-- feed it, so this is the same module.
+local pbStatsModule = require "./scripts/pbStats"
+-- Show GC Stats (Trainer tab). Fed from guardCancel.lua's P1 hook, cleared by
+-- the master script; the same module through the same path.
+local gcStatsModule = require "./scripts/gcStats"
 -- Read only for the frequency counter below. require returns the module
 -- already loaded by menu.lua, so this costs nothing at run time.
 local actionSequenceRunnerModule = require './scripts/actionSequenceRunner'
@@ -131,7 +137,11 @@ local function draw_pb_counter()
 		if globals == nil then return;	end
 		local color = "#0000ff"
 		if globals.timers.p1_pushblock_counter == 0 then
-			color = "#FF0000"
+			-- NOT PRESSING IS NOT AN ERROR (user, 2026-09-22). The red box
+			-- used to say "nothing counted" as if that were a failure, but a
+			-- player who chooses to just guard is playing correctly. Inactive
+			-- grey instead of alarming red.
+			color = "#555555"
 		end
 
 		local x = 21
@@ -144,19 +154,148 @@ local function draw_pb_counter()
 		-- (0x02760E takes eight, but six is 100% through the table below it).
 		local _ga = globals.dummy and globals.dummy.guard_action
 		local _showp2 = (_ga == 'pb' or _ga == 'recording on pushblock')
-		gui.rect(x, y, x + (_showp2 and 78 or 50), y+8, color)
-		-- The count is PRESSES TAKEN: it stops the moment the push block is
-		-- granted, so three is a lucky attempt rather than a weak one. Green
-		-- for granted, amber for not - reading the number alone gets it
-		-- backwards (see timers.lua).
-		if globals and globals.timers and globals.timers.p1_pushblock_counter then
-			gui.text( x + 2, y + 1, "PB Count: "..globals.timers.p1_pushblock_counter,
-				globals.timers.p1_pushblock_ok and "#00FF00" or "#FFFFFF")
+		-- THE TIMELINE INSIDE THE WIDENED BOX (user, 2026-09-21).
+		--
+		-- One character per tick of the window, published by timers.lua:
+		-- Guard = the block that opens it, Expired = the tick it closes, and
+		-- the digit is HOW MANY buttons edge on that tick. A skilled input is
+		-- one button per tick spaced across the window, so a tick reading 2 or
+		-- more is the mistake the colour exists to show - the ROM adds one
+		-- count per TICK, so two buttons together buy one where a spaced pair
+		-- would have bought two. MultiPush is the count of those ticks.
+		--
+		-- The window being open is read live ($1ab): while it is, the line is
+		-- still growing and no label closes it; when it reads zero the last
+		-- span is complete and stays up until the next one starts.
+		local _marks = globals.timers.p1_pb_marks
+		local _simul = globals.timers.p1_pb_simul or 0
+		local _last = 0
+		if _marks ~= nil then
+			for _p = 1, 14 do if _marks[_p] ~= nil then _last = _p end end
 		end
-		if _showp2 and globals.timers and globals.timers.p2_pushblock_counter then
+		local _live = memory.readbyte(0xFF84AB) > 0
+
+		-- RECT FIRST, THEN TEXT ON TOP - gui.rect is a filled rect and covers
+		-- anything drawn under it. The width is computed from the parts before
+		-- drawing, because drawing and measuring in the same pass would leave
+		-- the rect on top of the text it is meant to frame.
+		-- EVERY ADVANCE IS MEASURED FROM ITS OWN TEXT (2026-09-23).
+		--
+		-- The trailing fields used fixed allowances - 40 for at:, 56 for
+		-- MultiPush, 70 for LateMash - while the box was sized from the same
+		-- constants. LateMash's worst case is nineteen characters (about 80px)
+		-- against an allowance of 70, so the text ran past its own box and off
+		-- the right edge of the screen, over the art (user screenshot,
+		-- 2026-09-23). Measuring every part keeps the box and the text in step
+		-- whatever the numbers grow to, and hands back the ~25px the old
+		-- allowances were rounding away.
+		--
+		-- 4.2px is the advance the timeline has always used for one glyph.
+		local CH, GAP = 4.2, 4
+		local _first, _lastpress = nil, nil
+		for _p = 1, _last do
+			if (_marks and _marks[_p] or "-") ~= "-" then _first = _p break end
+		end
+		for _p = _last, 1, -1 do
+			if (_marks and _marks[_p] or "-") ~= "-" then _lastpress = _p break end
+		end
+		-- THE FIRST PRESS TICK, AFTER THE METER (user, 2026-09-22): the marks
+		-- are hard to count by eye, so the tick the pressing started on is
+		-- called out as a number. Lowercase "at" because it is a preposition,
+		-- not a field name. The pair is head and tail - at:8-13t with
+		-- PB Count: 6 is the ideal spacing, six presses on six consecutive
+		-- ticks with none wasted on a simultaneous one.
+		local _attxt = nil
+		if _first ~= nil then
+			_attxt = (_lastpress ~= nil and _lastpress ~= _first)
+				and ("at:" .. _first .. "-" .. _lastpress .. "t")
+				or ("at:" .. _first .. "t")
+		end
+		local _mptxt = "MultiPush: " .. _simul
+		-- LATEMASH: THE BUTTONS PRESSED AFTER THE WINDOW CLOSED.
+		--
+		-- The word is the one fighting game players use for it, not one
+		-- invented here (user, 2026-09-23).
+		--
+		-- INSIDE the fourteen ticks every press is a fair attempt, grant or no
+		-- grant: the player cannot see the grant, so carrying on is not a
+		-- mistake and PB Count keeps counting it. PAST the fourteen nothing can
+		-- be bought, and that is the habit this shows. The bracket is how far
+		-- past the window the LAST of them landed. The tally runs for fourteen
+		-- ticks past the window - the same fourteen as the window itself - so
+		-- holding the buttons down cannot make it climb forever.
+		local _over = globals.timers.p1_pb_latemash or 0
+		local _late = globals.timers.p1_pb_latemash_late or 0
+		local _omtxt = "LateMash: " .. _over
+			.. ((_over > 0) and (" (+" .. _late .. "t)") or "")
+
+		local _tlw = 0
+		if _last > 0 then
+			_tlw = GAP + 5 * CH                      -- "Guard"
+				+ _last * CH                          -- the timeline
+				+ (_live and 0 or (1 * CH))           -- the "|" that closes it
+				+ ((_attxt ~= nil) and (GAP + #_attxt * CH) or 0)
+				+ GAP + #_mptxt * CH
+				+ GAP + #_omtxt * CH
+		end
+		local _pbtxt = "PB Count: " .. globals.timers.p1_pushblock_counter
+		local _w = 4 + #_pbtxt * CH + ((_showp2) and 28 or 0) + _tlw
+		gui.rect(x, y, x + _w, y + 8, color)
+
+		gui.text( x + 2, y + 1, _pbtxt,
+			globals.timers.p1_pushblock_ok and "#00FF00" or "#FFFFFF")
+		local _cx = x + 2 + #_pbtxt * CH
+		if _showp2 and globals.timers.p2_pushblock_counter then
 			local _n = globals.timers.p2_pushblock_counter
-			gui.text( x + 52, y + 1, "P2:".._n,
+			gui.text( _cx + GAP, y + 1, "P2:".._n,
 				globals.timers.p2_pushblock_ok and "#00FF00" or "#FFD700")
+			_cx = _cx + GAP + 4 * CH
+			-- THE DUMMY'S DELIVERY IS ONE BUTTON PER TICK (guardCancel's PB
+			-- taps are one entry per tick for exactly this reason) - so its
+			-- MultiPush reads 0, and a number here is a bug in this tool.
+			local _s2 = globals.timers.p2_pb_simul or 0
+			if _s2 > 0 then
+				gui.text( _cx + GAP, y + 1, "MULTI!", "#FF0000")
+				_cx = _cx + GAP + 6 * CH
+			end
+		end
+		if _last > 0 then
+			_cx = _cx + GAP
+			gui.text(_cx, y + 1, "Guard", "#AAAAAA")
+			_cx = _cx + 5 * CH
+			for _p = 1, _last do
+				local _m = (_marks and _marks[_p]) or "-"
+				if _m == "-" then
+					gui.text(_cx, y + 1, "-", "#555555")
+				elseif tonumber(_m) >= 2 then
+					gui.text(_cx, y + 1, _m, "#FF0000")
+				else
+					gui.text(_cx, y + 1, _m, "#FFFFFF")
+				end
+				_cx = _cx + CH
+			end
+			if not _live then
+				-- JUST THE BAR (2026-09-23). It used to read "|Expired", and
+				-- the word costs seven glyphs to repeat what the bar and the
+				-- end of the timeline already say. With the dummy's count
+				-- beside P1's the line ran 12px off the right edge of the
+				-- screen; this is where the room came from.
+				gui.text(_cx, y + 1, "|", "#AAAAAA")
+				_cx = _cx + 1 * CH
+			end
+			if _attxt ~= nil then
+				_cx = _cx + GAP
+				gui.text(_cx, y + 1, _attxt, "#FFFFFF")
+				_cx = _cx + #_attxt * CH
+			end
+			_cx = _cx + GAP
+			gui.text(_cx, y + 1, _mptxt, (_simul > 0) and "#FF0000" or "#888888")
+			_cx = _cx + #_mptxt * CH
+			-- Same colour rule as MultiPush, the other negative on this line:
+			-- grey at zero, red once there is something to fix.
+			_cx = _cx + GAP
+			gui.text(_cx, y + 1, _omtxt, (_over > 0) and "#FF0000" or "#888888")
+			_cx = _cx + #_omtxt * CH
 		end
 	-- NOTHING TO DO WHEN THE READOUT IS OFF.
 	--
@@ -165,6 +304,32 @@ local function draw_pb_counter()
 	-- and back on after a push block gave a count of 0 that was still coloured
 	-- as granted. timers.lua now clears both together where the game clears its
 	-- own, and owns that state; drawing is all that belongs in here.
+	end
+end
+
+-- AIR GUARD GAPS, UNDER PB COUNT (user, 2026-09-26). The top left is free in
+-- the air: there is no push block there to fill the row above. airGuardGap.lua
+-- builds the lines as text; this only draws them, one glyph per character.
+local airGuardGapModule = require "./scripts/airGuardGap"
+local function draw_air_guard_gap()
+	if globals.options.display_air_guard_gap ~= true then return end
+	local _lines = airGuardGapModule.lines()
+	if #_lines == 0 then return end
+	local CH, ROW = 4.2, 8
+	local x, y = 21, 37
+	local _w = 0
+	for _, _l in ipairs(_lines) do
+		local _n = 0
+		for _, _c in ipairs(_l) do _n = _n + #_c[1] end
+		if _n > _w then _w = _n end
+	end
+	gui.box(x - 2, y - 1, x + _w * CH + 2, y + #_lines * ROW, "#00000099", "#00000055")
+	for _i, _l in ipairs(_lines) do
+		local _cx = x
+		for _, _c in ipairs(_l) do
+			if _c[1]:find("%S") then gui.text(_cx, y + (_i - 1) * ROW, _c[1], _c[2]) end
+			_cx = _cx + #_c[1] * CH
+		end
 	end
 end
 
@@ -290,17 +455,140 @@ local function draw_short_hop_counter()
 	end
 end
 
--- This function show stats for pushblocking
+-- SHOW PB STATS (pbStats.lua). BETWEEN THE BUTTON LIST AND THE GC COMMAND
+-- TRACE, so push block and guard cancel can be practised together (user,
+-- 2026-09-28: 置き場所). x 74, as far left as the button list allows: its
+-- TECH HIT after two buttons ends at 71. The widest line, 31 characters, ends
+-- with its box at 206 - the GC Command Trace's box starts at 208. The label
+-- column is one space narrower than AirGap's for that. y: blocks_top(),
+-- under the PB Count line. On AirGap's dark box
+-- (user, 2026-09-28: 背景は空中ガードに寄せて暗めに).
+local PB_STATS_X, PB_STATS_ROW = 74, 9
+-- THE BLOCKS UNDER THE PB COUNT LINE - the button list, PB Stats and the GC
+-- Command Trace - start right under it, at 38 (user, 2026-09-28: the GC
+-- counter is not shown any more, so they can come up). Only the Guard Action
+-- Frequency Check, a diagnostic on the Analysis tab, still draws a line at 36;
+-- with it on they keep to 50, below it.
+local function blocks_top()
+	return (globals.options.display_gc_freq_counter == true) and 50 or 38
+end
 local function draw_pb_stats()
-	if globals.options.display_pb_stats == true then
-		gui.text( 172, 54, "Total: ".. util.tablelength(globals.total_pb_attempt_counter))
-		gui.text( 172, 63, "Pass: " .. util.tablelength(globals.successful_pb_counter), "#00FF00")
-		gui.text( 210, 63, "% ", "#00FF00")
-		if util.tablelength(globals.successful_pb_counter) > 0 then
-			gui.text( 210, 63, "%" .. string.format("%02d", util.tablelength(globals.successful_pb_counter) / util.tablelength(globals.total_pb_attempt_counter) * 100), "#00FF00")
+	if globals.options.display_pb_stats ~= true then return end
+	local PB_STATS_Y = blocks_top()
+	local CH = 4.2
+	local _lines = pbStatsModule.lines()
+	local _w = 0
+	for _, _l in ipairs(_lines) do
+		local _n = 0
+		for _, _c in ipairs(_l) do _n = _n + #_c[1] end
+		if _n > _w then _w = _n end
+	end
+	gui.box(PB_STATS_X - 2, PB_STATS_Y - 1, PB_STATS_X + _w * CH + 2,
+		PB_STATS_Y + #_lines * PB_STATS_ROW, "#00000099", "#00000055")
+	for _i, _l in ipairs(_lines) do
+		local _x, _y = PB_STATS_X, PB_STATS_Y + (_i - 1) * PB_STATS_ROW
+		for _, _c in ipairs(_l) do
+			if _c[1]:find("%S") then gui.text(_x, _y, _c[1], _c[2]) end
+			_x = _x + #_c[1] * CH
 		end
-		gui.text( 172, 73, "Fail: " .. util.tablelength(globals.total_pb_attempt_counter) - util.tablelength(globals.successful_pb_counter), "#FF0000")
-		tech_hit_inputs()
+	end
+	tech_hit_inputs(PB_STATS_Y)
+end
+
+-- SHOW GC STATS (gcStats.lua). TWO PLACES, CHOSEN BY THE SETTINGS.
+--
+-- AT THE TOP LEFT while PB Stats, Tick Data, Air Guard Gaps and the Recording
+-- GUI are all off (user, 2026-10-01: PB Statsを出していない場合は左上に) -
+-- those four draw there. From x 6, so the box ends at 205 at its widest and
+-- clears the GC Command Trace's, which starts at 208; from blocks_top(), level
+-- with the trace. PB Stats' button list goes with PB Stats, so nothing else is
+-- left in that corner. Decided by the settings rather than by what is drawn,
+-- so the box never jumps mid-practice when an air guard puts lines up.
+--
+-- OTHERWISE AT THE BOTTOM RIGHT, over the P2 special gauge's corner (user,
+-- 2026-10-01: P2 のスペシャルゲージ付近、暗い枠で覆ってよい), right aligned on
+-- its own right edge. It stays above the input bar, whose box starts at 203
+-- (inputHistory.lua: screen height - 21) and whose G / GC / SUCCESS 13t labels
+-- sit at 196 over whichever column they belong to - anywhere along it. So the
+-- box ends at 193 and grows upwards. With the step rows it starts at 143: clear
+-- of the GC Command Trace, which ends by 138 at its longest (nine rows of 11
+-- from 38). Only the Random Guard Action % Check, a diagnostic that ships off,
+-- moves the trace down 12, and then a full trace can touch the box's top.
+--
+-- The step rows under the table use the trace's own arrows and button dots
+-- (user, 2026-10-01: トレースと同じ矢印で), 11 high like the trace's rows: the
+-- first direction carries no number, being where Input t starts, and each one
+-- after it is the average gap from the one before, as the trace counts a row.
+-- On the same dark box as PB Stats.
+local GCS = { RIGHT = 380, BOTTOM = 193, LEFT = 6, ROW = 9, STEP_ROW = 11,
+	-- The arrows by side, as the trace draws them (numpad, screen directions).
+	DIRS = { { 6, 2, 3 }, { 4, 2, 1 } } }
+local function draw_gc_stats()
+	local _o = globals.options
+	if _o.display_gc_stats ~= true then return end
+	local CH = 4.2
+	local _lines = gcStatsModule.lines()
+	local _steps = gcStatsModule.steps()
+	-- The count runs inside guardCancel.lua's hook, which keeps the first error
+	-- it threw. Numbers that stopped counting must not look like numbers.
+	if globals.gc_stats_error ~= nil then
+		_lines = { { { "GC Stats stopped: error", "#FF0000" } } }
+		_steps = {}
+	end
+	local _w = 0
+	for _, _l in ipairs(_lines) do
+		local _n = 0
+		for _, _c in ipairs(_l) do _n = _n + #_c[1] end
+		if _n > _w then _w = _n end
+	end
+	local _h = #_lines * GCS.ROW + #_steps * GCS.STEP_ROW
+	local _x0, _y0
+	if _o.display_pb_stats ~= true and _o.mo_enable_frame_data ~= true
+	   and _o.display_air_guard_gap ~= true and _o.display_recording_gui ~= true then
+		_x0, _y0 = GCS.LEFT, blocks_top()
+	else
+		_x0, _y0 = GCS.RIGHT - 2 - _w * CH, GCS.BOTTOM - _h
+	end
+	gui.box(_x0 - 2, _y0 - 1, _x0 + _w * CH + 2, _y0 + _h,
+		"#00000099", "#00000055")
+	-- A text cell is right aligned by its leading spaces. It is drawn from its
+	-- first glyph, placed by the same arithmetic as the cell, so a column's
+	-- digits end in the same place on every line.
+	local function cell(_x, _y, _s, _c)
+		local _lead = #(_s:match("^ *"))
+		if _lead < #_s then
+			gui.text(math.floor(_x + _lead * CH + 0.5), _y, _s:sub(_lead + 1), _c)
+		end
+	end
+	for _i, _l in ipairs(_lines) do
+		local _x, _y = _x0, _y0 + (_i - 1) * GCS.ROW
+		for _, _c in ipairs(_l) do
+			cell(_x, _y, _c[1], _c[2])
+			_x = _x + #_c[1] * CH
+		end
+	end
+	-- Columns in characters: the side, the first arrow at 4, the second at 9
+	-- with its number ending at 20, the third at 23 ending at 34, the button
+	-- dots at 37 ending at 47 - the table's own right edge.
+	for _i, _st in ipairs(_steps) do
+		local _y = _y0 + #_lines * GCS.ROW + (_i - 1) * GCS.STEP_ROW
+		local _d = GCS.DIRS[_i]
+		cell(_x0, _y + 2, (_i == 1) and "1P" or "2P", "#FFFFFF")
+		if img_dir ~= nil then
+			gui.image(math.floor(_x0 + 4 * CH + 0.5), _y, img_dir[_d[1]])
+			gui.image(math.floor(_x0 + 9 * CH + 0.5), _y, img_dir[_d[2]])
+			gui.image(math.floor(_x0 + 23 * CH + 0.5), _y, img_dir[_d[3]])
+		end
+		if img_no_button ~= nil then
+			local _bx = math.floor(_x0 + 37 * CH + 0.5)
+			for _k = 0, 2 do
+				gui.image(_bx + _k * 5, _y, img_no_button)
+				gui.image(_bx + _k * 5, _y + 5, img_no_button)
+			end
+		end
+		cell(_x0 + 15 * CH, _y + 2, string.rep(" ", 5 - #_st[1]) .. _st[1], "#FFFFFF")
+		cell(_x0 + 29 * CH, _y + 2, string.rep(" ", 5 - #_st[2]) .. _st[2], "#FFFFFF")
+		cell(_x0 + 42 * CH, _y + 2, string.rep(" ", 5 - #_st[3]) .. _st[3], "#FFFFFF")
 	end
 end
 
@@ -317,6 +605,292 @@ end
 --   arm    step one actually queued                should equal roll+
 --   seq    later steps the runner sent             above opp means leaks
 --   drop   later steps thrown away by a refusal
+-- WHAT THE GAME TOOK ON THE WAY TO A GUARD CANCEL.
+--
+-- guardCancel.lua collects it from the engine's own command block - one row
+-- per direction the game ACCEPTED, which is not the same as one row per
+-- direction pressed. Seeing the difference is the point: a motion that came
+-- apart and a button that arrived late fail the same way on screen and are
+-- not the same mistake.
+--
+-- DRAWN WITH THE INPUT VIEWER'S OWN ARTWORK (user, 2026-09-23). The arrows
+-- are img_dir, indexed by the numpad number worked out at the tick the step
+-- was taken, and the buttons are the same two rows of three the viewer lays
+-- out along the bottom. A direction has to read the same in both places or
+-- they cannot be held against each other.
+--
+-- EACH ROW IS THE GAP FROM THE ONE ABOVE IT (user, 2026-09-23). Input as
+-- fast as the engine can take it reads 1t on every direction, and a button
+-- that lands on the same tick as the last direction reads 0t - so the number
+-- is what there is to tighten, rather than a running total to subtract in
+-- your head. The first row has nothing above it and carries no number, the
+-- way the sketch this was built from had none on its Guard.
+--
+-- SUCCESS IS THE EXCEPTION and counts from the GUARD. It is the same number
+-- already drawn beside SUCCESS in the input viewer, and it is the one that
+-- says how fast the cancel came out. The two Expired lines count from the
+-- start of the attempt - from the guard, GC Expired would read 14 every time.
+--
+-- NOTHING IS DRAWN WITHOUT A GUARD. The motion is collected all the time,
+-- but a trace with no guard in it is just a lever history.
+local GCT_ROW_H = 11
+-- ONE COLUMN FOR EVERY NUMBER, RIGHT ALIGNED.
+--
+-- The ticks used to be written straight after their label, so the terminal
+-- line put its number wherever the label happened to end - Command Expired
+-- is fifteen characters and pushed it far past the column the rows use,
+-- which read as a mistake (user, 2026-09-23). Right aligning also lines the
+-- digits up, so 1t and 31t end in the same place.
+--
+-- TWO MEASUREMENTS LIVE HERE, BUT ONE COLUMN IS ENOUGH.
+--
+-- The directions, the button and Cmd Expired are one set: they are about the
+-- motion, each counted from the input before it. Guard, Success and GC
+-- Expired are the other, counted from the guard. They were briefly given a
+-- column each, until the brackets round the guard's number made the split
+-- unnecessary - the brackets say that row is not part of the chain, and the
+-- labels say the rest (user, 2026-09-23). One column is narrower and lines
+-- every number up.
+--
+-- The edge clears the longest label: Cmd Expired, eleven characters at about
+-- five pixels each.
+local GCT_NUM_R = 78
+-- ONE GLYPH IS 4.2 PIXELS, NOT 5.
+--
+-- Right aligning with 5 leaves every string short of the edge by 0.8 of a
+-- pixel per character, so the longer ones sit further left: 2t landed in one
+-- place, 13t a little left of it, (7t) further still. It reads as the column
+-- wobbling (user, 2026-09-23, twice - once for the brackets and once for
+-- Success). 4.2 is what draw_pb_counter in this same file measures with.
+local GCT_CH = 4.2
+-- THE BRACKETS HANG PAST THE COLUMN, so the digits inside them line up with
+-- the digits above. Right aligning the whole of (13t) would push its 13t a
+-- character to the left of every other number. One character's width is
+-- exactly the closing bracket.
+local GCT_BRACKET = GCT_CH
+-- The failure red the input viewer already draws a dead GC in, so the two
+-- readouts say the same thing in the same colour (user, 2026-09-23).
+-- A GAP THE RANDOM GRACE ONLY JUST CARRIED.
+--
+-- The wait between two inputs of a special is rolled, not fixed. What a
+-- player experiences is 11 to 15 ticks, so eleven still comes up often and
+-- anything past it only landed because the roll was generous (user,
+-- 2026-09-24).
+--
+-- NOT THE ROM TABLE. 0x02A55A holds 32 entries reading 14 16/32, then 15,
+-- 16, 17, 18, 19 with falling odds - the same shape four ticks higher. That
+-- byte is what the step timer is loaded with; it is not the window a player
+-- gets, because the acceptance around it is its own thing (user). The table
+-- is written down in VSAV_MEMORY_NOTES; it is not what this threshold is.
+--
+-- So it is a WARNING, not an error: the cancel did come out (user,
+-- 2026-09-24). Orange, which is neither the gold of Success nor the red of a
+-- failure. It was an amber (#FFA000) at first, and that sat close enough to
+-- Success's gold to be read as it (user, 2026-09-25).
+--
+-- Only a gap between two inputs the game took is warned - a guard or an expiry
+-- at either end means the random grace is not what the number measures. The
+-- closing line keeps its own colour: it is a result, not a gap.
+local GCT_WARN_AT = 12
+local GCT_WARN = "#FF7F00"
+local function gct_warn(_n)
+	if _n >= GCT_WARN_AT then return GCT_WARN end
+	return nil
+end
+
+-- THE ARROW BESIDE A WARNED NUMBER GOES ORANGE TOO (user, 2026-09-25).
+--
+-- gui.image is FBNeo's gdoverlay: position, image and an opacity, no colour.
+-- So the orange arrows are their own images, built from the input viewer's
+-- arrows by analysis/make_warn_arrows.py - the white fill recoloured, the
+-- black outline and every transparent pixel copied as they are.
+--
+-- There is no orange 5: the neutral arrow has no white fill. Loaded guarded,
+-- so a missing file costs the arrow its colour and nothing else - the number
+-- beside it still turns orange.
+local img_dir_warn = {}
+for _, _n in ipairs({ 1, 2, 3, 4, 6, 7, 8, 9 }) do
+	local _im = gd.createFromPng("images/" .. _n .. "_dir_warn.png")
+	if _im ~= nil then img_dir_warn[_n] = _im:gdStr() end
+end
+-- The empty button dot, orange, for a late button (gct_draw_buttons). Kept in
+-- the same table so this file's main chunk takes no new local.
+do
+	local _im = gd.createFromPng("images/no_button_warn.png")
+	if _im ~= nil then img_dir_warn.no_button = _im:gdStr() end
+end
+local GCT_BAD = "#FF0000"
+local GCT_OK  = "#FFD700"
+-- A COLOUR ALWAYS, NEVER nil. The row numbers ask for no particular colour,
+-- and passing the nil straight through made gui.text throw
+-- "invalid colour" - which takes the whole HUD down with it (user,
+-- 2026-09-23). White is what they were drawn in before.
+local GCT_PLAIN = "#FFFFFF"
+local function gct_at(_x, _y, _s, _r, _c)
+	-- Rounded, so two strings never land half a pixel apart.
+	gui.text(math.floor(_x + _r - #_s * GCT_CH + 0.5), _y, _s, _c or GCT_PLAIN)
+end
+local function gct_num(_x, _y, _n, _r, _c)
+	gct_at(_x, _y, tostring(_n) .. "t", _r, _c)
+end
+-- A LATE BUTTON WARNS THE WAY AN ARROW DOES (user, 2026-09-26).
+--
+-- The arrow's white fill turns orange and its outline stays. The button's
+-- counterpart is the empty dots: they turn orange, and the pressed ones keep
+-- their colour, because that colour is which strength was pressed. An orange
+-- frame round the dots was tried first and looked out of place - the only box
+-- in the trace, reading like a selection cursor rather than a warning.
+local function gct_draw_buttons(_x, _y, _b, _late)
+	if img_no_button == nil then return end
+	local _img = { img_L_button, img_M_button, img_H_button }
+	local _empty = (_late and img_dir_warn.no_button) or img_no_button
+	for _i = 1, 3 do
+		gui.image(_x + (_i - 1) * 5, _y,
+			(_b[_i] and _img[_i]) or _empty)
+		gui.image(_x + (_i - 1) * 5, _y + 5,
+			(_b[_i + 3] and _img[_i]) or _empty)
+	end
+end
+
+local function draw_gc_command_trace()
+	if globals.options.display_gc_command_trace ~= true then return end
+	local _t = globals.gc_trace
+	if _t == nil or _t.guard == nil or #_t.rows == 0 then return end
+	-- Moved in from 250: the block sat under the P2 input column and the
+	-- Fastest readout at the top right (user, 2026-09-23).
+	-- NO TITLE, ON THE DARK BOX, A LITTLE FURTHER LEFT (user, 2026-09-28): the
+	-- same box as PB Stats and AirGap, and 210 rather than 226 - PB Stats'
+	-- box ends at 206 at its widest, this one starts at 208. The rows move up
+	-- into the title's place, level with PB Stats' first line.
+	local _x, _y = 210, blocks_top()
+	local _t0 = _t.rows[1].t
+	local _n = #_t.rows + ((_t.done ~= nil and _t.at ~= nil) and 1 or 0)
+	gui.box(_x - 2, _y - 1, _x + GCT_NUM_R + GCT_BRACKET + 2, _y + _n * GCT_ROW_H + 1,
+		"#00000099", "#00000055")
+	-- A NUMBER IS COUNTED FROM THE INPUT BEFORE IT, AND BRACKETS MEAN IT WAS
+	-- COUNTED AGAINST THE GUARD INSTEAD (user, 2026-09-23).
+	--
+	-- The guard is not an input, so it never becomes the mark the next row
+	-- counts from - but it gets a number of its own, because how long after
+	-- the last input the guard landed is what says the motion was early or
+	-- late. Brackets say that number is not part of the chain.
+	--
+	-- The same applies from the other side. Guarding FIRST and then starting
+	-- the motion leaves the first direction with no input before it, and it
+	-- was drawn bare - but ticks-since-the-guard is exactly what matters
+	-- there, so it is shown, in brackets for the same reason.
+	--
+	-- A DEAD COMMAND CUTS THE CHAIN (user, 2026-09-24).
+	--
+	-- What follows a re-attached expiry belongs to a second go at the motion,
+	-- so counting it from an input of the first one adds three spans together
+	-- and reads as one wait. Measured across the two boundaries instead: the
+	-- guard from the expiry, and the first direction from the guard - which is
+	-- the guard-first rule above, now that nothing before it counts.
+	local _last_in = nil    -- the input chain. Only a dead command cuts it:
+	                        -- the guard deliberately does not, so the inputs
+	                        -- around it keep counting among themselves.
+	local _dead_t = nil     -- the last expiry. A guard is measured from it.
+	local _mark = nil       -- where a cut chain starts counting again: the
+	                        -- guard, or the expiry when the guard came first.
+	for _i, _r in ipairs(_t.rows) do
+		local _ry = _y + (_i - 1) * GCT_ROW_H
+		if _r.k == "guard" then
+			-- A block that landed while the guard pose was persisting - back
+			-- already let go - names the tick of it (user, 2026-09-25). "G-"
+			-- keeps it beside the plain Guard rows and the GC heading; the
+			-- word is the Japanese wiki's own for it. Same length as
+			-- "Cmd Expired", so the bracket column needs no room made.
+			local _label = "Guard"
+			if type(_r.v) == "number" then _label = "G-Persist " .. _r.v end
+			gui.text(_x + 2, _ry + 2, _label, "#99EE99")
+		elseif _r.k == "dead" then
+			-- The command died and a guard came soon enough that the rows above
+			-- are still worth reading. Marked so they are not taken for part of
+			-- the attempt that follows.
+			gui.text(_x + 2, _ry + 2, tostring(_r.v), GCT_BAD)
+		elseif _r.k == "btn" then
+			-- The number's own test, as for the arrows below, so the dots and
+			-- the number cannot disagree.
+			gct_draw_buttons(_x + 2, _ry, _r.v or {},
+				_last_in ~= nil and gct_warn((_r.t - _last_in) % 256) ~= nil)
+		elseif img_dir ~= nil then
+			-- The same test the number below makes for this row, so the arrow
+			-- and its number cannot disagree.
+			local _v = _r.v or 5
+			local _img = img_dir[_v]
+			if _last_in ~= nil and gct_warn((_r.t - _last_in) % 256) ~= nil then
+				_img = img_dir_warn[_v] or _img
+			end
+			gui.image(_x + 2, _ry, _img)
+		end
+		-- ONLY AN INPUT THE GAME TOOK CAN BE WARNED (user, 2026-09-24).
+		--
+		-- Amber says "this gap only got through because the roll went your
+		-- way". That reading needs both ends to be inputs of the motion, so
+		-- it belongs to the plain numbers alone. A guard is not an input, and
+		-- a dead command's number is the wait that killed it rather than one
+		-- that was let through - it carries its row's own red instead.
+		if _r.k == "guard" then
+			-- After an expiry the guard answers "how long was the command
+			-- dead before you blocked", which is the boundary worth reading.
+			local _from = _dead_t or _last_in
+			if _from ~= nil then
+				gct_at(_x, _ry + 2, "(" .. (_r.t - _from) % 256 .. "t)",
+					GCT_NUM_R + GCT_BRACKET)
+			end
+		elseif _last_in ~= nil then
+			local _n = (_r.t - _last_in) % 256
+			local _c = gct_warn(_n)
+			if _r.k == "dead" then _c = GCT_BAD end
+			gct_num(_x, _ry + 2, _n, GCT_NUM_R, _c)
+		elseif _mark ~= nil then
+			-- Plain: the guard, or the expiry before it, really is where the
+			-- count starts again, so this number IS the chain (user,
+			-- 2026-09-24). Only the guard's own number keeps its brackets.
+			-- Never amber either - neither end of it is an input.
+			gct_num(_x, _ry + 2, (_r.t - _mark) % 256, GCT_NUM_R)
+		end
+		if _r.k == "guard" then
+			_mark = _r.t
+		elseif _r.k == "dead" then
+			-- Nothing below counts from an input of the attempt that died.
+			_dead_t, _mark, _last_in = _r.t, _r.t, nil
+		elseif _r.k == "dir" or _r.k == "btn" then
+			_last_in = _r.t
+		end
+	end
+	if _t.done ~= nil and _t.at ~= nil then
+		-- FAILURES COUNT FROM THE LAST INPUT, NOT FROM THE START.
+		--
+		-- The step timer starts when a direction is TAKEN, so how long after
+		-- your last accepted input the command fell apart is the number that
+		-- can be held against the engine's own 14 to 19 tick step timeout.
+		-- Counted from the start of the attempt it says nothing you can act
+		-- on (user, 2026-09-23: "it should count from after the down-forward").
+		--
+		-- Guard is not an input, so it is skipped. With no input at all the
+		-- guard is all there is to count from.
+		local _from = _t.guard
+		if _t.done ~= "Success" then
+			for _i = #_t.rows, 1, -1 do
+				local _k = _t.rows[_i].k
+				-- Stop at a dead command: an input above it belongs to the
+				-- attempt that already ended, so the guard is the mark.
+				if _k == "dead" then break end
+				if _k == "dir" or _k == "btn" then
+					_from = _t.rows[_i].t
+					break
+				end
+			end
+		end
+		local _c = (_t.done == "Success") and GCT_OK or GCT_BAD
+		local _ry = _y + #_t.rows * GCT_ROW_H
+		gui.text(_x + 2, _ry + 2, _t.done, _c)
+		gct_num(_x, _ry + 2, (_t.at - _from) % 256, GCT_NUM_R, _c)
+	end
+end
+
 local function draw_gc_frequency_counter()
 	if globals.options.display_gc_freq_counter ~= true then return end
 	local _r = actionSequenceRunnerModule
@@ -333,8 +907,9 @@ local function draw_gc_frequency_counter()
 	if _opp >= 8 and _want >= 0 then
 		_c = (math.abs(_got - _want) <= 5) and "#00FF00" or "#FF0000"
 	end
-	gui.text(21, 36, string.format("GC freq=%s opp=%d roll+=%d arm=%d seq=%d drop=%d wait=%d",
-		tostring(globals.options.gc_freq), _opp, _true, gc_fires or 0, _seq, _drop, _wait), _c)
+	-- The setting as the menu names it, not its index: freq=1 read as 1%.
+	gui.text(21, 36, string.format("Random Guard Action %s opp=%d roll+=%d arm=%d seq=%d drop=%d wait=%d",
+		(_want >= 0) and (_want .. "%") or "?", _opp, _true, gc_fires or 0, _seq, _drop, _wait), _c)
 end
 
 -- WHAT THE ACTION STEPS ACTUALLY WAITED.
@@ -718,6 +1293,14 @@ local function draw_fastest()
 end
 
 local hudModule = {
+    -- EXPOSED FOR THE OFFLINE TEST. Nothing executes the drawing otherwise,
+    -- which is how a nil colour reached gui.text and took the HUD down.
+    ["draw_gc_command_trace"] = draw_gc_command_trace,
+    ["draw_pb_stats"] = draw_pb_stats,
+    ["draw_gc_stats"] = draw_gc_stats,
+    ["PB_STATS_X"] = PB_STATS_X,
+    ["blocks_top"] = blocks_top,
+    ["draw_air_guard_gap"] = draw_air_guard_gap,
     ["registerStart"] = function()
     end,
     ["guiRegister"] = function()
@@ -740,7 +1323,9 @@ local hudModule = {
 		pcall(draw_position_figure)
 		draw_ag_why()
 		draw_pb_counter()
+		pcall(draw_air_guard_gap)
 		draw_gc_frequency_counter()
+		draw_gc_command_trace()
 		draw_step_wait_ticks()
 		draw_controlling()
 		draw_airdash_trainer()
@@ -753,6 +1338,7 @@ local hudModule = {
 		frame_trap_trainer()
 		draw_push_dist()
 		draw_pb_stats()
+		draw_gc_stats()
 		draw_jump_in_trainer()
 		if globals.options.display_recording_gui == true then
 			draw_rec()

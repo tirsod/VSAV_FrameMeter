@@ -120,7 +120,7 @@ local seq_held_btn_until = nil
 
 -- COUNTED, BECAUSE THREE FIXES IN A ROW WERE ARGUED RATHER THAN MEASURED.
 --
--- Show GC Frequency Counter in the Trainer tab prints these. Read together
+-- Guard Action Frequency Check on the Analysis tab prints these. Read together
 -- they say which half is wrong without another round of reasoning:
 --
 --   rolls_true / opportunity  is the gate's real rate
@@ -156,6 +156,34 @@ function gc_should_perform(_arm_now)
 			(globals and globals.options and globals.options.gc_freq) or -1)
 	end
 	return gc_arm_roll
+end
+
+-- ONE GUARDED HIT IS ONE OPPORTUNITY, NOT TWO (2026-09-29).
+--
+-- The serial was bumped on entering stun AND on the $158 rise, and a guarded
+-- hit does both: $05 leaves 0 on the contact tick and $158 rises on the next
+-- (76 of 76 logged guards, R - E = 1). When one displayed frame took in both
+-- ticks the serial moved by two and one draw was made, so the check read
+-- roll+/opp = 39/55 at 100%. When the two ticks fell in different frames the
+-- hit was drawn twice instead - 26 and 28 of the 54 that could be told apart.
+--
+-- P2's $54 is 0xFF from the contact tick of a guard and never on a hit (76 of
+-- 76 guards, 0 of 514 other stun entries), so the entry already knows it is a
+-- guard. It takes the draw there - the frame GC's started_guarding edge acts
+-- on - and the rise that follows belongs to the same hit and passes.
+-- Knockdown and hit stun still get theirs on entering stun. Globals, as
+-- gc_opportunity is: service_held_reversal is at the upvalue ceiling.
+gc_entry_was_guard = false
+function gc_note_stun_entry(_guarded)
+	gc_opportunity = gc_opportunity + 1
+	gc_entry_was_guard = _guarded
+end
+function gc_note_block_rise()
+	if gc_entry_was_guard then
+		gc_entry_was_guard = false
+		return
+	end
+	gc_opportunity = gc_opportunity + 1
 end
 
 -- FIX: is the move being poked one of the character's inherently-EX moves
@@ -1849,7 +1877,9 @@ local pit_of_blame_frames        = -1
 local pit_of_blame_prev_hits     = 0
 local pit_of_blame_ground_y      = 0
 -- Result of this knockdown's Guard Action Frequency roll. This trigger sits
--- ahead of the roll in guardCancelCheck, so it has to take its own.
+-- ahead of the roll in guardCancelCheck, so it has to take its own. false when
+-- the roll said no; otherwise the Pit of Blame row's value for this knockdown
+-- (1 None, 2 Normal, 3 ES), with Random already drawn.
 local pit_of_blame_roll   = false
 
 -- Strength dropdown (Light/Medium/Heavy/ES) mapped onto kicks. get_p2_reversal_strength
@@ -1989,6 +2019,17 @@ local function bor8(a, b)
 	return r
 end
 
+-- Exchange the two facing-relative lever bits (0 and 1), leave the rest.
+-- Arithmetic style, like bor8 above - Lua 5.1 has no bitwise operators.
+-- No-op on 0, 3 and anything without exactly one of the two bits set, so
+-- down/up combinations and non-direction values pass through untouched.
+local function swap_facing_bits(_lev)
+	local _bit0 = _lev % 2
+	local _bit1 = math.floor(_lev / 2) % 2
+	if _bit0 == _bit1 then return _lev end
+	return _lev + (_bit0 == 1 and -1 or 1) + (_bit1 == 1 and -2 or 2)
+end
+
 -- Inject the motion's FINAL DIRECTION too, not just the button.
 --
 -- This was originally left out on purpose ("the directions arrive through the
@@ -2068,8 +2109,52 @@ local function side_flag_now()
 	return 0
 end
 
+-- IS THE CHARACTER STILL FACING THE WAY IT CAME?
+--
+-- $b is the facing the engine corrects a raw direction against, and it only
+-- moves when the character actually turns - which happens when it becomes
+-- free, not when the two cross over. While $b disagrees with the side the
+-- opponent is really on, "forward" points AWAY from them.
+--
+-- THIS MATTERS FOR DASHES AND NOTHING ELSE. Which way a dash travels is fixed
+-- the moment it is granted, so there is nothing to correct afterwards: a dash
+-- entered before the turn runs the wrong way for its whole length (user,
+-- 2026-09-20).
+local function facing_unsettled()
+	return memory.readbyte(0xFF880B) ~= side_flag_now()
+end
+
 local function facing_for_input()
 	if memory.readbyte(0xFF8838) ~= 0 or memory.readbyte(0xFF8915) ~= 0 then
+		return memory.readbyte(0xFF880B)
+	end
+	-- A DASH IS NOT A COMMAND MOTION, AND IT IS NOT CORRECTED LIKE ONE.
+	--
+	-- $122 is swapped on $b ALONE (0x02218E) while $12a is swapped on $120
+	-- when grounded (0x0221DC). side_flag_now() exists because $120 IS
+	-- recomputed between the injection at 0x02211A and the correction at
+	-- 0x022134, so reading the byte gives the tick before - a $12a problem
+	-- only. NOTHING recomputes $b in between, so for $122 the byte is read
+	-- outright and there is nothing to reproduce.
+	--
+	-- MEASURED 2026-09-20, three crossovers, same shape every time:
+	--
+	--     lg 18   $b=0  $120=1  used=0   injected L2
+	--     lg 19   $b=0  $120=1  used=0   injected L2
+	--     lg 21   $b=0  $120=1  used=1   injected L1   <- our answer flips
+	--     lg 22   $b=1  $120=1  used=1   injected L1   <- $b catches up after
+	--
+	-- Three different values at once, and the two taps of ONE dash went out as
+	-- opposite screen directions while the game's own reference had not moved.
+	-- Reported as: dash, Landing, dash - and the second dash does not come out
+	-- when the sides swapped during the first one (user, 2026-09-20).
+	--
+	-- Asked of the sequence being delivered rather than passed down through
+	-- twenty-odd call sites: the flag belongs to the command, and this is the
+	-- one place any of them resolves a direction.
+	local _d = player_objects and player_objects[2]
+	local _s = _d and _d.pending_input_sequence
+	if _s ~= nil and _s.raw_dir == true then
 		return memory.readbyte(0xFF880B)
 	end
 	return side_flag_now()
@@ -2252,6 +2337,20 @@ local hook_ticks = 0
 -- Measured on the v32 batch, that wait cost 0-3 ticks of jitter, which is
 -- the whole error budget: the press edge has to land on ONE specific tick.
 local function assert_input_bits(_lev, _btn)
+	-- NOTHING GOES IN BEHIND THE MENU.
+	--
+	-- Reported 2026-09-20: with the menu open the dummy stands still, as it
+	-- should, but its inputs keep arriving. Of the twenty-eight places that
+	-- assert bits, only the two hold paths asked about the menu; the walker
+	-- stops because M.service drops the pass, and the ARM's own delivery had
+	-- nothing stopping it at all. Present before the Action Pattern work -
+	-- confirmed on Reversal - Action Steps (0xB) as well (user).
+	--
+	-- Asked HERE rather than at the top of the hook. Returning from the hook
+	-- would also skip M.service, and that call is what drops a pass when the
+	-- menu opens - "the menu ends the run, it does not pause it" would quietly
+	-- become "it pauses it".
+	if globals ~= nil and globals.show_menu == true then return end
 	inject_guard = true
 	-- ALWAYS write the base address, even when there is no button.
 	--
@@ -2293,6 +2392,7 @@ local function assert_input_bits(_lev, _btn)
 		memory.getregister("m68000.pc"))
 	debugKnockdownModule.mark_write("0xFF8B95_lever", memory.readbyte(P2_INPUT_WORD + 1),
 		memory.getregister("m68000.pc"))
+
 end
 
 memory.registerwrite(P2_INPUT_WORD, 2, function()
@@ -2581,6 +2681,16 @@ local fast_press_lg = nil
 local fast_press_lev = 0
 local fast_press_btn = 0
 local fast_press_off = 0
+-- THE FACING THE BITS WERE RESOLVED AGAINST, AT DEFER TIME (2026-09-20).
+--
+-- Raw bits only mean one direction against the facing the game's swap
+-- (0x022194) will apply where they land. A wake-up turns the dummy between the
+-- defer and the delivery - measured 15 of 15 failed wake-up dashes had $b flip
+-- exactly on the free tick, 12 of 12 successes kept it - so the deferred
+-- press, the only part of the delivery that straddles the turn, must be
+-- re-aimed. Both defer sites store the reference; the delivery swaps the two
+-- facing-relative bits when the reference has moved on.
+local fast_press_fref = nil
 -- THE DELAY SEPARATES THE MOTION FROM THE BUTTON (v173).
 --
 -- fast_press_moff is where the motion's LAST entry goes, fast_press_off where
@@ -2697,6 +2807,15 @@ local DASH_AUTO_TICKS = {
 	[0x0D] = { name = "Lei-Lei",   f =  1, b =  5, fc =  1, bc =  1 },
 	[0x0E] = { name = "Lilith",    f =  5, b =  5, fc =  3, bc =  3 },
 	[0x0F] = { name = "Jedah",     f = 10, b = 10, fc =  9, bc =  9 },
+	-- Dark Gallon gets Gallon's values, the same judgement KD_END_1A7 above
+	-- already made: vsavscriptv2.lua's own check says he "is exactly the
+	-- same as regular Gallon". Confirmed by the user, 2026-09-19.
+	--
+	-- BOTH TABLES OR NEITHER: this one drives the arm and
+	-- MEASURED_STEP_FLOORS drives the step. A character present in one but
+	-- not the other has the two paths saying different things about him -
+	-- the trap the Demitri row was written to avoid.
+	[0x12] = { name = "Dark Gallon", f =  8, b =  3, fc =  6, bc =  1 },
 	-- DEMITRI (0x01) HAS NO ROW, AND SHOULD NOT GET ONE FOR THE CANCELS.
 	--
 	-- The attack wiki's Demitri page, basic actions: both dashes are
@@ -3063,12 +3182,92 @@ function air_dash_attack_ticks_for(_jump, _dash)
 	return _p and _p.atk
 end
 
+-- HOW SOON AN ATTACK CAN FOLLOW A JUMP, PER CHARACTER AND DIRECTION.
+--
+-- NOT MEASURED HERE, UNLIKE EVERY OTHER TABLE IN THIS FILE. These are the
+-- "before attack" column of the jump page in Vampire Savior System Data: the
+-- frames, counted from the start of the jump's pre-motion, during which an
+-- attack cannot come out yet - it comes out on the frame after. Taken whole at
+-- the user's direction (2026-09-25), knowing the note above AIR_DASH_TICKS:
+-- four generalisations about that table, all wrong.
+--
+-- THE PAGE'S FRAMES ARE TICKS. Its pre-motion of 3 agrees with takeoff
+-- measured 2 to 4 ticks after the jump starts (VSAV_MEMORY_NOTES, jump and
+-- dash route section), so there is no frame-to-tick scaling.
+--
+-- ONE IS TAKEN OFF. A jump is a single buttonless entry, so it is held for two
+-- ticks (v158) and the pre-motion starts on the first of them - while a Wait
+-- counts from the last. A press on the page's first attack frame is therefore
+-- a Wait of one less than the page says. That rule is the same for every
+-- character and direction, because the jump's input is.
+--
+-- TWO POINTS CONFIRM IT, measured by the user on characters whose page values
+-- differ: Aulbath forward, page 5, measured 4; Jedah forward, page 6, measured 5
+-- (2026-09-25). The obvious alternative - pre-motion plus one, which also gives
+-- Aulbath's 4 - predicted 4 for Jedah and is wrong. Everything else is the
+-- page's number carried by that rule. A row that turns out wrong in play gets
+-- measured and goes in JUMP_ATTACK_MEASURED, which wins.
+--
+-- Not here: Lilith's high jump (the page has it, but it is the super jump,
+-- which Auto does not resolve yet), Dark Gallon and Oboro (not on the page),
+-- and 0x0B.
+-- In a block of its own: this file's main chunk is at Lua 5.1's limit of 200
+-- active locals, and four more at the top level would not load ("main
+-- function has more than 200 local variables", 2026-09-25). Locals inside
+-- do ... end are released at its end; the global function keeps them.
+do
+	local JUMP_BEFORE_ATTACK = {
+		[0x00] = { name = "Bulleta",   f =  6, n =  6, b =  6 },
+		[0x01] = { name = "Demitri",   f =  6, n =  6, b =  6 },
+		[0x02] = { name = "Gallon",    f =  5, n =  5, b =  5 },
+		[0x03] = { name = "Victor",    f =  6, n =  6, b =  6 },
+		[0x04] = { name = "Zabel",     f =  5, n =  5, b =  5 },
+		[0x05] = { name = "Morrigan",  f =  6, n =  6, b =  6 },
+		[0x06] = { name = "Anakaris",  f = 15, n = 19, b = 15 },
+		[0x07] = { name = "Felicia",   f =  5, n =  5, b =  5 },
+		[0x08] = { name = "Bishamon",  f =  6, n =  6, b =  6 },
+		[0x09] = { name = "Aulbath",   f =  5, n =  5, b =  5 },
+		[0x0A] = { name = "Sasquatch", f =  5, n =  5, b =  5 },
+		[0x0C] = { name = "Q-Bee",     f =  6, n =  6, b =  5 },
+		[0x0D] = { name = "Lei-Lei",   f =  6, n =  6, b =  6 },
+		[0x0E] = { name = "Lilith",    f =  6, n =  6, b =  6 },
+		[0x0F] = { name = "Jedah",     f =  6, n =  6, b =  6 },
+	}
+	local JUMP_INPUT_OFFSET = 1
+	local JUMP_ATTACK_MEASURED = {
+		[0x09] = { ["jump.f"] = 4 },   -- Aulbath, measured by the user, 2026-09-25
+		[0x0F] = { ["jump.f"] = 5 },   -- Jedah, measured by the user, 2026-09-25
+	}
+	local JUMP_DIR = { ["jump.f"] = "f", ["jump.n"] = "n", ["jump.b"] = "b" }
+
+	-- Ticks from a jump to the earliest attack after it, or nil where neither a
+	-- measurement nor the page has a number. Global for the same reason the two
+	-- air dash ones above are.
+	function jump_attack_ticks_for(_jump)
+		local _cid = memory.readbyte(0xFF8B82)
+		local _m = JUMP_ATTACK_MEASURED[_cid]
+		if _m ~= nil and _m[_jump] ~= nil then return _m[_jump] end
+		local _row = JUMP_BEFORE_ATTACK[_cid]
+		local _d = JUMP_DIR[_jump]
+		if _row == nil or _d == nil or _row[_d] == nil then return nil end
+		return _row[_d] - JUMP_INPUT_OFFSET
+	end
+end
+
 -- WHAT AN Auto RESOLVES TO, FOR THE EDITOR'S ROW.
 --
 -- The runner owns the answer; the editor only prints it. Published here rather
 -- than required in the editor because the editor is loaded standalone by the
 -- offline tests, and because both tables it reads live in this file.
 seq_auto_ticks = actionSequenceRunnerModule.auto_ticks_for
+-- The editor calls this after writing a library item back, so the runner
+-- lets go of the copy it was holding.
+seq_forget_pick = actionSequenceRunnerModule.forget_pick
+-- The knockdown logger, for the runner to leave diagnostic marks on.
+-- It is a local in every file that requires it, so the runner cannot see
+-- it otherwise - and requiring it there would break the offline tests,
+-- which dofile the runner on its own.
+seq_debug = debugKnockdownModule
 -- Same reason: the editor asks whether "Recovered" would be a lie on this
 -- row, and the runner is where that is decided.
 seq_auto_needs_number = actionSequenceRunnerModule.auto_needs_number
@@ -3101,6 +3300,11 @@ end
 
 local function kd_delay_ticks()
 	local _d = globals and globals.options and globals.options.gc_delay
+	local _ga = globals and globals.dummy and globals.dummy.guard_action
+	-- THE CEILING (v11.7.21.2). The menu stopped at 50 while this stopped at
+	-- 30, so 31-50 quietly ran as 30. Both are 60 now, the ceiling every other
+	-- timing row has. Step one's Wait keeps 30: the editor never offers more.
+	local _cap = 60
 	-- IN SEQUENCE MODE THE FIRST STEP'S WAIT IS THIS DELAY (v300).
 	--
 	-- "Dragon punch on the fifth tick after the guard" is exactly what this
@@ -3112,9 +3316,10 @@ local function kd_delay_ticks()
 	-- The two agree on Auto without conversion: the editor stores -1 and
 	-- everything below already reads negative as "the per-character dash
 	-- value".
-	if globals and globals.dummy and globals.dummy.guard_action == 'sequence' then
+	if _ga == 'sequence' then
 		local _w = actionSequenceRunnerModule.first_wait("reversal")
 		if _w ~= nil then _d = _w end
+		_cap = 30
 	end
 	if type(_d) ~= "number" then return 0 end
 	-- NEGATIVE IS "Auto", NOT A DELAY (v198).
@@ -3126,7 +3331,15 @@ local function kd_delay_ticks()
 	if _d < 0 then
 		_d = dash_attack_ticks() or 0
 	end
-	if _d > 30 then _d = 30 end
+	if _d > _cap then _d = _cap end
+	-- RANDOM DELAY, ON TOP AND OUTSIDE THE CEILING (v11.7.21.2). Specified
+	-- only, drawn once per reversal or counter where it is queued
+	-- (GA.btn_rd_roll), so every call for the same press reads the same draw.
+	-- On Auto it rides the dash number, the way the editor's Random Delay
+	-- rides a Wait.
+	if _ga == 'reversal' or _ga == 'counter' then
+		_d = _d + (GA.btn_rd or 0)
+	end
 	return _d
 end
 
@@ -3202,8 +3415,602 @@ end
 -- Last ($125,$122) pair pushed to the input history, so held states are not
 -- pushed again on every tick.
 local tick_input_last = -1
+-- Same, for P1's bar along the bottom.
+local p1_tick_input_last = -1
+-- The guard cancel window state, carried across ticks so the transitions
+-- can be spotted. Mirrors handle_gc_event() in inputHistory.lua.
+local p1_gc_state = "p1_gc_none"
+-- The tick the window opened on, so the label can say how far into it the
+-- cancel came out. p1_tick_seq is monotonic, so this is a plain subtraction -
+-- $FF8081 is a byte and wraps.
+local p1_gc_open_seq = nil
+
+-- THE WINDOW, ONE TICK AT A TIME.
+--
+-- Same test as handle_gc_event() in inputHistory.lua: $158 is the block
+-- clock, and the cancel came out if $06 is a special (0x0E), an ES (0x10) or
+-- an EX (0x12) on the tick it reaches zero. Checked against 35 attempts
+-- logged both ways (analysis/gc_success_probe_20260915b.log).
+--
+-- SUCCESS IS ALSO REACHABLE STRAIGHT FROM BEGIN. It used to require
+-- in_progress, and a cancel that came out on the tick right after the window
+-- opened arrives while the state is still begin: no branch matched, the
+-- state stayed begin, and it stayed there until the NEXT guard - so the
+-- cancel came out, was correct, and drew no SUCCESS at all. Cancelling on
+-- the guard itself is exactly when that happens (user, 2026-09-23).
+--
+-- Pure, and out of the hook, so it can be driven tick by tick offline -
+-- the hook only runs when the game reaches 0x0221CC.
+local function gc_next_state(_state, _clock, _act)
+	if _clock == 0 and (_state == "p1_gc_in_progress"
+						or _state == "p1_gc_begin") then
+		if _act == 0x0E or _act == 0x10 or _act == 0x12 then
+			return "p1_gc_success"
+		end
+		return "p1_gc_ended"
+	end
+	if _state == "p1_gc_none" and _clock > 0 then return "p1_gc_begin" end
+	if _clock > 0 then return "p1_gc_in_progress" end
+	if _state == "p1_gc_ended" or _state == "p1_gc_success" then
+		return "p1_gc_none"
+	end
+	return _state
+end
+
+-- ------------------------------------------------------- GC COMMAND TRACE
+-- WHAT THE GAME ACCEPTED ON THE WAY TO A GUARD CANCEL, AND WHEN.
+--
+-- The engine keeps one 8 byte block per command at $300..$358, walked by
+-- 0x029F4A. Which block is the guard cancel's is per character (GC_BLOCK
+-- below) and every one of them is a DPF.
+--
+--   +0  WHICH HANDLER runs: 02 while directions are being taken, 04 once it
+--       is waiting for the button. NOT the step number - reading it as one
+--       made a dragon punch look like two directions (2026-09-23).
+--   +1  THE STEP. 02 / 04 / 06 are the first, second and third direction.
+--   +4  ticks the current step has left; it goes back up when one is taken.
+--
+-- A direction is 'taken' when +1 rises, and the lever ON THAT TICK is what
+-- was taken - read from the game rather than from what we think a dragon
+-- punch is, so a shortcut the engine allowed still shows what it allowed.
+--
+-- NOTHING IS DRAWN UNTIL A GUARD. Rows are collected all the time, because
+-- the motion often starts before the guard, but a trace only becomes visible
+-- when one arrives - otherwise every lever wiggle would draw (user,
+-- 2026-09-23).
+local GC_BLOCK = {
+	[0x00] = 0x340, [0x01] = 0x308, [0x02] = 0x328, [0x03] = 0x308,
+	[0x04] = 0x338, [0x05] = 0x318, [0x06] = 0x330, [0x07] = 0x310,
+	[0x08] = 0x300, [0x09] = 0x348, [0x0A] = 0x308, [0x0B] = 0x338,
+	[0x0C] = 0x330, [0x0D] = 0x310, [0x0E] = 0x310, [0x0F] = 0x308,
+}
+-- HOW LONG A DEAD COMMAND STAYS WORTH SHOWING.
+--
+-- The wait between two inputs of a special is rolled, and 15 ticks is the
+-- widest a player gets, so 16 covers a guard still inside the reach of the
+-- motion that just died (user, 2026-09-24).
+--
+-- NOT the 14..19 the step timer is loaded with from 0x02A55A - that byte is
+-- not the window a player experiences; the acceptance around it is its own
+-- thing (user).
+local REATTACH_TICKS = 16
+local P1_BASE = 0xFF8400
+local TRACE_ROWS = 8
+-- The attempt being collected. rows are {kind, tick, value}.
+local gct = { rows = {}, guard = nil, prog = nil, step = nil, done = nil, at = nil }
+
+local function gct_reset()
+	gct.rows, gct.guard, gct.done, gct.at = {}, nil, nil, nil
+	gct.prog, gct.step = nil, nil
+end
+
+local function gct_add(kind, tick, value)
+	if #gct.rows >= TRACE_ROWS then table.remove(gct.rows, 1) end
+	gct.rows[#gct.rows + 1] = { k = kind, t = tick, v = value }
+end
+
+-- WHAT IS COLLECTED AND WHAT IS SHOWN ARE NOT THE SAME THING.
+--
+-- A motion often starts before the guard, so collecting never stops. But a
+-- finished trace was being thrown away the moment the next motion began, and
+-- after a successful cancel the stick is usually still moving - so the
+-- result vanished a tick or two after it appeared, before anyone could read
+-- it (user, 2026-09-23).
+--
+-- So the last attempt THAT HAD A GUARD IN IT stays on screen, and the one
+-- being collected only takes its place once it has a guard of its own. No
+-- timer decides this: a guard is what a trace is about, so a guard is what
+-- replaces one.
+--
+-- Published whole, so the drawing never sees half an update. gct_reset makes
+-- a NEW rows table rather than emptying this one, which is what lets the
+-- shown copy go on pointing at the old one.
+local gct_shown = nil
+local function gct_publish()
+	if globals == nil then return end
+	if gct.guard ~= nil then
+		gct_shown = { rows = gct.rows, guard = gct.guard,
+		              done = gct.done, at = gct.at }
+	end
+	globals.gc_trace = gct_shown
+end
+
+-- THE DIRECTION, READ THE SAME WAY THE INPUT VIEWER READS IT.
+--
+-- The point of this readout is to be held against the bar along the bottom,
+-- so an arrow has to mean the same thing in both places. The surest way to
+-- get that is not to have a second opinion: this is read_game_input's rule
+-- from inputHistory.lua, byte for byte - $125 for the lever and $b for the
+-- facing, swapped back the same way, turned into the same numpad number that
+-- indexes the same arrow images.
+--
+-- TWO WRONG ANSWERS CAME BEFORE THIS ONE, both from deciding the rule
+-- instead of borrowing it (user, 2026-09-23). First $12B was drawn raw and a
+-- 1P dragon punch came out as a 2P one. Then $12B was swapped on $120,
+-- because 0x0221CC picks $120 over $b on the ground - true of what the
+-- ENGINE matches on, but $120's own sense of which way is which was never
+-- checked, and the arrows stayed mirrored.
+--
+-- $125 is the PREVIOUS tick's direction and is the steady one: measured over
+-- recorded play, $123 changed value on 20.3% of frames during a held
+-- horizontal against 4.2% for $125 (inputHistory.lua). The bar lags by that
+-- same tick, so the two still line up.
+local function gct_numpad()
+	local _d = memory.readbyte(P1_BASE + 0x125)
+	local _b0 = (_d % 2) >= 1
+	local _b1 = (math.floor(_d / 2) % 2) >= 1
+	local _left, _right
+	if memory.readbyte(P1_BASE + 0x00B) == 0 then
+		_left, _right = _b1, _b0
+	else
+		_left, _right = _b0, _b1
+	end
+	local _down = (math.floor(_d / 4) % 2) >= 1
+	local _up   = (math.floor(_d / 8) % 2) >= 1
+	if _down then
+		if _left then return 1 elseif _right then return 3 else return 2 end
+	elseif _up then
+		if _left then return 7 elseif _right then return 9 else return 8 end
+	end
+	if _left then return 4 elseif _right then return 6 end
+	return 5
+end
+
+-- WHICH BUTTONS FINISHED IT, IN THE VIEWER'S OWN ORDER.
+--
+-- $1AC and $1AE are the press edges the engine's button step reads
+-- (0x029FEC): bits 8/9/10 are the punches, 12/13/14 the kicks. Returned as
+-- LP MP HP LK MK HK so the drawing can lay them out as the input viewer
+-- does - two rows of three - rather than spelling a name. A kick completed a
+-- guard cancel in the measurements, so a punch-shaped label was never safe.
+--
+-- No bitwise operators in Lua 5.1, so the bits are divided out.
+local GCT_BITS = { 8, 9, 10, 12, 13, 14 }
+local function gct_buttons()
+	local _w = memory.readword(P1_BASE + 0x1AC)
+	local _v = memory.readword(P1_BASE + 0x1AE)
+	local _out = {}
+	for _i, _bit in ipairs(GCT_BITS) do
+		local _p = 2 ^ _bit
+		_out[_i] = (math.floor(_w / _p) % 2 == 1)
+					or (math.floor(_v / _p) % 2 == 1)
+	end
+	return _out
+end
+
+local function gct_tick(_gc)
+	local _blk = GC_BLOCK[memory.readbyte(P1_BASE + 0x382)]
+	if _blk == nil then gct_reset() gct.motion = {} return end
+	local _now = globals.p1_tick_seq or 0
+	local _step = memory.readbyte(P1_BASE + _blk + 1)
+	local _prog = memory.readbyte(P1_BASE + _blk)
+	local _was_prog, _was_step = gct.prog or 0, gct.step or 0
+
+	-- WHICH TICK OF THE GUARD POSE'S PERSISTENCE THE BLOCK LANDED ON.
+	--
+	-- Letting go of back does not drop the guard pose at once: it runs on for
+	-- a few ticks, and a hit inside that span is still blocked. Guard cancels
+	-- lean on it - the motion leaves the guard direction and the pose covers
+	-- the gap (user, 2026-09-25). The game keeps it in $07 while $06 is 0x0C
+	-- (the handler is 0x022FDA, one branch per value):
+	--
+	--     $07 00   standing, the guard direction is held
+	--     $07 02   standing, released, and the pose is persisting
+	--     $07 04   crouching, the guard direction is held
+	--     $07 06   crouching, released, and the pose is persisting
+	--     $07 08   the pose's first tick, before it picks 00 or 04
+	--
+	-- Only 02 was counted at first, so a crouching block never read as
+	-- persisting (user, 2026-09-25: "does G-Persist show on a crouch
+	-- guard?"). No log had caught 06 - every crouch guard in them was hit
+	-- while still held - so it comes from the ROM: 04 steps to 06 exactly
+	-- where 00 steps to 02.
+	--
+	-- Measured on Demitri, 65 blocks: persisting blocks landed 1 to 6 ticks
+	-- in; with the lever left at neutral the pose ran out after 5 to 8. Letting
+	-- go of back steps into persisting first, whatever the lever; from there
+	-- a lever that is only forward - not down-forward - walks (0x027122).
+	-- Cross-up blocks read 00 -
+	-- the guard direction follows the attacker, not the facing byte - so they
+	-- are held blocks, correctly (VSAV_MEMORY_NOTES, guard pose persistence).
+	--
+	-- The pose ends on the contact tick ($06 leaves 0x0C with $05 set), which
+	-- is a tick before the cancel window opens (the guard row below says
+	-- why), so the count is taken there and kept for the guard row. Dropped
+	-- once the stun is over, so a hit that opened no window cannot hand its
+	-- count to a later block.
+	-- Fields of gct, not locals: this file's main chunk is at the limit.
+	local _s06 = memory.readbyte(P1_BASE + 0x06)
+	local _s05 = memory.readbyte(P1_BASE + 0x05)
+	if _s06 == 0x0C then
+		local _s07 = memory.readbyte(P1_BASE + 0x07)
+		if _s07 == 0x02 or _s07 == 0x06 then
+			if gct.pers_start == nil then gct.pers_start = _now end
+		else
+			gct.pers_start = nil
+		end
+		gct.pers_n = nil
+	elseif gct.pose_prev == 0x0C then
+		-- A PERSISTENCE THAT BEGAN AND WAS HIT BETWEEN TWO LOOKS.
+		--
+		-- This hook runs at the top of P1's update, before the pose handler.
+		-- Letting go of back on the tick before the hit turns the pose to
+		-- persisting further down that same update, and the hit is written
+		-- after it - as $05 02 $06 00 $07 00, over the 02 this never saw. It
+		-- read as a plain Guard although back was already let go (user,
+		-- 2026-09-25: ← held 4, then neutral, blocked on the first neutral
+		-- tick).
+		--
+		-- The pose tests bit 0 of $12B, the facing-corrected lever, to stay
+		-- held (0x027694; $3B2 skips the test). By this hook that word has
+		-- moved to $12C (0x022120), so $12D is the very lever the pose last
+		-- tested. Clear there means it stepped to persisting: its first tick.
+		if _s05 ~= 0 and gct.pers_start == nil
+			and memory.readbyte(P1_BASE + 0x3B2) == 0
+			and memory.readbyte(P1_BASE + 0x12D) % 2 == 0 then
+			gct.pers_start = _now
+		end
+		-- COUNTED FROM 1, LIKE AN ATTACK'S ACTIVE FRAMES (user, 2026-09-26).
+		--
+		-- The number answers "on which tick of the persistence did the block
+		-- land", an ordinal. By the time a hit lands on the tick back was let
+		-- go, the pose has already run one tick as persisting - that is tick 1.
+		-- Counted from 0 it read G-Persist 0, which looks like no persistence
+		-- at all. It also makes the bar add up: the IDLE ticks from letting go
+		-- up to and including the marked column come to n.
+		if _s05 ~= 0 and gct.pers_start ~= nil then
+			gct.pers_n = (_now - gct.pers_start) % 256 + 1
+		else
+			gct.pers_n = nil
+		end
+		gct.pers_start = nil
+	elseif _s05 == 0 then
+		gct.pers_n = nil
+	end
+	gct.pose_prev = _s06
+
+	-- THE TICK THE BLOCK LANDED, FOR THE GUARD ROW.
+	--
+	-- The hit is written into P1 as $05 02, $06 00, $07 00 (0x0182D8 and its
+	-- neighbours, through A1 - code writing some other object), and P1's own
+	-- handler moves $07 on
+	-- the next time P1 runs - loading the block clock as it does. So that
+	-- state is the contact, and this hook sees it for one tick. Only its first
+	-- tick is taken: a hit that was not blocked was once logged holding it for
+	-- two. Dropped once the stun is over, like the count above.
+	local _pre = _s05 == 0x02 and _s06 == 0x00
+		and memory.readbyte(P1_BASE + 0x07) == 0x00
+	if _pre and not gct.pre_prev then
+		gct.contact = _now
+	elseif _s05 == 0 then
+		gct.contact = nil
+	end
+	gct.pre_prev = _pre
+
+	-- THE SAME TICK, FOR THE BAR ALONG THE BOTTOM (mark_guard_column in
+	-- inputHistory.lua). The hook hands it over with this tick's column.
+	-- Taken here, ahead of the trace's own bookkeeping below: the bar marks
+	-- every window that opens, the trace draws one guard per attempt, and the
+	-- trace clears both fields once it has used them.
+	if _gc == "p1_gc_begin" then
+		gct.bar_mark = gct.contact ~= nil
+			and { seq = gct.contact, pers = gct.pers_n } or nil
+	end
+
+	-- WHICH BYTE CARRIES THE STATE, AND WHY IT IS NOT THE STEP NUMBER.
+	--
+	-- +0 is the handler the command sits in: 0 waiting for a first
+	-- direction, 2 waiting for a middle one, 4 waiting for the button. +1 is
+	-- the step index inside the motion, and the game does NOT clear it when
+	-- an attempt dies - it keeps its last value until a later attempt writes
+	-- over it.
+	--
+	-- So an attempt ends when +0 falls back to 0, and a fresh first
+	-- direction is +0 leaving 0. Reading either of those off +1 misses them.
+	--
+	-- Replaying the 2026-09-23 log (6831 ticks) through this: 47 attempts
+	-- died part-way, and the version that watched +1 saw NONE of them. 25 of
+	-- those were restarted while +1 still read 02, which the old reading
+	-- also could not see - two goes then collect into one trace, and the gap
+	-- drawn between two directions is the sum of both waits. That is the
+	-- shape of the 19t the trace showed once (2026-09-24), but the log holds
+	-- no instance that reached the drawing, so the link is not proven.
+	local _restart = _was_prog == 0 and _prog ~= 0
+	local _dropped = _was_prog ~= 0 and _prog == 0
+	-- A direction landed if the handler moved on, OR if the step index
+	-- advanced. The index has to be able to carry it alone: when the button
+	-- lands on the same tick as the last direction, +0 falls back to 0 in
+	-- that same tick, and requiring +0 to be non-zero drops the direction.
+	-- One of the three cancels in the 2026-09-23 log does exactly this
+	-- (seq=5576, 02.04 -> 00.06 with the success event).
+	local _took = _prog > _was_prog or _step > _was_step
+
+	-- THE MOTION THAT IS ALIVE RIGHT NOW, WHATEVER THE TRACE IS SHOWING.
+	--
+	-- A finished trace is held on screen until the next attempt, and nothing
+	-- goes into its rows while it is held. The command can still be half way
+	-- through a motion, though: a blocked chain opens a fresh window on every
+	-- hit, so one window can run out mid-motion and the next guard finish it.
+	-- That cancel drew as a single direction and a button (user, 2026-09-25,
+	-- guarding Aulbath's five-hit jump chain) - the directions taken before the
+	-- new guard had gone nowhere, although the input viewer had all of them.
+	--
+	-- So the live motion is followed on its own, from its first direction to
+	-- the tick +0 falls back to 0, and a guard that ends the hold takes it
+	-- over. The copy is taken before this tick is added, so a direction that
+	-- lands on the guard's own tick is recorded once, by the path below.
+	-- A field of gct and not a local: this file's main chunk is at Lua 5.1's
+	-- limit of 200 locals.
+	local _dir_v = _took and gct_numpad() or nil
+	local _carry = {}
+	for _i, _m in ipairs(gct.motion or {}) do _carry[_i] = _m end
+	if _restart then gct.motion = {} end
+	if _took then
+		gct.motion = gct.motion or {}
+		gct.motion[#gct.motion + 1] = { t = _now, v = _dir_v }
+	end
+	if _dropped then gct.motion = {} end
+
+	-- A GUARD THAT LANDS RIGHT AFTER A DEAD COMMAND BELONGS TO THE SAME GO.
+	--
+	-- One input's grace is random, and REATTACH_TICKS is the widest it gets,
+	-- so a guard closer than that is inside the span the motion was still
+	-- live for. Throwing the rows away there loses exactly the thing worth
+	-- seeing - the inputs that were too slow, and then the guard (user,
+	-- 2026-09-24).
+	--
+	-- The expiry becomes a row of its own rather than vanishing, so the rows
+	-- above it are still marked as belonging to the attempt that died. This
+	-- falls through rather than returning, so a direction taken on the same
+	-- tick as the guard is still recorded - and the guard row is left to the
+	-- same code as every other guard, so it is placed the same way.
+	if gct.done == "Cmd Expired" and _gc == "p1_gc_begin"
+		and gct.at ~= nil and ((_now - gct.at) % 256) <= REATTACH_TICKS then
+		gct_add("dead", gct.at, gct.done)
+		gct.done, gct.at = nil, nil
+		gct.guard = nil
+	elseif gct.done == "Cmd Expired" and _restart and gct.guard ~= nil
+		and _gc == "p1_gc_in_progress" then
+		-- A DEAD COMMAND IS NOT THE END WHILE THE GUARD IS STILL OPEN.
+		--
+		-- The cancel window outlasts one go at the motion, so dropping it and
+		-- inputting it again cancels off the SAME guard. Resetting here threw
+		-- that guard away, and the attempt that then succeeded had no guard of
+		-- its own - so it was never published, and the screen kept showing the
+		-- expiry while the input viewer said SUCCESS (user, 2026-09-24).
+		--
+		-- The 2026-09-23 log holds 11 windows and not one of them is restarted
+		-- after a drop, which is why this was never seen there. The evidence
+		-- is two screenshots: the trace stopped at Cmd Expired three ticks
+		-- after the guard while the input viewer counted SUCCESS twelve ticks
+		-- off that same guard.
+		gct_add("dead", gct.at, gct.done)
+		gct.done, gct.at = nil, nil
+	elseif gct.done ~= nil then
+		-- A finished attempt stays up until the next one starts.
+		if _gc == "p1_gc_begin" or _restart then
+			gct_reset()
+			-- A guard that ends the hold takes the motion still alive into the
+			-- new trace, above the guard - it is the start of this cancel. Not
+			-- one that dies on this very tick. A restart needs nothing here:
+			-- +0 was 0 a tick ago, so the motion was already emptied.
+			if not _dropped then
+				for _, _m in ipairs(_carry) do gct_add("dir", _m.t, _m.v) end
+			end
+		else
+			gct.prog, gct.step = _prog, _step
+			gct_publish()
+			return
+		end
+	end
+
+	if gct.done == nil then
+		-- A direction the game took.
+		if _took then
+			gct_add("dir", _now, _dir_v)
+		end
+		if _gc == "p1_gc_begin" and gct.guard == nil then
+			-- THE GUARD ROW SITS AT THE CONTACT, NOT AT THE WINDOW.
+			--
+			-- The window opens a tick after the block lands. This hook runs at
+			-- the top of P1's update (0x022114 reads the input, then 0x0222AC
+			-- dispatches on $04), the hit is written from outside that update,
+			-- and the block clock is loaded further down it by the guard handler
+			-- (0x023960). So a direction taken on the tick the window opened
+			-- came after the block, yet it was drawn above the guard, 0t apart -
+			-- which read as blocking with the lever already forward (user,
+			-- 2026-09-25: G-Persist 5 (0t) under a forward that came the tick
+			-- after the contact).
+			--
+			-- So the row takes the contact tick and moves up past whatever came
+			-- after it, and a tie keeps the direction first. Every other row is
+			-- already in tick order, so this keeps the whole trace in it - a
+			-- command that died between the contact and the window goes below
+			-- the guard, where the drawing counts both from the input before
+			-- them instead of wrapping to 255t. With no contact seen, the
+			-- window's own tick is all there is.
+			--
+			-- gct.guard stays the window's tick: Success and GC Expired count
+			-- from it, as the SUCCESS count in the input viewer does.
+			gct.guard = _now
+			local _at = gct.contact or _now
+			gct_add("guard", _at, gct.pers_n)
+			local _rows, _i = gct.rows, #gct.rows
+			while _i > 1 do
+				local _p = _rows[_i - 1]
+				local _d = (_p.t - _at) % 256
+				if _d == 0 or _d > (_now - _at) % 256 then break end
+				_rows[_i - 1], _rows[_i] = _rows[_i], _p
+				_i = _i - 1
+			end
+			gct.pers_n, gct.contact = nil, nil
+		end
+		if _gc == "p1_gc_success" then
+			gct_add("btn", _now, gct_buttons())
+			gct.done, gct.at = "Success", _now
+		elseif _gc == "p1_gc_ended" then
+			gct.done, gct.at = "GC Expired", _now
+		elseif _dropped and #gct.rows > 0 then
+			-- The motion did not stay together. A cancel that succeeds drops
+			-- +0 on the same tick as the success event, so this has to come
+			-- after both events, not before them (log, 2026-09-24).
+			--
+			-- Kept even when no guard has happened yet: without that, the
+			-- re-attach above can never fire for the case it exists for -
+			-- the command dying first and the guard arriving after.
+			gct.done, gct.at = "Cmd Expired", _now
+		end
+	end
+	gct.prog, gct.step = _prog, _step
+	gct_publish()
+end
+-- --------------------------------------------------- END GC COMMAND TRACE
+
+-- WHEN THE COUNT STARTS, AND WHAT IT COMES TO.
+--
+-- Pulled out of the hook on purpose. The hook only runs when the game
+-- reaches 0x0221CC, so nothing offline can drive it; this is lifted out of
+-- the file and run tick by tick by analysis/test_gc_success_ticks.lua, the
+-- same way make_input_sequence is lifted out of controller.lua.
+--
+-- Returns the tick count to hang on this tick's column (nil on every tick
+-- but the one a cancel came out on) and the opening tick to carry forward.
+local function gc_tick_count(_gc, _open_seq, _seq)
+	if _gc == "p1_gc_begin" then return nil, _seq end
+	if _gc == "p1_gc_success" then
+		if _open_seq == nil then return nil, nil end
+		return _seq - _open_seq, nil
+	end
+	return nil, _open_seq
+end
 memory.registerexec(0x0221CC, function()
-	if memory.getregister("m68000.a6") ~= 0xFF8800 then return end
+	local _who = memory.getregister("m68000.a6")
+
+	-- P1'S BAR, ALSO PER TICK.
+	--
+	-- The bar was built once per DISPLAYED frame, and the input that completes
+	-- a command is a one-tick event: measured over 19 guard cancels, the frame
+	-- sampler saw the qualifying press or release 3 times and missed it 16,
+	-- with 10 of those drawing SUCCESS against no input column at all. The
+	-- cancel itself was fine every time - only the drawing lost it
+	-- (analysis/gc_success_probe_20260915b.log).
+	--
+	-- $125, NOT $123, which is the opposite of the choice made for the dummy
+	-- below. The note there explains why $123 suits a dummy: it is the current
+	-- tick's direction and the dummy holds nothing, so the flicker between the
+	-- two horizontal bits cannot bite. A human holds directions constantly and
+	-- it would. $125 is the previous tick's direction and is what the bar has
+	-- always drawn from; checked against 248 lever changes in the probe logs,
+	-- it turns over cleanly at tick resolution - one A->B->A inside two ticks
+	-- in the whole set.
+	--
+	-- Pairing this tick's buttons with last tick's direction is also the right
+	-- way round for a motion: in 6 2 3 + button the button lands a tick after
+	-- the 3, so $125 still reads 3 when the button arrives.
+	if _who == 0xFF8400 then
+		-- Monotonic, unlike $FF8081, which is a byte and wraps. inputHistory
+		-- uses this as its clock so it can tell two ticks inside one displayed
+		-- frame apart - without it the history appends at most one column per
+		-- frame however many inputs happened.
+		globals.p1_tick_seq = (globals.p1_tick_seq or 0) + 1
+		local _btn = memory.readbyte(0xFF8522)
+		local _dir = memory.readbyte(0xFF8525)
+		local _v = _dir * 256 + _btn
+
+		-- THE GUARD CANCEL STATE, ON THE SAME CLOCK AS THE COLUMNS.
+		--
+		-- inputHistory.lua worked this out once per DISPLAYED frame and stamped
+		-- the answer onto every column built that frame. While a frame produced
+		-- at most one column that was invisible; now that a frame can produce
+		-- three or four, SUCCESS lands on whichever of them came first and the
+		-- input that actually completed the cancel can be several columns away.
+		--
+		-- Same test as handle_gc_event(): the window is the block clock $158,
+		-- and the cancel came out if $06 is a special (0x0E), an ES (0x10) or an
+		-- EX (0x12) on the tick it reaches zero. Checked against 35 attempts
+		-- logged both ways - tick side and frame side agreed on every one, so
+		-- moving it here changes WHERE the label lands, not WHAT it says
+		-- (analysis/gc_success_probe_20260915b.log).
+		local _clock = memory.readbyte(0xFF8558)
+		local _gc = gc_next_state(p1_gc_state, _clock,
+			memory.readbyte(0xFF8406))
+		-- HOW FAR INTO THE WINDOW THE CANCEL CAME OUT, IN TICKS.
+		--
+		-- $158 takes 14 on a guard and 0x022492 removes one EVERY TICK, so this
+		-- is a tick count or it is nothing. It is measured here rather than in
+		-- inputHistory because that side runs on displayed frames - at turbo 3
+		-- that is 3 frames to 4 ticks, and the number would be frames under a
+		-- tick label.
+		--
+		-- Counted from the tick the window OPENED rather than read out of $158,
+		-- because a cancel clears the clock early and the last value before it
+		-- was cleared is already gone by the time we know it succeeded. Both
+		-- ends are sampled in this one hook, so whatever offset the hook sits
+		-- at within a tick cancels out of the difference.
+		local _gct
+		_gct, p1_gc_open_seq = gc_tick_count(_gc, p1_gc_open_seq, globals.p1_tick_seq)
+		gct_tick(_gc)
+		-- SHOW GC STATS COUNTS OFF THIS SAME TICK (gcStats.lua): the window
+		-- state, the Success count and the command block gct_tick has just
+		-- read, plus $05 for the blocked string and $120 for the side. Looked up
+		-- here rather than held in a local - this file's main chunk is at Lua
+		-- 5.1's limit of 200 - and require hands back the one loaded table.
+		-- Protected: an error thrown in this hook would take the input bar with
+		-- it. The message is kept, and the box says so instead of its numbers.
+		local _ok, _err = pcall(require("./scripts/gcStats").on_tick,
+			globals.p1_tick_seq, _gc, _gct, gct.prog, gct.step,
+			memory.readbyte(0xFF8405), memory.readbyte(0xFF8520))
+		if not _ok and globals.gc_stats_error == nil then
+			globals.gc_stats_error = tostring(_err)
+		end
+		local _gc_changed = _gc ~= p1_gc_state
+		p1_gc_state = _gc
+
+		-- A tick earns a column when the input changed OR the window did. The
+		-- second half is what puts SUCCESS on the tick it happened rather than
+		-- on the first tick of the frame that noticed.
+		if _v ~= p1_tick_input_last or _gc_changed then
+			p1_tick_input_last = _v
+			-- Nothing drains it while the menu is up, so do not fill it there:
+			-- a queue held across the menu would flush stale columns the moment
+			-- it closed.
+			if globals.show_menu ~= true then
+				local _q = globals.p1_tick_inputs
+				if _q == nil then _q = {}; globals.p1_tick_inputs = _q end
+				if #_q < 64 then
+					-- mark: the tick the block landed on, carried by the column
+					-- of the tick the window opened (gct_tick).
+					table.insert(_q, { dir = _dir, btn = _btn,
+						seq = globals.p1_tick_seq, gc = _gc, gct = _gct,
+						mark = gct.bar_mark })
+				end
+			end
+		end
+		gct.bar_mark = nil
+		return
+	end
+
+	if _who ~= 0xFF8800 then return end
 
 	-- THE DUMMY'S SCROLLING INPUT, SAMPLED PER TICK (v135).
 	--
@@ -3960,9 +4767,50 @@ memory.registerexec(0x02211A, function()
 		                  and memory.readbyte(0xFF8940) == 0x0A)
 		if _csig or _csnosig then
 			csp_pending = false
-			run_one_frame_special_ref()
-			debugKnockdownModule.mark_write("csp_poke",
-				_csig and 1 or 2, memory.readbyte(0xFF8940))
+			-- RANDOM START WAIT (user, 2026-10-02). Drawn when the request was
+			-- made; 0 pokes here as it always has. Anything else is due that
+			-- many Ticks after this one - the dummy is free by then, which
+			-- run_one_frame_special accepts ($05 == 0x00). Kept on GA, not in a
+			-- local: this hook is at the 60-upvalue ceiling.
+			local _rw = GA.csp_wait or 0
+			GA.csp_wait = nil
+			if _rw > 0 then
+				GA.csp_due = (memory.readbyte(0xFF8081) + _rw) % 256
+				debugKnockdownModule.mark_write("csp_rsw", _rw,
+					memory.readbyte(0xFF8940))
+			else
+				run_one_frame_special_ref()
+				debugKnockdownModule.mark_write("csp_poke",
+					_csig and 1 or 2, memory.readbyte(0xFF8940))
+			end
+		end
+	end
+	-- The delayed poke. A difference of 0, or past it (the half-window above
+	-- 128), is due; a re-run tick that reads the clock a little early just
+	-- waits a little longer.
+	--
+	-- Due is not enough on its own: run_one_frame_special refuses anything but
+	-- a free dummy standing or walking ($06 0x00 / 0x04) and the request would
+	-- be gone. So a dummy turning round or in a proximity block is waited for,
+	-- tick by tick, and one that has been hit or has blocked again ($05 non-zero)
+	-- drops it - that is a new chance, with a request of its own.
+	if GA.csp_due ~= nil and run_one_frame_special_ref ~= nil then
+		local _now = memory.readbyte(0xFF8081)
+		local _left = (GA.csp_due - _now) % 256
+		if _left == 0 or _left > 128 then
+			local _c06 = memory.readbyte(0xFF8806)
+			if memory.readbyte(0xFF8805) ~= 0x00 then
+				GA.csp_due = nil
+			elseif _c06 == 0x00 or _c06 == 0x04 then
+				GA.csp_due = nil
+				run_one_frame_special_ref()
+				debugKnockdownModule.mark_write("csp_poke", 3,
+					memory.readbyte(0xFF8940))
+			else
+				-- Still due next tick: keep it on this one, so a long wait
+				-- cannot run the half-window round to "not yet".
+				GA.csp_due = _now
+			end
 		end
 	end
 
@@ -4056,9 +4904,34 @@ memory.registerexec(0x02211A, function()
 		local _phold = (fast_press_btn == 0) and 1 or 0
 		if _dlg >= fast_press_off and _dlg <= fast_press_off + _phold
 		   and (_dlg > fast_press_off or memory.readbyte(0xFF8805) == 0x00) then
-			assert_input_bits(fast_press_lev, fast_press_btn)
+			-- RE-AIM THE DEFERRED PRESS AT THE FACING IT LANDS UNDER (2026-09-20).
+			--
+			-- The bits were captured raw at defer time, one to three ticks
+			-- before free. A knockdown whose dummy is lying facing away ends
+			-- with the wake-up turn: $b flips exactly on the free tick and the
+			-- swap at 0x022194 then reads the captured bits as the opposite
+			-- direction. Measured shape of every failure (kd_c05_s12..s16,
+			-- kd_c0A_s19..s37): tap one went in as corrected forward, the
+			-- press landed as corrected back, the two taps of ONE dash
+			-- disagreed, no dash came out, and the counter attack's own button
+			-- came out alone as a plain normal (0x0A at free+2..+3) or as
+			-- nothing at all. Swapping the two facing-relative bits when the
+			-- reference has moved restores the corrected direction the press
+			-- was asked for, tick by tick - a turn between the press's own two
+			-- ticks is handled the same way.
+			--
+			-- facing_for_input() is stable within a tick for this purpose:
+			-- nothing recomputes $b between the inject at 0x02211A and the
+			-- correction at 0x022134 (see the dash_facing diagnostic), so the
+			-- value read here is what the swap will use this tick.
+			local _pl = fast_press_lev
+			if fast_press_fref ~= nil
+			   and facing_for_input() ~= fast_press_fref then
+				_pl = swap_facing_bits(_pl)
+			end
+			assert_input_bits(_pl, fast_press_btn)
 			debugKnockdownModule.mark_write("press_now",
-				fast_press_lev * 256 + fast_press_btn, _dlg)
+				_pl * 256 + fast_press_btn, _dlg)
 			if _dlg < fast_press_off + _phold then
 				-- More ticks of this press to come; keep the state.
 				return
@@ -4352,7 +5225,11 @@ memory.registerexec(0x02211A, function()
 		-- on separate ticks spends a tick doing nothing - and a tick is the
 		-- whole unit this path exists to get right.
 		for _pass = 1, 2 do
-			if _d0 == nil or globals.dummy.guard_action ~= 'sequence' then break end
+			-- owns(): also a Specified start delayed by Random Start Wait.
+			if _d0 == nil
+			   or not actionSequenceRunnerModule.owns(globals.dummy.guard_action) then
+				break
+			end
 			actionSequenceRunnerModule.service(_d0)
 			local _s0 = _d0.pending_input_sequence
 			if _s0 == nil or not _s0.seq_tick or _s0.sequence == nil then break end
@@ -4371,8 +5248,252 @@ memory.registerexec(0x02211A, function()
 			seq_held_btn = nil
 			seq_held_btn_until = nil
 			local _i = _s0.current_frame or 1
+			-- THE LAST PRESS WAITS FOR THE REAL TOUCHDOWN - BUT NOT FOREVER.
+			--
+			-- A landing step is committed lead ticks early so its final entry
+			-- falls on the tick the dummy can first act. That is a PREDICTION,
+			-- and a hit stop starting after the commit stops the physics while
+			-- this walk keeps counting ticks: the touchdown moves back, the
+			-- last press goes out in the air, and a press that misses free+0
+			-- does not come out late - it does not come out at all.
+			--
+			-- Measured 2026-09-19, ten runs each. Dash LP: FD:0, works. Dash
+			-- HP: FD:48, and every single landing press (AF 24 of 24) went out
+			-- roughly two ticks above the floor. The slow move connects late in
+			-- the descent, so its freeze lands inside this delivery.
+			--
+			-- ONLY A DELIVERY THAT WAS FROZEN IS TOUCHED. An earlier attempt
+			-- waited whenever the dummy was airborne at the last entry, which
+			-- fires constantly - half of the working LP presses are airborne
+			-- too, one tick out and perfectly fine - and measured LW:240 over
+			-- 24 laps. It pushed the dash cancel out of its window and had to
+			-- be reverted. saw_freeze is what keeps the working case untouched.
+			--
+			-- WAITING COSTS NO EDGE, BUT IT DOES COST THE WINDOW. The entry
+			-- before the last is neutral, so holding asserts nothing and the
+			-- forward is pressed fresh on the real touchdown. But the game's
+			-- command clock does not stop for hit stop, and the dash allows
+			-- only DASH_GRACE_TICKS on that neutral. Past it the motion is
+			-- dead, so the whole thing is entered again from the top rather
+			-- than pressed into a window that has already closed.
+			-- ONLY AS THE LAST ENTRY IS ABOUT TO START.
+			--
+			-- The last forward is asserted for TWO ticks (a buttonless entry
+			-- needs the v158 hold). On the first of them the dash is granted -
+			-- and Sasquatch's dash lifts his feet, so $38 goes 0 -> 1 on that
+			-- very tick (VSAV_MEMORY_NOTES.md). On the second tick this branch
+			-- then saw "airborne and on the way down" and re-entered the motion,
+			-- which granted another dash, which lifted him again: dash, land,
+			-- dash, land, for as long as the list was running (reported
+			-- 2026-09-19). The guard was reacting to the dash it had just
+			-- produced.
+			--
+			-- tick_held is zero only before the entry has been asserted at all,
+			-- so this now asks the question once, at the moment it is still a
+			-- question. A hold keeps it zero - that path returns before writing
+			-- - so waiting and re-entering both still work.
+			-- ticks_to_landing() > 0 WAS TRIED HERE AND BROKE SASQUATCH.
+			--
+			-- The reasoning was that saw_freeze is only a proxy for "would this
+			-- press land before the touchdown", which is true - but the direct
+			-- form waits on EVERY descending delivery, and a press that is
+			-- already aimed at the touchdown is still descending when it goes
+			-- out. Sasquatch's second dash went late again, the same LW:240 as
+			-- 2026-09-19. Reverted the same day it was tried (user, 2026-09-20).
+			--
+			-- The Morrigan case it was meant to fix is real and still open: the
+			-- freeze that shifts the schedule belongs to the PREVIOUS step's
+			-- contact and is over before this segment starts being delivered,
+			-- so saw_freeze - which only watches the delivery - never sees it.
+			-- Whatever replaces this has to ask about the freeze since the
+			-- ANCHOR, not the freeze during the delivery.
+			if _s0.seq_land and _s0.saw_freeze and _i == #_s0.sequence
+			   and (_s0.tick_held or 0) == 0 then
+				-- A DASH: ASK THE GAME WHERE ITS RECOGNISER IS (2026-10-02).
+				--
+				-- The neutral in front of this entry has put the game's dash
+				-- recogniser on its last step, waiting for one more forward
+				-- press, for DASH_STEP_TICKS (actionSequenceRunner, from
+				-- 0x02A4C8). It keeps counting through hit stop. That press
+				-- completes the dash wherever it falls - but the dash is only
+				-- taken on a tick a $06 handler can take it, never inside the
+				-- freeze and not near the floor in the air.
+				--
+				-- The old rule held a fixed nine ticks, then entered the motion
+				-- again from the top, in the air. Traced on Morrigan (dash MK LP)
+				-- and Sasquatch (dash cancel HK, the HK's second hit), looped on
+				-- Auto (Landing) with the attack blocked: the re-entered motion's
+				-- FIRST forward completed the old dash inside the freeze or in
+				-- the air, where it was spent, and its later forward only started
+				-- a new one. No dash on any such lap (Morrigan 17 of 17).
+				--
+				-- So nothing is pressed in the air or inside the freeze. On the
+				-- floor, with the freeze over, the recogniser itself decides
+				-- ($1F0/$1F4 for forward, read before this tick runs it, so a
+				-- timer of 2 or more is still alive after its own decrement):
+				--   last step, alive  -> press now: the dash completes on the
+				--                        touchdown, the fastest there is
+				--   step 0            -> nothing left of it: enter the motion again
+				--                        from the top
+				--   anything else     -> wait a tick (on the first step our
+				--                        neutral moves it on; on the last with the
+				--                        timer about to run out it clears)
+				--
+				-- The floor is $38 back to 0, not "able to act": releasing on
+				-- $05/$06 both zero was tried on 2026-09-19 and made Sasquatch's
+				-- second dash late, so it was taken straight back out.
+				--
+				-- A motion that is not a dash keeps the rule it had: hold out the
+				-- grace in the air, then enter it again. Its recogniser is a
+				-- different one and nothing here has been measured against it.
+				local _R = actionSequenceRunnerModule
+				local _rec = _R.dash_recognizer and _R.dash_recognizer(_s0.sequence)
+				local _air = memory.readbyte(0xFF8838) ~= 0 and ticks_to_landing() ~= nil
+				if _rec ~= nil then
+					if _air or memory.readbyte(0xFF885C) ~= 0 then
+						return
+					end
+					local _st = memory.readbyte(_rec)
+					local _tm = memory.readbyte(_rec + 4)
+					if _st == 0 then
+						_s0.current_frame = 1
+						_s0.tick_held = 0
+						_s0.land_hold = 0
+						_i = 1
+					elseif not (_st == 4 and _tm >= 2) then
+						return
+					end
+					-- Otherwise the last step is alive: this press completes it.
+				elseif _air then
+					_s0.land_hold = (_s0.land_hold or 0) + 1
+					-- One tick of the grace is already spent by the neutral entry
+					-- itself, so the hold may use the rest and no more.
+					if _s0.land_hold < (_R.DASH_GRACE_TICKS or 10) - 1 then
+						return
+					end
+					-- Spent. Start the motion over so the window is fresh.
+					--
+					-- saw_freeze STAYS SET. Clearing it made the second attempt
+					-- blind: it would walk straight to its own last entry and press
+					-- in the air again. Keeping it means the list cycles until the
+					-- floor is really there; the whole branch is under
+					-- ticks_to_landing() ~= nil, so it cannot spin forever.
+					_s0.current_frame = 1
+					_s0.tick_held = 0
+					_s0.land_hold = 0
+					_i = 1
+				end
+			end
+			-- THE WINDOW RAN OUT WHILE WAITING. START OVER INSTEAD.
+			--
+			-- Not counting frozen ticks keeps a press alive through a SHORT
+			-- freeze, which is what Jedah needed: three frozen ticks, the
+			-- forward held five, the dash came out. It cannot save a long
+			-- one. Sasquatch's HP freezes for eleven, the forward ends up
+			-- held thirteen ticks, and the game only lets the first
+			-- direction of a dash continue for ten (VSAV_MEMORY_NOTES.md).
+			-- Past that the motion is dead and every further tick feeds
+			-- something that cannot come out.
+			--
+			-- So stop asserting, let the freeze finish, and enter the whole
+			-- motion again on a window that is open. Traced 2026-09-19: the
+			-- runs that did re-enter (e3, then e1 again) produced a dash
+			-- every time, and the ones that kept feeding never did.
+			if _s0.restart_pending then
+				if memory.readbyte(0xFF885C) ~= 0 then return end
+				_s0.restart_pending = nil
+				_s0.tick_held = 0
+				_s0.entry_ticks = 0
+				-- A DASH MAY STILL BE HALF-ENTERED (2026-10-02).
+				--
+				-- Letting go of the stretched forward is a neutral, and a
+				-- neutral is exactly what moves the game's recogniser on to its
+				-- last step - so the dash is waiting for one more forward. The
+				-- top of the motion would hand it that forward now, in the air
+				-- off a freeze where it is spent (traced: Sasquatch, dash cancel
+				-- HP, the HP connecting on the run-up's first tick, every such lap
+				-- without a dash). Go to the last entry instead, and press
+				-- nothing on this tick: on a landing delivery the branch above
+				-- then holds it for the floor; on any other it goes on the next
+				-- tick. Step 0 means the dash is gone - start from the top.
+				local _rec = actionSequenceRunnerModule.dash_recognizer
+				             and actionSequenceRunnerModule.dash_recognizer(_s0.sequence)
+				if _rec ~= nil and memory.readbyte(_rec) == 4
+				   and memory.readbyte(_rec + 4) >= 2 then
+					_s0.current_frame = #_s0.sequence
+					return
+				end
+				_s0.current_frame = 1
+				_i = 1
+			end
+			-- A DASH CANNOT BE AIMED WHILE THE CHARACTER IS STILL TURNING.
+			--
+			-- Held, not corrected: the direction a dash travels is decided when
+			-- the game grants it, so one entered facing the old way runs away
+			-- from the opponent for its whole length. Waiting for the turn is
+			-- the only thing that puts it the right way round, because a back
+			-- dash cannot be used instead - $b flips inside the command window
+			-- and half a back dash plus half a forward dash is neither.
+			--
+			-- ONLY RAW DIRECTIONS, AND ONLY WHILE THE TWO DISAGREE. Outside a
+			-- crossover they never disagree, so nothing else waits a tick.
+			--
+			-- CAPPED BY THE COMMAND'S OWN WINDOW. If the turn has not happened
+			-- within the grace the dash has anyway (10 ticks Normal, 8 Turbo -
+			-- VSAV_MEMORY_NOTES.md), waiting longer buys nothing: the motion
+			-- would be dead by then. Past the cap it goes out as it did before,
+			-- which is no worse than not waiting at all.
+			if _s0.raw_dir == true and facing_unsettled() then
+				_s0.face_hold = (_s0.face_hold or 0) + 1
+				if _s0.face_hold
+				   <= (actionSequenceRunnerModule.DASH_GRACE_TICKS or 10) then
+					return
+				end
+			else
+				_s0.face_hold = 0
+			end
 			if _i <= #_s0.sequence then
 				local _pl, _pb = entry_to_bits(_s0.sequence[_i])
+				-- Every tick this entry has been asserted, frozen ones too -
+				-- the game's command clock does not stop for hit stop.
+				_s0.entry_ticks = (_s0.entry_ticks or 0) + 1
+				-- THE FREEZE DOES NOT HAVE TO STILL BE RUNNING.
+				--
+				-- This used to require $5C at the very tick the count crossed,
+				-- and that is not when the damage shows. A freeze that ends at
+				-- tick 8 leaves the entry asserted for another few ticks while
+				-- tick_held catches up, so the count crosses on a tick that is
+				-- no longer frozen, the guard misses it, and the entry goes out
+				-- having been held THIRTEEN ticks - past the ten the game gives
+				-- a dash's first direction, and with no press edge left at the
+				-- end because it never let go.
+				--
+				-- MEASURED 2026-09-20 (Morrigan, dash then Forward+MK, looped).
+				-- Every lap that dashed had entry one asserted 2 ticks; every
+				-- lap that did not had it asserted 12 or 13 and walked instead:
+				--
+				--     lg 144..156  e1 L2   (13 ticks)  -> no dash, $06 = 04
+				--     lg 185..186  e1 L2   ( 2 ticks)  -> dash,    $06 = 14
+				--
+				-- Which is why a whiff works and a hit does not: without the
+				-- hit there is no freeze to stretch the entry (user, 2026-09-20).
+				--
+				-- saw_freeze, so a delivery that never met a freeze still comes
+				-- out exactly as it did before - the same rule the re-timing
+				-- below already follows.
+				-- 2026-09-20: two guards were added here and then removed.
+				-- An early one that fired on the first frozen tick took landing
+				-- segments away from the landing measures above, and widening
+				-- this one with saw_freeze did not fix what it was aimed at
+				-- (Morrigan's looped dash MK). Both are recorded in
+				-- handoff_v11.5_action_steps.md; neither belongs here.
+				if (_pl ~= 0 or _pb ~= 0)
+				   and memory.readbyte(0xFF885C) ~= 0
+				   and _s0.entry_ticks
+				       > (actionSequenceRunnerModule.DASH_GRACE_TICKS or 10) then
+					_s0.restart_pending = true
+					return
+				end
 				-- THE PARKED REVERSE RIDES THE FIRST ENTRY THAT HAS ROOM.
 				--
 				-- An entry with no lever of its own - an Attack step pressing a
@@ -4401,10 +5522,56 @@ memory.registerexec(0x02211A, function()
 				-- presses a button still goes in for exactly one tick, which
 				-- is what stops a chain-cancellable normal being swung twice.
 				local _hold = (_pb == 0 and _pl ~= 0) and 2 or 1
-				_s0.tick_held = (_s0.tick_held or 0) + 1
+				-- A TICK THE GAME DID NOT PROCESS IS NOT A TICK DELIVERED.
+				--
+				-- $126 is one tick's press edge, so a press made during hit
+				-- stop is thrown away (measured on Zabel's crouching LP, see
+				-- rapid_fire_open). Counting those ticks anyway retired an
+				-- entry the game never saw.
+				--
+				-- It bit the two tick entries. A buttonless direction has to
+				-- exist for two ticks or the game does not take it (v158), and
+				-- a dash is N forward N forward - all directions. Traced on
+				-- 2026-09-19 over ten Jedah runs: the five that worked had no
+				-- frozen press ticks at all, and the five that failed each had
+				-- EXACTLY ONE, always the second tick of the first forward.
+				-- So that tap was delivered for one effective tick, never
+				-- registered, and the second forward arrived alone - which is
+				-- not a dash. $06 never reached 0x14 in any of the five.
+				--
+				-- Nothing changes where nothing freezes: all five working runs
+				-- had $5C at zero on every press tick.
+				-- ONLY FOR AN ENTRY THAT ASSERTS SOMETHING.
+				--
+				-- A neutral entry hands the game nothing to take, so there is
+				-- no press for the freeze to discard and nothing is gained by
+				-- sitting on it. Waiting there only burns the dash's neutral
+				-- grace, which is ten frames and not renewable.
+				--
+				-- Traced 2026-09-19: an eleven tick freeze landed on the
+				-- neutral of Sasquatch's second dash, this held it for twelve
+				-- ticks, and the motion expired - breaking a case that had
+				-- been working. The same freeze on a DIRECTION is the case
+				-- this whole guard exists for, so the two are split here.
+				if (_pl ~= 0 or _pb ~= 0)
+				   and memory.readbyte(0xFF885C) ~= 0 then
+					-- asserted, but the game is not looking: not delivered
+				else
+					_s0.tick_held = (_s0.tick_held or 0) + 1
+				end
 				if _s0.tick_held >= _hold then
 					_s0.current_frame = _i + 1
 					_s0.tick_held = 0
+					_s0.entry_ticks = 0
+				end
+				-- ON THE RECORD, NOT IN A GLOBAL. Only the delivery that was
+				-- actually frozen may be re-timed above; a run that never met a
+				-- freeze has to come out exactly as it did before.
+				--
+				-- Measured 2026-09-19: dash LP never freezes mid delivery and
+				-- works, dash HP does and did not.
+				if memory.readbyte(0xFF885C) ~= 0 then
+					_s0.saw_freeze = true
 				end
 				debugKnockdownModule.mark_write("seq_tick", _pl * 256 + _pb, _i)
 				return
@@ -4488,7 +5655,8 @@ memory.registerexec(0x02211A, function()
 		do
 			local _rvn = actionSequenceRunnerModule.rev_lever_now(
 				memory.readbyte(0xFF8081))
-			if _rvn ~= nil and globals.dummy.guard_action == 'sequence'
+			if _rvn ~= nil
+			   and actionSequenceRunnerModule.owns(globals.dummy.guard_action)
 			   and _d0 ~= nil and _d0.pending_input_sequence == nil then
 				assert_input_bits(entry_to_bits({ _rvn }), 0)
 				return
@@ -4508,7 +5676,8 @@ memory.registerexec(0x02211A, function()
 		-- lever while it lasts.
 		do
 			local _wl = actionSequenceRunnerModule.waiting_lever()
-			if _wl ~= nil and globals.dummy.guard_action == 'sequence'
+			if _wl ~= nil
+			   and actionSequenceRunnerModule.owns(globals.dummy.guard_action)
 			   and _d0 ~= nil and _d0.pending_input_sequence == nil then
 				assert_input_bits(entry_to_bits(_wl), 0)
 				return
@@ -4534,7 +5703,7 @@ memory.registerexec(0x02211A, function()
 			-- ends the hold early rather than holding for another 250 ticks.
 			local _left = (seq_held_btn_until - memory.readbyte(0xFF8081)) % 256
 			if _left == 0 or _left > 64
-			   or globals.dummy.guard_action ~= 'sequence' then
+			   or not actionSequenceRunnerModule.owns(globals.dummy.guard_action) then
 				seq_held_btn = nil
 				seq_held_btn_until = nil
 			elseif _d0 ~= nil and _d0.pending_input_sequence == nil
@@ -4556,7 +5725,7 @@ memory.registerexec(0x02211A, function()
 		end
 		if seq_held_lever ~= nil then
 			if actionSequenceRunnerModule.pending_count() == 0
-			   or globals.dummy.guard_action ~= 'sequence' then
+			   or not actionSequenceRunnerModule.owns(globals.dummy.guard_action) then
 				seq_held_lever = nil
 			elseif _d0 ~= nil and _d0.pending_input_sequence == nil
 			       and globals.show_menu ~= true then
@@ -4717,6 +5886,7 @@ memory.registerexec(0x02211A, function()
 				-- the normals use.
 				assert_input_bits(_plev, 0)
 				fast_press_lg  = memory.readbyte(0xFF8081)
+				fast_press_fref = facing_for_input()
 				fast_press_lev = _plev
 				fast_press_btn = _pbtn
 				fast_press_off = 1
@@ -4981,6 +6151,7 @@ memory.registerexec(0x02211A, function()
 			assert_input_bits(0, 0)
 		end
 		fast_press_lg  = memory.readbyte(0xFF8081)
+		fast_press_fref = facing_for_input()
 		-- What rides in WITH the button. Merged with the motion when there is
 		-- no delay; on a split it is the held direction, or nothing.
 		local _ov = button_lever_bits()
@@ -5298,10 +6469,11 @@ end
 
 local function service_held_reversal()
 	-- Knockdown and hit stun arm once per stun span, so entering stun is their
-	-- opportunity. The block path bumps again on each $158 rise below, which is
+	-- opportunity. A guard enters stun too, and its first $158 rise is the
+	-- same hit - see gc_note_stun_entry. The later rises of a blockstring are
 	-- the one place a second opportunity exists inside a single span.
 	if memory.readbyte(0xFF8805) ~= 0 and not prev_in_stun then
-		gc_opportunity = gc_opportunity + 1
+		gc_note_stun_entry(memory.readbyte(0xFF8854) == 0xFF)
 	end
 	local _d = player_objects and player_objects[2]
 	local _in_stun = memory.readbyte(0xFF8805) ~= 0
@@ -5385,6 +6557,18 @@ local function service_held_reversal()
 	if memory.readbyte(0xFF8009) == 4 and _hurt_or_block and not pit_of_blame_armed then
 		pit_of_blame_armed = true
 		pit_of_blame_roll = shouldGC()
+		-- RANDOM PICKS ONE OF THE THREE, ONCE PER KNOCKDOWN (user, 2026-09-26).
+		--
+		-- None, Normal or ES - None included, so whether it comes at all is part
+		-- of the guess. Drawn here beside the frequency roll and for the same
+		-- reason: once per attempt, never per frame. Kept in pit_of_blame_roll
+		-- because this file's main chunk has no local to spare: false when the
+		-- frequency said no, otherwise the row's value this knockdown runs with.
+		if pit_of_blame_roll then
+			local _pob = (training_settings and training_settings.pit_of_blame) or 1
+			if _pob == 4 then _pob = math.random(3) end
+			pit_of_blame_roll = _pob
+		end
 		-- Y where the dummy stood (or crouched) right before any launch, so
 		-- the rise check below is relative to THIS hit, not a fixed
 		-- absolute value.
@@ -5420,14 +6604,16 @@ local function service_held_reversal()
 				--
 				-- The Character Specific route is the original: pick the move
 				-- there and it comes out here. The Pit of Blame row on the
-				-- Player tab is the second, and it does not care what the guard
+				-- Dummy tab is the second, and it does not care what the guard
 				-- action is - the move is used while the opponent is down, so
 				-- tying it to a reversal setting meant giving that setting up.
 				--
 				-- Its own strength, too. The Character Specific route reads the
 				-- Strength dropdown, which belongs to the reversal; the row is
 				-- its own setting and says Normal or ES outright.
-				local _pob = (training_settings and training_settings.pit_of_blame) or 1
+				-- The row's value as resolved at arming - Random already drawn
+				-- (training_settings.pit_of_blame, read there).
+				local _pob = tonumber(pit_of_blame_roll) or 1
 				local _via_row = _pob ~= 1
 				local _via_cs  = globals.dummy.guard_action == 'Character Specific Reversal'
 				                 and move_is_pit_of_blame()
@@ -5781,10 +6967,10 @@ local function service_held_reversal()
 		BLK.zero_lg = nil
 		BLK.lead = nil
 		-- A new blocked hit is a new opportunity, and the frequency gets one
-		-- draw per opportunity. This is the only place that says so - the
-		-- episode is also cleared by $140 above, which re-arms within the SAME
-		-- hit and must not buy another draw.
-		gc_opportunity = gc_opportunity + 1
+		-- draw per opportunity. The episode is also cleared by $140 above,
+		-- which re-arms within the SAME hit and must not buy another draw -
+		-- and the first rise of a guard is the hit its stun entry counted.
+		gc_note_block_rise()
 	end
 	-- Counted from the zero edge, so the wait above can be applied.
 	if _s158 == 0 and BLK.prev158 > 0 then
@@ -6450,7 +7636,17 @@ local function service_held_reversal()
 		-- window branch below and put a second button press on the dummy
 		-- while the reversal is still coming out.
 		_seq.tick_owned = true
-		if memory.readbyte(0xFF8805) == 0x00 then
+		-- NOT WHILE THE HOOK STILL OWES THE PRESS (v11.7.21.2).
+		--
+		-- This cleanup assumes the button has gone in by the time the dummy
+		-- has been free for eight frames. A Button Wait plus Random Delay can
+		-- put the press far later than that, and then this released the held
+		-- last entry first: the controller sent forward+LP during the dash
+		-- cancel and the hook's own LP followed, two swings (user, 2026-10-03;
+		-- kd_c0A_s02: free at lg 236, release at 248, press_now at 281). While
+		-- fast_press_lg is set the hook has a deferred press outstanding, so
+		-- the count waits; the press drops the sequence itself (v144).
+		if memory.readbyte(0xFF8805) == 0x00 and fast_press_lg == nil then
 			-- RELEASE, not drop. Releasing lets the controller emit the final
 			-- entry of the motion - down-forward + button - which is what
 			-- draws the last column of the dragon punch in P2's input
@@ -6535,6 +7731,104 @@ local function service_held_reversal()
 	end
 end
 
+-- One draw of the Random Start Wait, 0 when it is off or the module is missing.
+-- These two hang on GA rather than being locals: the main chunk is at Lua 5.1's
+-- 200-local ceiling.
+function GA.rsw_draw()
+	local _ok, _m = pcall(require, "./scripts/randomStartWait")
+	if not _ok or type(_m) ~= "table" or _m.roll == nil then return 0 end
+	return _m.roll()
+end
+
+-- One draw of the Random Delay on the button (v11.7.21.2), for Reversal /
+-- Counter Attack - Specified; 0 for everything else. Called where the guard
+-- action is queued and kept in GA.btn_rd, which kd_delay_ticks adds: the press
+-- is placed by the tick hook later, sometimes more than once for one press
+-- (a rewound tick is run again), and every one of those has to see the same
+-- number.
+function GA.btn_rd_roll()
+	local _ga = globals and globals.dummy and globals.dummy.guard_action
+	if _ga ~= 'reversal' and _ga ~= 'counter' then return 0 end
+	local _ok, _m = pcall(require, "./scripts/randomStartWait")
+	if not _ok or type(_m) ~= "table" or _m.roll_button == nil then return 0 end
+	return _m.roll_button()
+end
+
+-- RANDOM START WAIT FOR THE GUARD ACTIONS THE ARM PLACES (user, 2026-10-02).
+--
+-- Reversal / Counter Attack - Specified, Action Steps and Action Patterns. The
+-- arm can only aim at the free tick: the motion goes in during the stun and the
+-- press on free-1 or free+0, and every measurement in this file was made on
+-- that. A start that has to wait cannot be placed that way - the motion would
+-- go stale in the buffer long before a sixty Tick wait was over.
+--
+-- So a draw above 0 does not arm. The same input goes to the runner, which
+-- holds it until the dummy can act on the ground and delivers it on the tick
+-- clock, aimed so the press lands the drawn number of Ticks after the tick the
+-- arm would have pressed on (actionSequenceRunner, start_steps). A draw of 0
+-- returns false and the arm runs exactly as it always has.
+--
+-- Everything the arm would have asked about the press is answered here, from
+-- the same functions: where the press sits (kd_press_base), how long it waits
+-- after the motion (kd_delay_ticks - Guard Action Delay, or step one's Wait),
+-- whether the direction stays down while it waits (kd_holds_direction), the
+-- dash cancel's reverse, and the button lever row.
+function GA.rsw_defer()
+	local _w = GA.rsw_draw()
+	local _ga = globals.dummy.guard_action
+	-- Step one's own Random Delay (v11.7.21.1) is drawn here too, on the same
+	-- footing: the arm only knows the free tick. Pick the pattern first, so the
+	-- draw is the one for the pattern that runs - the arm that follows, either
+	-- branch, uses that same pick.
+	if _ga == 'sequence' and actionSequenceRunnerModule.prepick ~= nil then
+		actionSequenceRunnerModule.prepick("reversal")
+		_w = _w + actionSequenceRunnerModule.draw_first_delay("reversal")
+	end
+	if _w <= 0 then return false end
+	local _o = {
+		wait = _w,
+		adj = kd_press_base() - 1,
+		delay = kd_delay_ticks(),
+		hold_dir = kd_holds_direction(),
+	}
+	-- dash_cancel_reverse_bits() answers nil in sequence mode, where the runner
+	-- parks a cancel step's reverse itself. Same here.
+	if _ga ~= 'sequence' then
+		_o.rev = DASH_CANCEL_REVERSE[GA.stick()]
+		-- Guard Action Delay = Auto. kd_delay_ticks has already turned it into
+		-- the arm's dash number; the runner swaps in its own measured one.
+		local _gd = globals.options and globals.options.gc_delay
+		if type(_gd) == "number" and _gd < 0 then
+			_o.auto_dash = GA.stick()
+			-- The Random Delay is inside `delay` too, and that swap drops it
+			-- with the arm's number - so it goes along on its own.
+			_o.delay_extra = GA.btn_rd or 0
+		end
+	end
+	-- button_lever_bits(), as names: the walker turns names into bits on the
+	-- tick it writes them, when the facing is known.
+	local _li = globals.options and globals.options.counter_attack_lever
+	if _li == 2 then
+		_o.lever = {}
+	elseif type(_li) == "number" and _li > 2 then
+		_o.lever = BUTTON_LEVER_DIR[_li]
+	end
+	local _done = false
+	if _ga == 'sequence' then
+		_done = actionSequenceRunnerModule.arm_deferred("reversal", _o)
+	end
+	if not _done then
+		-- Specified, or a sequence with nothing to compile: the list the arm
+		-- would have queued (ga_sequence's fallback).
+		local _mk = make_input_sequence(GA.stick(), GA.button(), "", 0)
+		if _mk ~= nil and #_mk > 0 then
+			_done = actionSequenceRunnerModule.arm_oneshot(_ga, _mk, _o)
+		end
+	end
+	debugKnockdownModule.mark_write("rsw_defer", _w, _done and 1 or 0)
+	return _done
+end
+
 local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 	-- FIX: runs before any early return - verifying a poke already made must
 	-- not depend on this frame's random frequency roll.
@@ -6557,10 +7851,19 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 	--
 	-- Loading a savestate is handled separately, in the master script, beside
 	-- the same clean-up for pending_input_sequence.
-	if globals.dummy.guard_action ~= 'sequence'
+	-- owns(): Action Steps / Patterns, or a Specified guard action whose
+	-- Random Start Wait is still queued there (rsw_defer).
+	if not actionSequenceRunnerModule.owns(globals.dummy.guard_action)
 	   or globals.game_state == nil
 	   or not globals.game_state.match_begun then
 		actionSequenceRunnerModule.cancel()
+	end
+	-- A Character Specific poke waiting out its Random Start Wait belongs to
+	-- that guard action; switched away, it does not go off.
+	if GA.csp_due ~= nil
+	   and globals.dummy.guard_action ~= 'Character Specific Reversal'
+	   and globals.dummy.guard_action ~= 'Character Specific Counter' then
+		GA.csp_due = nil
 	end
 
 	-- GUARD = PUSH BLOCK IS NOT A GUARD ACTION.
@@ -6599,6 +7902,9 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 		-- and replaces the schedule wholesale; a refusal has to drop it, or an
 		-- opportunity is not one unit.
 		actionSequenceRunnerModule.cancel()
+		-- And a Character Specific poke still waiting out its Random Start
+		-- Wait: it belonged to the chance before this one.
+		GA.csp_due = nil
 		-- And the direction a Hold step left down goes with it. The walker
 		-- would drop it on its next pass anyway, once the schedule reads empty;
 		-- doing it here means the dummy is not leaning on a direction for the
@@ -6772,7 +8078,9 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 			_defender.counter.sequence = nil
 		end
 		if should_reversal then 
-			if not globals.macroLua.playing then  
+			-- starting: waiting out its Random Start Wait. playcontrol()
+			-- toggles, so asking again then would call it off.
+			if not globals.macroLua.playing and not globals.macroLua.starting then
 				globals.macroLua.playcontrol()
 			end
 		else
@@ -6787,7 +8095,9 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 		end
 
 		if should_counter then
-			if not globals.macroLua.playing then  
+			-- starting: waiting out its Random Start Wait. playcontrol()
+			-- toggles, so asking again then would call it off.
+			if not globals.macroLua.playing and not globals.macroLua.starting then
 				globals.macroLua.playcontrol()
 			end
 			wasJustGuarding = false
@@ -6847,7 +8157,24 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 		else
 			_armed = (arm_edge or hs_arm_edge or BLK.edge)
 		end
+		-- RANDOM DELAY ON THE BUTTON (v11.7.21.2): one draw for each reversal
+		-- or counter that goes out, ahead of rsw_defer and the arm, which both
+		-- read it through kd_delay_ticks.
 		if _armed and _defender.pending_input_sequence == nil then
+			GA.btn_rd = GA.btn_rd_roll()
+		end
+		if _armed and _defender.pending_input_sequence == nil
+		   and GA.rsw_defer() then
+			-- RANDOM START WAIT: handed to the runner instead of armed (see
+			-- rsw_defer). A fire like any other for the frequency count, and
+			-- the opportunity is covered, so the reactive path below must not
+			-- queue the motion again when the reversal window opens.
+			gc_fires = gc_fires + 1
+			debugKnockdownModule.mark_write("gc_fire", gc_opportunity % 256,
+				(globals and globals.options and globals.options.gc_freq) or -1)
+			prebuffer_used = true
+			BLK.edge = false
+		elseif _armed and _defender.pending_input_sequence == nil then
 			-- ONE ROW PER GUARD ACTION THAT ACTUALLY GOES OUT.
 			--
 			-- gc_roll counts opportunities, this counts fires. Their ratio is
@@ -7009,6 +8336,9 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 				-- delay, so no blanks in front of the motion (v179).
 				_stick = globals.dummy.counter_attack_stick
 				_button = globals.dummy.counter_attack_button
+				-- A fresh Random Delay here too: this reversal never passed
+				-- the arm's draw, and the last one belongs to another press.
+				GA.btn_rd = GA.btn_rd_roll()
 				_defender.counter.sequence = ga_sequence(_stick, _button, delay_type, 0)
 			end
 		else
@@ -7021,7 +8351,9 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 
 	elseif globals.dummy.guard_action == 'recording on reversal' then
 		if should_reversal then 
-			if not globals.macroLua.playing then  
+			-- starting: waiting out its Random Start Wait. playcontrol()
+			-- toggles, so asking again then would call it off.
+			if not globals.macroLua.playing and not globals.macroLua.starting then
 				globals.macroLua.playcontrol()
 			end
 		else
@@ -7049,6 +8381,14 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 		-- work that went into them.
 		if (arm_edge or hs_arm_edge or BLK.edge)
 		   and not move_is_pit_of_blame() then
+			-- Random Start Wait, drawn once per request. The tick hook pokes
+			-- on the signature as before when it is 0, and that many Ticks
+			-- later otherwise.
+			-- A new request supersedes a delayed poke still waiting.
+			if not csp_pending then
+				GA.csp_wait = GA.rsw_draw()
+				GA.csp_due = nil
+			end
 			csp_pending = true
 		end
 		if not should_reversal then
@@ -7062,6 +8402,10 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 		-- a wake-up. Without it the character specific counter was block-only
 		-- while its input-driven twin covered both.
 		if counter_arm_edge() and not move_is_pit_of_blame() then
+			if not csp_pending then
+				GA.csp_wait = GA.rsw_draw()
+				GA.csp_due = nil
+			end
 			csp_pending = true
 		end
 		if not should_counter then
@@ -7108,6 +8452,13 @@ local function guardCancelCheck(run_dummy_input, macroLua_funcs)
 end
 
 guardCancelModule = {
+	-- A CHARACTER SELECT CLEARS THE GC COMMAND TRACE, as a restart would (user,
+	-- 2026-09-27): the one being collected and the one on screen.
+	["clear_trace"] = function()
+		gct_reset()
+		gct_shown = nil
+		if globals ~= nil then globals.gc_trace = nil end
+	end,
 	["registerBefore"] = function(run_dummy_input, macroLua_funcs)
         return guardCancelCheck(run_dummy_input, macroLua_funcs)
     end

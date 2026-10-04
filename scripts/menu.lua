@@ -21,7 +21,43 @@ panel_outline_color = MENU_STYLE.panel_outline
 charMovesModule   = require "./scripts/charMoves"
 actionSequenceEditorModule = require "./scripts/actionSequenceEditor"
 actionSequenceRunnerModule = require "./scripts/actionSequenceRunner"
+positionModule    = require "./scripts/position"
+-- A DIAGONAL IS NOT A MENU DIRECTION.
+--
+-- The four direction blocks in the menu are independent and they do different
+-- jobs: a vertical moves the cursor down the rows, a horizontal changes the
+-- value ON the row. Held together they both fire on the same frame, so a stick
+-- passing through down-right walks the list AND edits a setting in one motion,
+-- with nothing on screen to say the second thing happened (user, 2026-09-23).
+--
+-- So a direction counts only while its own axis is the only one held. Both are
+-- dropped while the stick sits on a diagonal, and coming back to a cardinal is
+-- what lets one through again.
+--
+-- PER PAD, NOT ACROSS THE TWO. 1P holding Down while 2P pushes Right is two
+-- players, not a diagonal - either stick drives this menu, and testing them
+-- together would let one player's hold lock the other one out.
+--
+-- BUTTONS ARE NOT FILTERED. Confirm and cancel still answer with the stick on
+-- a diagonal. Only what moves the cursor is dropped.
+local MENU_CROSS_AXIS = {
+  up    = { "left", "right" },
+  down  = { "left", "right" },
+  left  = { "up",   "down"  },
+  right = { "up",   "down"  },
+}
+function menu_input_crossed(_player_object, _input)
+  local _other = MENU_CROSS_AXIS[_input]
+  if _other == nil then return false end
+  local _down = _player_object and _player_object.input
+                and _player_object.input.down
+  if _down == nil then return false end
+  -- == true rather than truthiness: the offline harnesses build these sets
+  -- with the keys they are driving and leave every other one nil.
+  return _down[_other[1]] == true or _down[_other[2]] == true
+end
 function check_input_down_autofire(_player_object, _input, _autofire_rate, _autofire_time)
+  if menu_input_crossed(_player_object, _input) then return false end
   _autofire_rate = _autofire_rate or 4
   -- A RATE OF ZERO TURNED THE HOLD OFF, SILENTLY.
   --
@@ -407,6 +443,12 @@ function list_menu_item(_name, _object, _property_name, _list, _default_value, _
       _v = self.default_value
       self.object[self.property_name] = _v
     end
+    -- Orange while this row's value stops what another row selected (see
+    -- ZERO_RATE_COLOR). Not under the cursor: there the brackets and the
+    -- legend line say it.
+    if not _selected and self.warn ~= nil and self.warn() then
+      _c = ZERO_RATE_COLOR
+    end
     gui.text(_x, _y, _prefix..self.name.." : "..tostring(self.list[_v]).._suffix, _c, text_default_border_color)
   end
 
@@ -761,6 +803,7 @@ guard_action_type = {
     "PB Recording",
     -- Appended, never inserted: the index is what the settings file stores.
     "Reversal - Action Steps",
+    "Reversal - Action Patterns",
 }
 
 _push_block_type = {
@@ -877,25 +920,32 @@ local counter_attack_random_upback = {
   "100%",
 }
 
+-- 0%, NOT None, ON THE THREE RATE ROWS (UI review, 2026-09-29).
+--
+-- They are the only rows where the player types a percentage, and None read
+-- as "not randomised" - which is the opposite of what index 1 does: every
+-- reader (shouldGC, get_block_chance, rolled_tech) returns false for it. The
+-- index is what the settings file stores, so only the word changes. None stays
+-- where it means no action at all, such as Guard Action Type = None.
 gc_freq = {
-    "None",
+    "0%",
     "25%",
     "50%",
     "75%",
     "100%",
 }
--- Same five as Guard Action Frequency and P2 Random Guard %, because it is the
--- same question asked about a different reaction, and the Player tab already
--- teaches the reader what None/25/50/75/100 means.
+-- Same five as Random Guard Action % and Random Guard %, because it is the
+-- same question asked about a different reaction, and the Dummy tab already
+-- teaches the reader what 0/25/50/75/100 means.
 p2_throw_tech_chance = {
-  "None",
+  "0%",
   "25%",
   "50%",
   "75%",
   "100%",
 }
 p2_block_chance = {
-  "None",
+  "0%",
   "25%",
   "50%",
   "75%",
@@ -912,6 +962,23 @@ stage_position = {
     "|------12|",
     "|------21|",
 }
+-- THE POSITION ROW'S BUTTONS (user, 2026-09-21).
+--
+-- Returning to the arrangement already stored meant picking another one and
+-- back: the row changes the value to re-place, and position.lua's watcher
+-- acts only on a CHANGE. So the row gets two shortcuts. LP is free on a list
+-- row (there is no child to open); HP is free menu-wide (nothing dispatched
+-- on it). MP keeps its reset. Off means leave everyone alone, so neither
+-- shortcut does anything there - which is why reapply answers for the close
+-- decision: no move, no menu close.
+local position_menu_item = list_menu_item("Position", training_settings, "stage_position", stage_position, 1, "Places both characters on the stage. 1 is you, 2 is the dummy, | is the wall.\nWalls put the two touching; the middle puts them exactly where a round starts.\nOff leaves everyone alone. Left/Right pick an arrangement; the move starts\nonce the value has settled.\nLP places the pair at this setting again - practice walks them out of it.\nHP also closes the menu. Both do nothing on Off. MP resets to Off.")
+function position_menu_item:validate() positionModule.reapply() end
+function position_menu_item:hp()
+	if positionModule.reapply() then togglemenu() end
+end
+function position_menu_item:legend()
+	return "LP: Place again   MP: Reset   HP: Place + close"
+end
 guard = {
     "None",
     "Stand Block",
@@ -1018,8 +1085,18 @@ counter_attack_lever_menu_item.is_disabled = check_for_counter_attack_disabled
 -- only exists for a dash - for every other guard action it behaves as 0. The
 -- point is that a dash attack works without the user looking anything up,
 -- while still being a number they can take over at any time.
+--
+-- RENAMED IN v11.7.21.2, from Guard Action Delay (Ticks). That name read as
+-- "the whole guard action starts later", which is Random Start Wait's job; what
+-- this does is wait in front of the BUTTON - after the motion for Specified,
+-- before the presses for Push Block and PB Recording, which read the same
+-- setting - so it is named after the button, and as a Wait, the word the step
+-- editor uses for the same thing. One name for every type (user, 2026-10-03).
+-- The key stays gc_delay so saved settings read as before. The top is 60 like
+-- every other timing row (it was 50 here against 30 in guardCancel).
+local GAD_NAME = "Button Wait"
 local guard_action_delay_menu_item = integer_menu_item(
-      "Guard Action Delay (Ticks)", training_settings, "gc_delay", -1, 50, false, -1, 0,
+      GAD_NAME, training_settings, "gc_delay", -1, 60, false, -1, 0,
       "How long after the MOTION the button is pressed, in game Ticks. The motion still\ncomes out at the earliest moment: Forward Dash + HP with 14 gives the fastest\ndash, then HP 14 Ticks later.\nAuto uses the character's own dash attack timing, and only means anything for a\ndash - anything else treats it as 0. Three displayed frames are four Ticks.\nMeasured after a GUARD; after a HIT it is not always enough (Morrigan, Jedah)."
     )
 -- Auto EXISTS ONLY FOR THE FOUR DASH MOTIONS (v199).
@@ -1086,7 +1163,34 @@ guard_action_delay_menu_item.is_disabled = function()
           training_settings.guard_action == 2 or -- GC (see gc_input_delay_menu_item below)
           -- A sequence carries its own waits, one per step. Two places to set
           -- the same thing is how they end up disagreeing.
-          training_settings.guard_action == 0xB
+          training_settings.guard_action == 0xB or
+          training_settings.guard_action == 0xC
+end
+
+-- RANDOM DELAY ON THE BUTTON (v11.7.21.2; user: press dash attacks and jump
+-- attacks later). A fresh 0..N on top of the row above for every reversal or
+-- counter; the motion is not moved. Indented under that row, the way the step
+-- editor puts its Random Delay under Wait, and written 0-N like Random Start
+-- Wait. Specified only: Push Block reads the row above too, but nothing asked
+-- for its presses to wander.
+local button_random_delay_item = integer_menu_item("Random Delay", training_settings,
+      "button_random_delay", 0, 60, false, 0, nil,
+      "A random 0 to this many Ticks on top of the Button Wait above, drawn again\nfor every reversal or counter. 0 is off. The motion still goes in at once and\nonly the button moves, so a dash or jump attack lands at a different point.\nToo late and the game decides: a special's motion is kept 14-19 Ticks, then a\nnormal comes out; once a dash or jump is over there is no dash or jump attack.")
+function button_random_delay_item:draw(_x, _y, _selected)
+  local _c = text_default_color
+  local _prefix, _suffix = "", ""
+  if _selected then
+    _c = text_selected_color
+    _prefix, _suffix = "< ", " >"
+  end
+  local _v = tonumber(self.object[self.property_name]) or 0
+  local _label = (_v > 0) and ("0-" .. _v) or "0"
+  gui.text(_x + 8, _y, _prefix .. self.name .. " : " .. _label .. _suffix, _c,
+           text_default_border_color)
+end
+button_random_delay_item.is_disabled = function()
+  local _ga = training_settings.guard_action
+  return _ga ~= 6 and _ga ~= 8
 end
 
 -- GC専用の任意フレーム入力ディレイ。共用の guard_action_delay_menu_item
@@ -1099,8 +1203,51 @@ local gc_input_delay_menu_item = integer_menu_item(
     )
 gc_input_delay_menu_item.is_disabled = check_for_gc_disabled
 
-local guard_action_frequency_menu_item = list_menu_item("Guard Action Frequency", training_settings, "gc_freq", gc_freq,1, "Use to randomize whether the guard action is performed")
+local guard_action_frequency_menu_item = list_menu_item("Random Guard Action %", training_settings, "gc_freq", gc_freq,1, "How often the dummy does what Guard Action Type is set to, rolled once per\nchance. 0% never does it: while a Guard Action Type is set, this row is\norange when the cursor is on another row, and the bottom line says why.")
 guard_action_frequency_menu_item.is_disabled = function() return training_settings.guard_action == 1 end
+
+-- RANDOM START WAIT (user, 2026-10-02). One setting, two rows: here under
+-- Random Guard Action % - whether it acts is drawn first, then how long it
+-- waits - and on the Recording tab under Loop Interval. Same property, so the
+-- two always read the same. randomStartWait.lua says what waits and what not.
+local function random_start_wait_item(description)
+  local item = integer_menu_item("Random Start Wait", training_settings,
+        "random_start_wait", 0, 60, false, 0, nil, description)
+  -- 0 to N, because that is what is drawn. 0 alone is off.
+  function item:draw(_x, _y, _selected)
+    local _c = text_default_color
+    local _prefix, _suffix = "", ""
+    if _selected then
+      _c = text_selected_color
+      _prefix, _suffix = "< ", " >"
+    end
+    local _v = tonumber(self.object[self.property_name]) or 0
+    local _label = (_v > 0) and ("0-" .. _v) or "0"
+    gui.text(_x, _y, _prefix .. self.name .. " : " .. _label .. _suffix, _c,
+             text_default_border_color)
+  end
+  return item
+end
+local dummy_random_start_wait_item = random_start_wait_item(
+  "Waits a random number of game Ticks, 0 up to this, before the dummy's own\n"
+  .. "action starts - drawn again every time. 0 is off: as fast as before.\n"
+  .. "Reversal and Counter Attack of every kind, and each Loop Steps lap.\n"
+  .. "Defence never waits: Guard, Push Block, Guard Cancel, throw tech.\n"
+  .. "A reversal that waits goes in once the dummy can act, so it is never sooner\n"
+  .. "than its input takes. The same setting as Recording > Random Start Wait.")
+-- Shown where it does something: not for None, Guard Cancel or Push Block,
+-- which are defence.
+dummy_random_start_wait_item.is_disabled = function()
+  local _ga = training_settings.guard_action
+  return _ga == 1 or _ga == 2 or _ga == 3
+end
+local recording_random_start_wait_item = random_start_wait_item(
+  "Waits a random number of game Ticks, 0 up to this, before a recording starts\n"
+  .. "playing - drawn again every time. 0 is off.\n"
+  .. "Play Recording, the playback hotkey, every Looped Playback pass (after Loop\n"
+  .. "Interval), and the Recording guard actions on the Dummy tab.\n"
+  .. "The Recording Wizard's check playback does not wait.\n"
+  .. "The same setting as Dummy > Random Start Wait.")
 
 function set_p1_reversal_names()
   return charMovesModule.get_player_movelists().P1.reversal_names
@@ -1130,7 +1277,7 @@ local p2_reversal_list_menu_item = list_menu_item("P2 Reversal List", training_s
 p2_reversal_list_menu_item.is_disabled = char_specific_reversal_is_disabled
 local p2_reversal_strength_menu_item = list_menu_item("Reversal Strength", training_settings, "p2_reversal_strength", { "Light", "Medium","Heavy","ES"}, 1, nil, "The strength of the reversal,\nPlease use normal game values (e.g. EX for EX moves)")
 p2_reversal_strength_menu_item.is_disabled = char_specific_reversal_is_disabled
-local p2_block_chance_menu_item = list_menu_item("P2 Random Guard %", training_settings, "p2_block_chance", p2_block_chance, 1, nil, "Randomize Blocking")
+local p2_block_chance_menu_item = list_menu_item("Random Guard %", training_settings, "p2_block_chance", p2_block_chance, 1, "How often the dummy blocks. 0% never blocks.\nRead by Stand Block, All Guard and Push Block (Guard row). While one of those\nis set and this is 0%, the dummy will not block at all: this row is orange\nwhen the cursor is on another row, and the bottom line says why.")
 -- ENABLED EXACTLY WHERE THE VALUE IS STILL READ.
 --
 -- It was hidden on anything but Stand Block (2) and All Guard (4), but
@@ -1148,10 +1295,53 @@ p2_block_chance_menu_item.is_disabled = function()
 	return training_settings.guard ~= 2 and training_settings.guard < 4
 end
 
+-- A 0% THAT STOPS WHAT ANOTHER ROW PICKED IS SAID, NOT CHANGED
+-- (UI review, 2026-09-29).
+--
+-- Guard and Guard Action Type pick WHAT the dummy does; these two rows say HOW
+-- OFTEN, and both ship at 0%. Picking All Guard or a guard action with the
+-- rate still at 0% looked like switching it on and did nothing. A 0% can be
+-- deliberate, so the value is left alone: the rate row turns orange, and with
+-- the cursor on any of the rows involved the legend line says why. The same
+-- orange as the Action Steps warning, which says this about its own screen.
+ZERO_RATE_COLOR = "#FF7F00"
+local function block_rate_stops_guard()
+	return not p2_block_chance_menu_item.is_disabled()
+	   and training_settings.p2_block_chance == 1
+end
+local function action_rate_stops_action()
+	return training_settings.guard_action ~= nil and training_settings.guard_action ~= 1
+	   and training_settings.gc_freq == 1
+end
+local function block_rate_warning()
+	if block_rate_stops_guard() then return "Random Guard % is 0%: the dummy never blocks." end
+	return nil
+end
+local function action_rate_warning()
+	if action_rate_stops_action() then return "Random Guard Action % is 0%: it never runs." end
+	return nil
+end
+p2_block_chance_menu_item.warn = block_rate_stops_guard
+p2_block_chance_menu_item.warning = block_rate_warning
+guard_action_frequency_menu_item.warn = action_rate_stops_action
+guard_action_frequency_menu_item.warning = action_rate_warning
+local function with_warning(_item, _fn)
+	_item.warning = _fn
+	return _item
+end
+-- On the legend line, right-aligned: the legend is short on these rows and the
+-- description block above it is full.
+function draw_entry_warning(_entry, _right, _y)
+	if _entry == nil or _entry.warning == nil then return end
+	local _w = _entry.warning()
+	if _w == nil then return end
+	gui.text(_right - #_w * 4, _y, _w, ZERO_RATE_COLOR, text_default_border_color)
+end
+
 -- SHOWN ONLY WHEN GUARD ACTION TYPE IS "Reversal - Action Steps" (0xB).
 --
 -- The row used to carry no is_disabled at all, so it sat at the end of the
--- Player tab whatever the guard action was - and with the longer lists it was
+-- Dummy tab whatever the guard action was - and with the longer lists it was
 -- the row that overflowed onto the second column. The menu hides disabled rows
 -- and navigation skips them, so gating here removes the row from the list
 -- instead of greying it. The saved list itself survives the switch: this gates
@@ -1160,6 +1350,17 @@ end
 local reversal_action_steps_item = actionSequenceEditorModule.parent_item("reversal", "Reversal Action Steps")
 reversal_action_steps_item.is_disabled = function()
 	return training_settings.guard_action ~= 0xB
+end
+
+-- THE LIBRARY SITS BESIDE THE LIST, GATED THE SAME WAY.
+--
+-- Same reason the row above is gated: the menu hides disabled rows and
+-- navigation skips them, so this removes the row rather than greying it. The
+-- saved patterns survive the switch - this gates the ROW, not the data.
+local reversal_action_patterns_item =
+	actionSequenceEditorModule.patterns_parent_item("reversal", "Reversal Action Patterns")
+reversal_action_patterns_item.is_disabled = function()
+	return training_settings.guard_action ~= 0xC
 end
 
 -- LOOP: THE LIST STARTS AGAIN WHEN IT ENDS.
@@ -1174,9 +1375,12 @@ local action_steps_loop_switch = checkbox_menu_item(
 
 -- The ceiling is the editor's own WAIT_MAX: this value IS step one's wait on
 -- every pass after the first (see the runner's LOOP_AUTO note).
+-- Mirrors LOOP_LANDING in actionSequenceRunner. Named here so the row and
+-- the runner cannot drift apart silently.
+local LOOP_WAIT_LANDING = -2
 local action_steps_loop_wait_item = integer_menu_item(
-      "Loop Wait", training_settings, "action_steps_loop_wait", -1, 120, false, -1, 0,
-      "How long after the last step the first one starts again, in game Ticks.\nAuto starts it when the dummy can act - enough for a blocking drill, but NOT\nthe fastest: the input begins then, so a dash is three or four Ticks later.\nA number lands the first step ON that Tick, counted from the last one, which is\nwhat a loop tight enough to be an infinite needs.\nWalk it down until it stops coming out. Three displayed frames are four Ticks."
+      "Loop Wait", training_settings, "action_steps_loop_wait", -2, 120, false, -1, 0,
+      "How long after the last step the first one starts again, in game Ticks.\nAuto (After) starts it when the dummy can act - fine for a blocking drill,\nbut NOT the fastest: the input begins then, so a dash is three Ticks later.\nAuto (Landing) starts it so the first step arrives ON the touchdown, which\nis what a hop into an air normal needs to loop at full speed.\nA number lands the first step on that Tick, counted from the last one."
     )
 
 -- Zero is not a supported loop boundary. Keep Auto at -1, but make Left and
@@ -1216,11 +1420,14 @@ local _pit_of_blame_type = {
     "None",
     "Normal",
     "ES",
+    -- Appended: stored as an index.
+    "Random",
 }
 local pit_of_blame_item = list_menu_item("Pit of Blame", training_settings, "pit_of_blame", _pit_of_blame_type, 1, {
   "Off.",
   "Anakaris swallows a follow-up hit while the opponent is down.\nOne kick.",
   "The ES version. Two kicks.\nCosts meter, and is the one that catches more.",
+  "None, Normal or ES, picked at random once per knockdown - so whether it comes\nat all is part of the guess.",
 })
 pit_of_blame_item.is_disabled = function()
 	-- $382 is the character id the rest of the tool reads P2 by. 0x06 is
@@ -1232,6 +1439,17 @@ local _aslw_draw = action_steps_loop_wait_item.draw
 action_steps_loop_wait_item.draw = function(self, _x, _y, _selected)
   local _v = self.object[self.property_name] or -1
   if _v >= 0 then return _aslw_draw(self, _x, _y, _selected) end
+  -- -2 is Auto (Landing): the restart is timed off the touchdown rather than
+  -- off the dummy becoming able to act. Kept above the Auto (After) branch
+  -- because that one answers for every negative value.
+  if _v == LOOP_WAIT_LANDING then
+    local _cl = _selected and text_selected_color or text_default_color
+    local _pl = _selected and "< " or ""
+    local _sl = _selected and " >" or ""
+    gui.text(_x, _y, _pl..self.name.." : Auto (Landing)".._sl, _cl,
+             text_default_border_color)
+    return
+  end
   local _c = text_default_color
   local _prefix, _suffix = "", ""
   if _selected then
@@ -1247,7 +1465,9 @@ end
 -- Gated with the row they belong to: the list is only reachable, and only runs,
 -- under Reversal - Action Steps.
 local function action_steps_rows_disabled()
+	-- Both sources run the same list machinery, so the loop belongs to both.
 	return training_settings.guard_action ~= 0xB
+		and training_settings.guard_action ~= 0xC
 end
 action_steps_loop_switch.is_disabled = action_steps_rows_disabled
 action_steps_loop_wait_item.is_disabled = action_steps_rows_disabled
@@ -1297,7 +1517,7 @@ enable_slot_5_menu_item.is_disabled = is_random_playback_on
 -- display, and the dummy's input column inside the HUD. Leaving them visible
 -- while they cannot act is what made the Display tab read as a wall of
 -- switches, and the draw loop already hides is_disabled rows and navigation
--- already skips them (see the Reversal Action Steps row on the Player tab).
+-- already skips them (see the Reversal Action Steps row on the Dummy tab).
 --
 -- The test is ~= true rather than a falsy check because that is how each
 -- parent's OWN consumer reads it - hud() and render_hitboxes() and the
@@ -1307,6 +1527,141 @@ enable_slot_5_menu_item.is_disabled = is_random_playback_on
 local function child_of(_parent_property, _item)
   _item.is_disabled = function() return training_settings[_parent_property] ~= true end
   return _item
+end
+
+
+-- RESET A WHOLE TAB, AND IT FINDS OUT WHICH TAB IT IS ON BY ITSELF.
+--
+-- Every row here already resets on MP; what was missing was doing it to the
+-- lot. The place for that is the tab it belongs to, not one tab that owns the
+-- others - a tab that resets itself needs no owner, and the rows change in
+-- front of you when you press it (user, 2026-09-23).
+--
+-- NO LIST OF ROWS. It is told which TAB it is on and resets whatever that
+-- tab holds at the time, so a row added later is covered without anyone
+-- remembering to add it anywhere. Naming the rows would be a second list to
+-- keep in step, which is how the test list drifted and left four unrun.
+--
+-- THE TAB IS NAMED, NOT FOUND. It used to look itself up in menu, which
+-- reads better and does not work: menu = get_menu() sits inside guiRegister,
+-- so every row object is thrown away and remade EVERY DRAWN FRAME. The popup
+-- is answered on a later frame than the one that opened it, and the row held
+-- across that gap was an object that no longer existed anywhere in menu -
+-- the lookup returned nil and the reset did nothing at all, silently (user,
+-- 2026-09-23: the GC Frequency Counter row stayed on). A name survives the
+-- rebuild. test_menu_reset_tab.lua checks each row's name against the tab it
+-- actually sits in, so a renamed tab fails there rather than in front of
+-- someone.
+--
+-- IT ASKS FIRST, ON EVERY WAY IN. Right, LP and MP all open the same two-row
+-- popup rather than doing anything - MP included, because MP resets a single
+-- row everywhere else in this menu and the muscle memory that goes with it
+-- would wipe a tab (user, 2026-09-23).
+--
+-- THE STICK ALONE IS ENOUGH. Right opens it, Up/Down choose, Right confirms
+-- and Left cancels, so nothing here needs a button. Right keeps its one
+-- meaning throughout: further in.
+--
+-- IT LANDS ON CANCEL, AND RIGHT IS HELD OFF FOR FIFTEEN FRAMES. Right auto-
+-- repeats while held, so the press that opens the popup would otherwise
+-- carry straight on into the row it lands on - the same guard Play Recording
+-- and the Loop Interval popup use. Landing on Cancel means even a repeat
+-- that got through would close the popup rather than wipe the tab.
+--
+-- HIDDEN ROWS ARE RESET TOO. A row behind a parent switch still holds a
+-- value and shows it again the moment the parent comes back on, so leaving
+-- it alone would make the reset depend on what happened to be on screen.
+local function reset_tab_item(_tab_name)
+  local _o = {}
+  _o.name = "Reset This Tab"
+  -- Exposed so the test can hold it against the tab it is in.
+  _o.tab_name = _tab_name
+  local opened_at = nil
+  local function right_locked()
+    return opened_at ~= nil and emu.framecount() - opened_at < 15
+  end
+  -- BY NAME, BECAUSE THE ROWS DO NOT SURVIVE THE FRAME.
+  --
+  -- menu = get_menu() runs inside guiRegister, which runs every drawn frame,
+  -- so every row object is rebuilt each frame. The popup is answered on a
+  -- LATER frame than the one that opened it, and holding the row itself over
+  -- that gap meant looking for an object that no longer existed anywhere in
+  -- menu: tab_of returned nil and the reset did nothing at all, silently
+  -- (user, 2026-09-23 - the GC Frequency Counter row stayed on).
+  --
+  -- The lookup still happens by identity, but on the frame of the press,
+  -- where the row IS the one in menu. Only the tab's name crosses the gap.
+  local function do_reset(_tab_name)
+    for _, _tab in ipairs(menu) do
+      if _tab.name == _tab_name then
+        for _, _r in ipairs(_tab.entries) do
+          if _r.name ~= "Reset This Tab" and _r.reset ~= nil then
+            _r:reset()
+          end
+        end
+        return
+      end
+    end
+  end
+  local function confirm_rows(_tab_name)
+    local _ok = {}
+    _ok.name = "OK"
+    function _ok:draw(_x, _y, _selected)
+      local c = _selected and text_selected_color or text_default_color
+      gui.text(_x, _y, (_selected and "< " or "") .. self.name, c, text_default_border_color)
+    end
+    -- CLOSED FIRST, THEN THE WORK. Closing afterwards hid whether the reset
+    -- touched this row too: its own reset opens the box, and clearing the
+    -- popup on the way out threw that second box away again, so a reset that
+    -- included itself was invisible. This way it would be left standing.
+    function _ok:validate() current_popup = nil do_reset(_tab_name) end
+    function _ok:right() if right_locked() then return end self:validate() end
+    function _ok:legend() return "Right or LP: Reset the tab" end
+    function _ok:description() return "" end
+    local _no = {}
+    _no.name = "Cancel"
+    function _no:draw(_x, _y, _selected)
+      local c = _selected and text_selected_color or text_default_color
+      gui.text(_x, _y, (_selected and "< " or "") .. self.name, c, text_default_border_color)
+    end
+    function _no:validate() current_popup = nil end
+    function _no:left() current_popup = nil end
+    function _no:legend() return "Left or LP: Leave it alone" end
+    function _no:description() return "" end
+    return { _ok, _no }
+  end
+  local function ask()
+    if right_locked() then return end
+    opened_at = emu.framecount()
+    current_popup = make_popup(92, 84, 292, 144, confirm_rows(_tab_name),
+      "Reset " .. (_tab_name or "this tab") .. " to defaults?")
+    -- Lands on Cancel. See the note above.
+    current_popup.selected_index = 2
+  end
+  function _o:draw(_x, _y, _selected)
+    local _c = text_default_color
+    local _prefix, _suffix = "", ""
+    if _selected then
+      _c = text_selected_color
+      _prefix, _suffix = "< ", " >"
+    end
+    gui.text(_x, _y, _prefix .. self.name .. _suffix, _c, text_default_border_color)
+  end
+  function _o:right() ask() end
+  function _o:validate() ask() end
+  -- MP asks as well. Everywhere else in this menu MP resets the row under the
+  -- cursor outright, and that habit is the one that would cost a tab.
+  function _o:reset() ask() end
+  function _o:legend() return "Right / LP / MP: Asks before resetting" end
+  function _o:description()
+    return "Puts every row on this tab back to the value it ships with. It asks first -"
+        .. "\nRight, LP and MP all open the same OK / Cancel box, which lands on Cancel."
+        .. "\nIn the box: Up/Down choose, Right or LP confirms, Left cancels."
+        .. "\nOnly this tab. The others are left alone."
+        .. "\nRows hidden behind another setting are reset too - they are still holding a"
+        .. "\nvalue, and it comes back into view when that setting is turned on."
+  end
+  return _o
 end
 
 local function get_menu() 
@@ -1320,7 +1675,9 @@ return {
               local _label = _self.name
               local _st = globals.macroLua ~= nil and globals.macroLua.get_recording_status ~= nil
                           and globals.macroLua.get_recording_status() or nil
-              if _st ~= nil and _st.playing then _label = _label .. "  (playing)" end
+              -- starting: waiting out its Random Start Wait. Pressing again
+              -- stops it there too, so it reads the same.
+              if _st ~= nil and (_st.playing or _st.starting) then _label = _label .. "  (playing)" end
               if _selected then
                 _c = text_selected_color
                 _label = "< " .. _label .. " >"
@@ -1350,6 +1707,7 @@ return {
           list_menu_item("Recording Slot", training_settings, "recording_slot", recording_slot,1,"Choose a playback/recording slot\nWill be overriden by random playback"),
           checkbox_menu_item("Looped Playback", training_settings, "looped_playback", 0, "The playback slot will be played back when the current recording ends\nThis works with random playback slots enabled below\nas well as with guard actions"),
           interval_popup_menu_item(training_settings),
+          recording_random_start_wait_item,
           checkbox_menu_item("Reset Distance Each Loop", training_settings, "restore_recorded_position", 0, "Puts both characters back to the distance the recording was made from, at the\nstart of every loop. Without it the two drift apart over the passes and the\nsetup you were practising stops happening.\nOnly works on recordings made from v11.4.1 on - the distance is stored in the\nrecording itself.\nNot used with Use Savestate Upon Recording, which restores everything anyway."),
           checkbox_menu_item("Use Savestate Upon Recording", training_settings, "use_recording_savestate", 0, "BETA! EXPERIMENTAL! (But works!)\nCreates a savestate when you hit record, and loads it before playback.\nUse this for timing sensitive training. VERY USEFUL!!!!"),
           checkbox_menu_item("Use Random Recording Slot", training_settings, "random_playback", 0, "This can be used in two ways:\n 1) Random playback file on reversal\n 2) Using looped playback mode a random playback file will be \n    played back when the current recording ends"),
@@ -1391,20 +1749,20 @@ return {
         }
       },
     {
-        name = "Player",
+        name = "Dummy",
         entries = {
-            list_menu_item("Position", training_settings, "stage_position", stage_position, 1, "Places both characters on the stage. 1 is you, 2 is the dummy, | is the wall.\nWalls put the two touching; the middle puts them exactly where a round starts.\nOff leaves everyone alone. Selecting an entry moves them at once."),
+            position_menu_item,
             list_menu_item("Pose", training_settings, "dummy_neutral", dummy_neutral,1,"The dummy will hold this direction."),
             list_menu_item("Wakeup", training_settings, "roll_direction", roll_direction,1, "Determines which direction the dummy will roll on knockdown"),
             anak_menu_item,
             lilith_gps_menu_item,
             lei_lei_stun_menu_item,
-            list_menu_item("Tech Throws", training_settings, "p2_throw_tech", p2_throw_tech_chance, 5, "How often the dummy escapes a throw.\nRolled once per throw, not per frame - a roll every frame would come out as\n100% whatever this said, which is what Guard Action Frequency used to do.\nNone leaves the throw alone."),
-            list_menu_item("Guard", training_settings, "guard", guard,1, "Push Block (All ...) guards like All Guard and pushes, at that strength,\nwithout needing Guard Action Type - so that stays free for what you test next.\nAuto Guard writes the game's own guard flag, so it blocks everything,\nincluding unblockable setups.\nStand Block holds Back while an attack is in range; All Guard adds down, so\nlows are covered too. Both use the game's proximity check - projectiles too."),
+            list_menu_item("Random Throw Tech %", training_settings, "p2_throw_tech", p2_throw_tech_chance, 5, "How often the dummy escapes a throw.\nRolled once per throw, not per frame - a roll every frame would come out as\n100% whatever this said, which is what Random Guard Action % used to do.\n0% leaves the throw alone."),
+            with_warning(list_menu_item("Guard", training_settings, "guard", guard,1, "Push Block (All ...) guards like All Guard and pushes, at that strength,\nwithout needing Guard Action Type - so that stays free for what you test next.\nAuto Guard writes the game's own guard flag and blocks even unblockable setups.\nStand Block holds Back while an attack is in range, by the game's own proximity\ncheck - projectiles too. All Guard also picks the height each hit needs: down\nfor lows, standing for overheads and jump attacks, the Pose for everything else."), block_rate_warning),
             -- integer_menu_item("# Guard Frames", training_settings, "p2_refill_timer", 0, 20, false, 0, nil, "This timer controls when the life meter will be refilled.\nOccurs this many seconds after being hit"),
 
             p2_block_chance_menu_item,
-            list_menu_item("Guard Action Type", training_settings, "guard_action", guard_action_type, 1, {
+            with_warning(list_menu_item("Guard Action Type", training_settings, "guard_action", guard_action_type, 1, {
               --1 "None",
               --2 "Guard Cancel",
               --3 "Push Block",
@@ -1415,8 +1773,8 @@ return {
               --8 "Counter Attack - Specified",
               --9 "Counter Attack - Recording",
               "No Guard Action will be performed",
-              "The dummy will input a guard cancel manually.\nYou can delay this with the delay option in order to get later GC's\nYou can also set the frequency option to have it be performed randomly",
-              "The dummy will input a push block manually.\nThe game counts button presses inside a 14 Tick window from the block\n($1AB, set to 14 at ROM 0x023966). Eight counted presses is guaranteed;\nbelow that the game rolls once per press.\nYou can delay this with the delay option in order to get later PB's.\nYou can also set the frequency option to have it be performed randomly.",
+              "The dummy will input a guard cancel manually.\nYou can delay this with the delay option in order to get later GC's\nRandom Guard Action % sets how often it is performed.",
+              "The dummy will input a push block manually.\nThe game counts button presses inside a 14 Tick window from the block\n($1AB, set to 14 at ROM 0x023966) and rolls on each: presses 1-2 never,\n3rd 25%, 4th 50%, 5th 75%, 6th always (the table at ROM 0x028D50).\nYou can delay this with the delay option in order to get later PB's.\nRandom Guard Action % sets how often it is performed.",
               "Specify a character specific special move.\nto be performed after the dummy hurt, block, or wakeup",
               "A recording will be played after the opponent guards, is hurt,\nor wakes up.\nThe recording played can be set in the 'Recording' tab.\nThis can be specified or random.",
               "Specify an input to be performed after the dummy hurt, block,\nor wakeup.",
@@ -1424,10 +1782,14 @@ return {
               "Specify an action to be performed after the dummy blocks or is hit.\nSame timing machinery as Reversal, minus the wake-up.",
               "A recording will be played after the opponent finishes guarding.\nThe recording played can be set in the 'Recording' tab.\nThis can be specified or random.",
               "Play recording after pushblock",
-              "Runs the list of steps set in 'Reversal Sequence', in order.\nEach step is one action and one answer to when it starts.\nThe first step's Wait replaces Guard Action Delay, so that row is off.",
+              "Runs the list of steps set in 'Reversal Action Steps', in order.\nEach step is one action and one answer to when it starts.\nThe first step's Wait replaces Button Wait, so that row is off.",
+              -- 12, Reversal - Action Patterns. Without it the row fell back to
+              -- the default line below, which says nothing about patterns.
+              "Runs one of the patterns ticked in 'Reversal Action Patterns'.\nWith several ticked, one is picked at random each time.\nRandom Guard Action % decides whether it runs at all.",
 
-            }, "Use this to set up various counter attacks."),
+            }, "Use this to set up various counter attacks."), action_rate_warning),
             guard_action_frequency_menu_item,
+            dummy_random_start_wait_item,
             counter_attack_stick_menu_item,
             counter_attack_button_menu_item,
             counter_attack_lever_menu_item,
@@ -1435,9 +1797,11 @@ return {
             pb_button_menu_item,
             pb_rev_button_menu_item,
             guard_action_delay_menu_item,
+            button_random_delay_item,
             gc_input_delay_menu_item,
             p2_reversal_list_menu_item,
             p2_reversal_strength_menu_item,
+            reversal_action_patterns_item,
             reversal_action_steps_item,
             action_steps_loop_switch,
             action_steps_loop_wait_item,
@@ -1494,7 +1858,7 @@ return {
       entries = {
         integer_menu_item("Game Speed", training_settings, "game_speed", 0, 3, false, 3, 0, "Change the game speed\n0 = normal, 1-3 = turbo 1-3"),
         checkbox_menu_item("BGM On", training_settings, "bgm_on", false, "Background music on or off.\nIt only takes proper effect after a trip through character select - switch it\nhere and the music comes back quiet. Return to Character Select below does\nthat, and so does Lua Hotkey 4."),
-        list_menu_item("P1 Min PB Presses", training_settings, "min_pb_inputs", { "Normal", "4", "5", "6" }, 1, "How many presses YOU must make before a push block is allowed. P1 only - it\ndoes not make the dummy work harder.\nNormal leaves the game alone: it counts presses in a 14 Tick window and eight\nis a guaranteed push block, fewer is a roll per press.\n4/5/6 rewrite the count the game reads to zero whenever you pressed fewer than\nthat (ROM 0x02760E), so it rolls as if you had not pressed at all."),
+        list_menu_item("P1 Min PB Presses", training_settings, "min_pb_inputs", { "Normal", "4", "5", "6" }, 1, "How many presses YOU must make before a push block is allowed. P1 only - it\ndoes not make the dummy work harder.\nNormal leaves the game alone: it counts presses in a 14 Tick window and rolls\nper press - never on 1-2, then 25/50/75%, and the 6th always pushes.\n4/5/6 rewrite the count the game reads to zero whenever you pressed fewer than\nthat (ROM 0x02760E), so it rolls as if you had not pressed at all."),
         { name = "Return to Character Select",
           draw = function(_self, _x, _y, _selected)
             local _c = text_default_color
@@ -1518,6 +1882,60 @@ return {
           description = function()
             return "Ends the match and goes back to the character select screen, the same as\nLua Hotkey 4. LP or Right does it.\nRecordings stop, the recording savestate is dropped, and the trainer\nreadouts are cleared - none of them describe the next match."
           end },
+      }
+    },
+    {
+      name = "Display",
+      entries = {
+        -- checkbox_menu_item("Use Custom Palettes *at your own risk*", training_settings, "enable_custom_palette", "Shows Health and Meter values"),
+        -- integer_menu_item("P1 Char Palette", training_settings, "p1_char_palette", 0, 255, false, 0,0,"Scroll through these on char select to see if you like one\nMany do not look good"),
+        -- integer_menu_item("P2 Char Palette", training_settings, "p2_char_palette", 0, 255, false, 0,0,"Scroll through these on char select to see if you like one\nMany do not look good"),
+
+        checkbox_menu_item("HUD (Life / Meter)", training_settings, "display_hud", true, "Red and white life for both players at the top of the screen, the meter, and\nthe character specific readouts - curse, Dark Force timer.\nTech hit has its own row under this one.\nThe trainers and the input bar are not part of this; they have their own rows."),
+        child_of("display_hud", checkbox_menu_item("Show Tech Hit Mash", training_settings, "display_tech_hit", false, "Timer and Mash under the characters while the tech hit window is open - the\nraw $1AB and $170, straight from the game.\nShow PB Counter on this tab reads the same two bytes and draws them as a\nhistory, so this is the same information twice.\nPart of the HUD row above - it comes off with that as well.")),
+        checkbox_menu_item("Movelist", training_settings, "display_movelist", false,"Shows a character specific move list"),
+        checkbox_menu_item("Display Hitboxes", training_settings, "display_hitbox_default",1, "Display hitboxes for P1 and P2"),
+        child_of("display_hitbox_default", checkbox_menu_item("Display Pushbox X Center", training_settings, "display_pushbox_axis", false, "Display the x center of the pushbox")),
+        list_menu_item("Show Pushbox Distance", training_settings, "show_x_distance", { "Off", "X Only", "X,Y,Triangle"},1,"Gives a numerical / visual representation of the distances between characters"),
+        checkbox_menu_item("Show Damage Calc (on P2)", training_settings, "show_damage_calc", false, "This shows a damage calculation.\nDamage calculations are recalculated on hit"),
+        checkbox_menu_item("Recording GUI", training_settings, "display_recording_gui", false, "Shows the current recording staet"),
+        checkbox_menu_item("Show Scrolling Input", training_settings, "show_scrolling_input",1, "The input bar along the bottom of the screen: YOUR inputs, newest at the right.\nShow P2 Inputs is the same thing for the dummy, down the right edge.\nThe four rows under this one all draw into this bar and come off with it."),
+        child_of("show_scrolling_input", integer_menu_item("Scrolling Input History", training_settings, "inp_history_scroll", 0, 80, false, 0,0,"How far back into the Scrolling Input bar above to look. 0 is the newest input.\nRaising it slides the bar along so inputs that have gone off the left come\nback into view. It does not pause anything - new inputs still arrive.")),
+        child_of("show_scrolling_input", checkbox_menu_item("Show Button Releases", training_settings, "show_button_releases", true, "Draws a hollow marker on the frame a button is let go, in its own one-frame\ncolumn. Off leaves presses and holds only, and a release just ends the column\nthe button was held in - the way the input bar read before the marker existed.\nHide Negative Edge Inputs below does not touch these columns.")),
+        child_of("show_scrolling_input", checkbox_menu_item("Hide Negative Edge Inputs", training_settings, "skip_nedge_displays", true, "Hides the columns that carry nothing new: same direction as the one before and\nno button newly pressed - the clutter a release leaves behind.\nNot the release marker itself. Show Button Releases above owns that, and this\nrow leaves those columns alone.")),
+        child_of("show_scrolling_input", checkbox_menu_item("Show GC Trainer", training_settings, "show_gc_trainer", true,"This option shows the GC window in the input viewer.\nThe Green GC shows when the window begins,\nand Red when it is performed or ends.\nG / GP n on the tick before it: the block landed there\n(GP n: tick n of the persistence, the tick back is let go being 1).")),
+        checkbox_menu_item("Show P2 Inputs", training_settings, "display_p2_inputs", 1, "The dummy's inputs, as icons down the right edge of the screen.\nShow Scrolling Input above is the same thing for YOUR side, along the bottom.\nThis used to come off only with the whole HUD."),
+        child_of("display_hud", checkbox_menu_item("Show Character Specific", training_settings, "display_char_specific", false, "Two readouts that exist for one character each, from before this menu had rows\nfor them: Anakaris's swallowed projectile, and Aulbath's Direct Scissors with\nits command lighting up green as 2,2 + PP goes in.\nNothing on screen says what either one is, which is why they ship off.\nPart of the HUD row above - it comes off with that as well.")),
+        reset_tab_item("Display"),
+      }
+    },
+    {
+      name = "Trainer",
+      entries = {
+        checkbox_menu_item("Tick Data", training_settings, "mo_enable_frame_data", false, "Startup, active, recovery, advantage, total, hitstun, hitfreeze - in Ticks.\nThe first three come from the ATTACK HITBOX, so they do not move with distance.\nStartup and active share the tick the box appears: 4 + 3 + 7 - 1 = 13 Total.\nTotal includes gaps between hits, minus the attacker's hitfreeze; * = not frozen.\nACTION TIMELINE (third row, green): one action on a clock, each entry stamped\nwith its Tick. LP..HK and Action Steps names. 1t PreJump > 4t Air > 10t MP."),
+        child_of("mo_enable_frame_data", list_menu_item("Tick Data Side", training_settings, "mo_frame_data_side", { "P1", "P2" }, 1, "WHICH PLAYER the rows above measure. P1 is you.\nP2 measures the DUMMY: its move gets Startup / Active / Recovery, the Action\nTimeline follows what the DUMMY did, and YOUR side supplies the hit or guard\nit ran into. This is how to see what a recorded Action Steps pattern really\ncame out as.\nOne side at a time. Both readouts say P2 while it is on.")),
+        checkbox_menu_item("Show Step Wait Ticks", training_settings, "display_step_wait_ticks", false,"Shows what each Action Step actually waited, in game Ticks.\nThe Wait row names a mode - Auto (After), Auto (Chain) - without saying how\nlong it came to. This measures it: Step.2 Wait:13 is step two connecting 13 Ticks\nafter step one. Act is the Ticks that step spends entering its own inputs.\nLoop Wait is the gap a loop restart waited, which is not step one own wait.\nMeasured only - what the row is set to is on the row."),
+        checkbox_menu_item("Show PB Counter", training_settings, "display_pb_counter",1, "Push block presses the game counted ($170), plus any after it grants - a lucky\nthree would read three however hard you mash. Green once granted; the count\ncarries a blocked string. Right: the TICK timeline of the last window (Guard\nopens it, | closes it, digit = buttons that tick; 2+ red is simultaneous).\nMultiPush counts those. LateMash: buttons pressed AFTER the 14 ticks - they\nLEAK A NORMAL when guard stun ends. Cap 14t. The dummy shows as P2."),
+        checkbox_menu_item("Show PB Stats", training_settings, "display_pb_stats", false,"Push block, over every touch on the ground you pressed a button in: Total.\nPass: it pushed. Fail: it did not, or you were hit. Unpressed touches: ignored.\nAvg: the PB Count line's own values, over the touches you pressed in and guarded.\nMulti / Late: its MultiPush and LateMash. A blocked string is one touch.\nA guard cancel that came out is left out. Counts stop at 99999.\nOff and on starts at 0."),
+        checkbox_menu_item("Show GC Command Trace", training_settings, "display_gc_command_trace", false, "Every direction the GAME TOOK on the way to a guard cancel, with the tick it\ntook it, the button that finished it, and how it ended.\nDrawn once a guard happens - the motion is followed before that, so a command\nstarted early still shows. Numbers count from the input above, or from the\nguard or expiry once one of those cut the count. GC Expired is the 14 tick\nwindow running out. Cmd Expired is the motion not staying together."),
+        -- SHOW GC STATS (gcStats.lua, user 2026-10-01). The help has to say what
+        -- the side is, that both averages are over OKs only and what each one
+        -- measures, and that neither is a score. Its words are PB Stats' (user,
+        -- 2026-10-01: 表記がPBとぶれてる). No Reset row: going back to the
+        -- character select clears it (user, 2026-10-01: キャラ選択に戻ればクリア
+        -- だから要らない).
+        checkbox_menu_item("Show GC Stats", training_settings, "display_gc_stats", false, "Guard cancels, one per blocked string in which the game took a direction of your\nGC motion (begun before the block counts too). Pass: a GC came out. Fail: none.\n1P / 2P: the side your character was on - on the left, facing right, is 1P.\nAverages of ticks to the GC, over Passes only. Smaller is a faster GC.\nGC t: from the window opening. Input t: from the final motion's first direction.\nOff and on starts at 0. Counts stop at 99999."),
+        checkbox_menu_item("Show Air Guard Gaps", training_settings, "display_air_guard_gap", false,"After each hit of an air chain you BLOCKED. Gap: the ticks you could act before\nthe next hit (|) or your landing (L). 1t is your first tick. A press before it:\nIn Blockstun 14t at 9,13t and P/K after | (row above): thrown away. * your hit.\nPress>Hit: LP 1t>5t (5t) = LP pressed on tick 1, hit on tick 5. (nt) is startup\nas Tick Data counts it. LATE 4t: 4t past the last winning press. NO GAP: (nt)>Gap\nDash > 12t J.LK(5t): theirs, Auto (10) in Action Steps. PreJump > Guard: yours."),
+        checkbox_menu_item("Show Frame Trap Trainer", training_settings, "display_frame_trap_trainer", false,"Shows the gap between p2 recovering from hit or block stun\nand the next one, in game Ticks."),
+        checkbox_menu_item("Show Jump In Trainer", training_settings, "display_jump_in_trainer", false,"Displays the gap between p2 getting hit and your character landing,\nin DISPLAYED frames - not game Ticks."),
+        checkbox_menu_item("Show IAD Trainer", training_settings, "display_airdash_trainer", 0,"This option shows the HEIGHT of your last few aidashes.\nGreen is best! Red is Worst!"),
+        checkbox_menu_item("Show Dashes Interval", training_settings, "display_dash_interval_trainer", 0,"Shows how many DISPLAYED frames between dashes - not game Ticks.\nGreen is best! Red is Worst!"),
+        checkbox_menu_item("Show Dash Time", training_settings, "display_dash_length_trainer", 0,"Shows how many DISPLAYED frames you dashed for - not game Ticks.\nIf Sas then Smileys describe short hop success.\nGreen is best! Red is Worst!"),
+        checkbox_menu_item("Show Dash Attack Cancel Trainer", training_settings, "display_dash_attack_cancel_trainer", false,"Shows the DISPLAYED frames between starting a dash\nand the start of an attack - not game Ticks.\nThis is printed under Dash ATK in the gui."),
+        checkbox_menu_item("Show Attack Dash Gap Trainer", training_settings, "display_attack_dash_gap_trainer", false,"Shows the DISPLAYED frames between an attack recovering\nand the start of a dash - not game Ticks.\nThis is printed under Gap BTW ATK Dash in the gui."),
+        checkbox_menu_item("Show Short Hop Counter (Sas)", training_settings, "display_short_hop_counter", false,"Shows how many short hops you.\nhave done in a row on Sasquatch"),
+        checkbox_menu_item("Show Bishamon UBK Trainer", training_settings, "display_bishamon_ubk_trainer", false,"Overlays onto P2 whether you are in a crouch or standing\n unblockable distance for Karame Dama or Bricks"),
+        reset_tab_item("Trainer"),
       }
     },
     {
@@ -1546,7 +1964,14 @@ return {
         checkbox_menu_item("Show Pursuit Indicator", training_settings, "show_pursuit_indicator", false,"Opponent OK at the top left, from the game's pursuit (OTG) state.\nINCOMPLETE. Two of its three lines have never been drawn - the option that\nguards them exists nowhere - and the labels on the other two disagree about\nwhich side they describe.\nSee analysis/ISSUE-PURSUIT-INDICATOR-001.md before trusting it."),
         checkbox_menu_item("Show Hit Strength + PB PushBack", training_settings, "show_move_strength", false,"Four lines at the top left: the strength of the attack each character was last\nhit by ($59), and each one's push block pushback timer ($1B0).\nAdded while chasing a delayed-pushback bug. Raw values, no measurement."),
         checkbox_menu_item("Show Projectile Allocation", training_settings, "show_projectile_count_limiter", false,"The projectile allocation value ($FFF9BE) in hex, near the top of the screen.\nThe game's own budget for what can be on screen at once.\nA readout, not a limiter - nothing here changes the value."),
-        checkbox_menu_item("Knockdown Logger", training_settings, "knockdown_logger_enable", false,"Writes a JSON trace of every recovery to scripts/reversal_logs.\nFor investigating timing. Leave it off unless you are measuring something -\nit writes a file per recovery."),
+        -- A CHECK ON THE TOOL, NOT PRACTICE (user, 2026-09-28): it counts
+        -- whether the dummy's Random Guard Action % acts as often as set,
+        -- so it sits with the diagnostics and ships off. Was "Show GC
+        -- Frequency Counter" on the Trainer tab; the property keeps its name
+        -- so a saved setting still reaches it.
+        checkbox_menu_item("Random Guard Action % Check", training_settings, "display_gc_freq_counter", false, "The dummy's Random Guard Action %, counted: does it act as often as set?\nopp = chances the dummy had, roll+ = how many the roll allowed,\narm = guard actions started, seq = later sequence steps sent.\nGreen when roll+/opp matches the setting. seq above opp means\nleftover steps from an earlier chance are still coming out."),
+        checkbox_menu_item("Knockdown Logger", training_settings, "knockdown_logger_enable", false,"Writes a JSON trace of every recovery to scripts/reversal_logs.\nFor investigating timing. Leave it off unless you are measuring something -\nit writes a file per recovery.\nAir guards go to airg_s01..s30.json, one file per air-blocked chain."),
+        reset_tab_item("Analysis"),
       }
     }
 }
@@ -1776,6 +2201,14 @@ menuModule = {
               mark_training_settings_dirty()
             end
           end
+
+      if P1.input.pressed.HP or P2.input.pressed.HP then
+        if is_main_menu_selected then
+        elseif _current_entry.hp then
+          _current_entry:hp()
+          mark_training_settings_dirty()
+        end
+      end
       
           -- screen size 383,223
           local _gui_box_bg_color = MENU_STYLE.panel_fill
@@ -1847,6 +2280,8 @@ menuModule = {
             if menu[main_menu_selected_index].entries[sub_menu_selected_index].legend then
               gui.text(_menu_x, _menu_box_bottom - 8, menu[main_menu_selected_index].entries[sub_menu_selected_index]:legend(), text_disabled_color, text_default_border_color)
             end
+            draw_entry_warning(menu[main_menu_selected_index].entries[sub_menu_selected_index],
+              _menu_box_right - 10, _menu_box_bottom - 8)
             if menu[main_menu_selected_index].entries[sub_menu_selected_index].description then
               local description = menu[main_menu_selected_index].entries[sub_menu_selected_index]:description()
               gui.text(_menu_x, _menu_box_bottom - 57, description, text_disabled_color, text_default_border_color)

@@ -45,6 +45,21 @@ local actionSequenceEditorModule = require "./scripts/actionSequenceEditor"
 local actionSequenceRunnerModule = require "./scripts/actionSequenceRunner"
 local guardCancelModule  = require "./scripts/guardCancel"
 local debugKnockdownModule = require "./scripts/debugKnockdown"
+-- Air guards, tick by tick. Measurement only, on the same switch.
+local airGuardLogModule  = require "./scripts/airGuardLog"
+-- Air Guard Gaps (Trainer tab). hud.lua requires the same path to draw it.
+local airGuardGapModule  = require "./scripts/airGuardGap"
+-- Show PB Stats (Trainer tab). hud.lua requires the same path to draw it.
+local pbStatsModule      = require "./scripts/pbStats"
+-- Show GC Stats (Trainer tab). Counted from guardCancel.lua's P1 hook; hud.lua
+-- requires the same path to draw it.
+local gcStatsModule      = require "./scripts/gcStats"
+-- Random Start Wait. Loaded HERE, at start-up, like every other module: the
+-- runner, guardCancel and macro.lua only look it up while running
+-- (pcall(require, ...)), and the one other module used that way - gcStats - is
+-- also loaded above first, so those look-ups are always answered from the
+-- cache rather than resolved against a path mid-run.
+local randomStartWaitModule = require "./scripts/randomStartWait"
 local autoguardModule    = require "./scripts/autoguard"
 local gameStateModule    = require './scripts/gameState'
 local dummyStateModule   = require './scripts/dummyState'
@@ -73,12 +88,14 @@ local rawStateServiceModule = require "./scripts/rawStateService"
 local playerStateServiceModule = require "./scripts/playerStateService"
 
 if show_controls_message == true then
-	print("* Press Start open the training menu..")
-	print("* Press Coin to swap controls to dummy")
-	print("* Press Volume Down to play back recording. (found in 'map game inputs')")
-	print("* Press Volume Up to record dummy. (found in 'map game inputs')")
-	print("* Press Alt + 3 to toggle looping playback.")
-	print("* Press Alt + 4 to return to character select.")
+	-- Lua Hotkey 1, not Start: the Start toggle in controller.lua is commented
+	-- out, and this line sent new players to a button that does nothing.
+	print("* Lua Hotkey 1 opens the training menu (set it in Input > Map Game Inputs).")
+	print("* Press P1 Coin to swap controls to the dummy.")
+	print("* Press Volume Up to record the dummy, Volume Down to play it back.")
+	print("* Hold a direction and press Lua Hotkey 2 to reposition both characters.")
+	print("* Lua Hotkey 3 toggles looping playback.")
+	print("* Lua Hotkey 4 returns to character select.")
 end
 
 local p1_addr = 0xFF8400
@@ -463,6 +480,48 @@ emu.registerbefore(function()
 	-- end
 	gameStateModule.registerBefore()
 
+	-- THE CHARACTER SELECT STOPS THE LOOP (user, 2026-09-21).
+	--
+	-- The Action Pattern loop refills itself whenever its queue is empty, and
+	-- nothing in the runner knows what scene the game is in. Back on this
+	-- screen the runner's service gate is not enough: service runs from the
+	-- 0x02211A hook, which has no reason to still be executing here, and
+	-- globals.dummy is never rebuilt on this screen (the early return below
+	-- skips the refresh), so a stale object kept answering. The lap survived
+	-- and the next one was delivered here, moving the P2 cursor by itself.
+	--
+	-- Scene 2 is this screen and nothing else. No pattern should ever run
+	-- here, so the whole pass goes - the same cancel the savestate load does,
+	-- plus the delivery slot, whose runner-side half cancel cannot reach.
+	-- Every frame while the scene says so: the runner's refill may run later
+	-- in the same frame, and this has to win.
+	if memory.readbyte(0xFF8009) == 2 then
+		actionSequenceRunnerModule.cancel()
+		if guard_action_input ~= nil then guard_action_input.csp_due = nil end
+		if player_objects ~= nil and player_objects[2] ~= nil then
+			player_objects[2].pending_input_sequence = nil
+		end
+		-- AND WHAT THE LAST MATCH LEFT ON SCREEN GOES: a character select stands
+		-- in for restarting the tool (user, 2026-09-27). Once on the way in -
+		-- the input history, the icon columns, PB Count with its timeline and
+		-- LateMash, PB Stats, the GC Command Trace, GC Stats. Air Guard Gaps
+		-- and Tick Data clear themselves off the match already.
+		if not globals._select_cleared then
+			globals._select_cleared = true
+			inpHistoryModule.clear()
+			vsavScriptModule.clear()
+			timersModule.clear()
+			guardCancelModule.clear_trace()
+			globals.total_pb_attempt_counter = {}
+			globals.successful_pb_counter = {}
+			pbStatsModule.clear()
+			-- A new pick is a new character to count for (user, 2026-10-01).
+			gcStatsModule.clear()
+		end
+	else
+		globals._select_cleared = false
+	end
+
 	-- Lua keys 1 and 2 are held off until the match is genuinely running -
 	-- the same gate the overlay uses, meaning the characters are on screen
 	-- and the modules behind those keys are initialised. Pressing them during
@@ -512,7 +571,28 @@ emu.registerbefore(function()
 					_inp["P2 Weak Kick"] = _inp["P1 Weak Kick"] or _inp["P2 Weak Kick"]
 					_inp["P2 Medium Kick"] = _inp["P1 Medium Kick"] or _inp["P2 Medium Kick"]
 					_inp["P2 Strong Kick"] = _inp["P1 Strong Kick"] or _inp["P2 Strong Kick"]
-					-- Start/Coin not mirrored (would instantly confirm / change stage)
+					-- START IS MIRRORED. COIN IS NOT.
+					--
+					-- Both were held back for fear of confirming the pick or jumping
+					-- the stage. Neither applies on this screen (user, 2026-09-19):
+					-- the mirror does not start until the wait above has run, so
+					-- nothing is standing on Start when control arrives, and stage
+					-- select is on Coin (stage-select.lua), which stays on P1.
+					--
+					-- Holding it is how the secret characters are picked - Start plus
+					-- two punches or two kicks - so without this Dark Gallon cannot be
+					-- chosen for P2 at all.
+					--
+					-- THE NAME IS NOT FIXED. FBNeo spells it differently per driver;
+					-- macro.lua already probes the same three. The P2 spelling is the
+					-- P1 one with its single 1 turned into a 2.
+					for _, _s in ipairs({ "1 Player Start", "P1 Start", "Start 1" }) do
+						if _inp[_s] ~= nil then
+							local _p2 = _s:gsub("1", "2", 1)
+							_inp[_p2] = _inp[_s] or _inp[_p2]
+							break
+						end
+					end
 					joypad.set(_inp)
 				end
 			else
@@ -534,6 +614,9 @@ emu.registerbefore(function()
 	-- globals["skip_frame"] 	 = frameskipHandlerModule.registerBefore()
 	globals["timers"] 		 = timersModule.registerBefore()
 	positionModule.registerBefore()
+	-- A blocked string the position shortcut slid you out of is not a try
+	-- either way (user, 2026-10-01): thrown away, not counted as NG.
+	if positionModule.busy() then gcStatsModule.discard() end
 	globals["current_frame"] = emu.framecount()
 	-- print("rev", globals.dummy.p2_reversal)
 
@@ -554,7 +637,11 @@ emu.registerbefore(function()
 	if globals.options.display_pb_stats == false then
 		globals.total_pb_attempt_counter = {}
 		globals.successful_pb_counter = {}
+		-- Off and on again starts from zero, as the menu says.
+		pbStatsModule.clear()
 	end
+	-- GC Stats the same way (user, 2026-10-01: PB Statsとあわせて).
+	if globals.options.display_gc_stats ~= true then gcStatsModule.clear() end
 	-- if globals.macroLua and (globals.macroLua.playing == true or globals.macroLua.recording == true) then
 	-- 	if was_gathering_graph_data == false then
 	-- 		last_dummy_config = {}
@@ -634,6 +721,9 @@ emu.registerbefore(function()
 	end
 
 	debugKnockdownModule.registerBefore()
+	airGuardLogModule.registerBefore(debugKnockdownModule.script_version)
+	airGuardGapModule.registerBefore()
+	pbStatsModule.registerBefore()
 
 	globals.controllerModule.process_pending_input_sequence(player_objects[1], globals._input)
 
@@ -773,6 +863,12 @@ if savestate.registersave and savestate.registerload then --registersave/registe
 		-- them, which is the same fault this whole block exists to prevent.
 		actionSequenceEditorModule.abort("savestate_load")
 		actionSequenceRunnerModule.cancel()
+		-- And a Character Specific poke waiting out its Random Start Wait: it is
+		-- due on a tick counted from before the load.
+		if guard_action_input ~= nil then guard_action_input.csp_due = nil end
+		-- The blocked string in progress happened in a game that has just been
+		-- rewound: thrown away, not counted as NG (user, 2026-10-01).
+		gcStatsModule.discard()
 		for _i = 1, 2 do
 			local _p = player_objects and player_objects[_i]
 			if _p ~= nil then

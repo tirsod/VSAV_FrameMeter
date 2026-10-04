@@ -521,6 +521,39 @@ end
 local function p2_can_act()
 	return memory.readbyte(0xFF8805) == 0 and memory.readbyte(0xFF8806) == 0
 end
+
+-- RANDOM START WAIT (user, 2026-10-02).
+--
+-- Every playback that goes through playcontrol() - Play Recording, the playback
+-- hotkey, each Looped Playback pass, and the Recording guard actions - waits a
+-- fresh draw of 0..N game Ticks before its first frame. The take is parsed and
+-- the slot picked at once, so what is about to play is settled; only the start
+-- waits. The Recording Wizard's check playback has its own entry and does not
+-- wait.
+--
+-- Counted on the game's tick clock (0xFF8081), one read per callback. A
+-- displayed frame is one Tick at Normal and one or two at Turbo, so the start
+-- falls on the first frame at or past the draw. A jump in the clock (a state
+-- load) is not counted. While it waits nothing is playing, so the dummy does
+-- what its Dummy tab settings say.
+local start_wait = nil   -- { left = <Ticks still to wait>, last = <clock last read> }
+
+-- One callback's worth of the wait, against the clock as read now. True once
+-- it has run out. A difference of 8 or more is a jump, not time passing.
+local function start_wait_tick(sw, now)
+	local d = (now - sw.last) % 256
+	sw.last = now
+	if d < 8 then sw.left = sw.left - d end
+	return sw.left <= 0
+end
+
+local function rsw_roll()
+	local ok, m = pcall(require, "./scripts/randomStartWait")
+	if ok and type(m) == "table" and type(m.roll) == "function" then
+		return m.roll()
+	end
+	return 0
+end
 local playback_facing = nil      -- from the header of the file being played
 
 function get_playback_facing()
@@ -901,12 +934,21 @@ function stop_macro_playback()
 	end
 	loop_pending = false
 	loop_reload = false
+	start_wait = nil
 end
 function start_macro_playback()
 		playing = true
 end
 
 local function playcontrol(silent)
+	-- Asked again while the start is still waiting: that is a stop, as it is
+	-- while playing.
+	if start_wait ~= nil then
+		start_wait = nil
+		inputstream = nil
+		if not silent then print("Canceled playback before it started.") print() end
+		return
+	end
 	local slot
 	if globals.options.random_playback then 
 		slot = get_playback_file(true)
@@ -925,8 +967,14 @@ local function playcontrol(silent)
 		if not parse(slot) or warning("Macro is zero frames long.", macrosize == 0) or dumpinputstream(dumpmode) then
 			return
 		end
+		local _w = rsw_roll()
 		if not silent then
-			print("Now playing " .. slot .. " (" .. macrosize .. " frames)" .. (loopmode and " in loop mode" or wait.duration and " in incremental wait mode" or ""))
+			print("Now playing " .. slot .. " (" .. macrosize .. " frames)" .. (loopmode and " in loop mode" or wait.duration and " in incremental wait mode" or "")
+				.. (_w > 0 and (" after a Random Start Wait of " .. _w .. " Ticks") or ""))
+		end
+		if _w > 0 then
+			start_wait = { left = _w, last = memory.readbyte(0xFF8081) }
+			return
 		end
 		dostate(frame)
 		playing = true
@@ -1021,7 +1069,7 @@ end
 local wizard_saved_loop = nil
 
 function play_temporary_recording()
-	if playing or recording then return false end
+	if playing or recording or start_wait ~= nil then return false end
 	-- parse() returns frame (0) on success and nil on failure; 0 is truthy.
 	if not parse(WIZARD_TEMP_NAME) then return false end
 	if macrosize == nil or macrosize == 0 then return false end
@@ -1044,7 +1092,8 @@ function end_temporary_playback()
 end
 
 function get_recording_status()
-	return { recording = recording, playing = playing, frames = recframe, temp_name = WIZARD_TEMP_NAME }
+	return { recording = recording, playing = playing, frames = recframe, temp_name = WIZARD_TEMP_NAME,
+	         starting = (start_wait ~= nil) }
 end
 
 -- emu.registerexit(function() --Attempt to save if the script exits while recording
@@ -1228,6 +1277,21 @@ macroLuaModule = {
 			end
 		end
 
+		-- THE RANDOM START WAIT RUNNING OUT. Before the playback block below, so
+		-- the first frame goes out on this same callback - exactly where a start
+		-- with no wait would have put it.
+		if start_wait ~= nil and globals.hotkeys_armed ~= true then
+			-- Left the match: same as a pending loop restart, dropped.
+			start_wait = nil
+			inputstream = nil
+		elseif start_wait ~= nil
+		       and start_wait_tick(start_wait, memory.readbyte(0xFF8081)) then
+			start_wait = nil
+			dostate(frame)
+			playing = true
+			framediff = emu.framecount()
+		end
+
 		--framediff check is necessary for emus where registerbefore runs multiple times per frame
 		if playing and loop_menu_hold_active() then
 			-- HOLD IT WHERE IT IS, DO NOT BANK THE FRAMES.
@@ -1326,6 +1390,10 @@ macroLuaModule = {
 				["start_macro_playback"] = start_macro_playback,
 				["recording"] = recording,
 				["playing"] = playing,
+				-- Waiting out a Random Start Wait. Nothing is playing yet, so
+				-- the dummy's own settings still drive it; asking for playback
+				-- again in this state would call it off (playcontrol toggles).
+				["starting"] = (start_wait ~= nil),
 				["get_keytable"] = function()
 					-- Freeze an already-running loop as well as a pending restart.
 					-- Returning no macro keys prevents the last recorded input from

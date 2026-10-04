@@ -115,6 +115,9 @@ end
 package.preload["./scripts/actionSequenceRunner"] = function()
 	return dofile("actionSequenceRunner.lua")
 end
+package.preload["./scripts/position"] = function()
+	return dofile("position.lua")
+end
 training_settings = {}
 memory = { readbyte = function() return 0 end }
 gui = { text = function() end, box = function() end }
@@ -123,9 +126,9 @@ menuModule.guiRegister()
 
 local row
 for _, tab in ipairs(menu) do
-	if tab.name == "Player" then
+	if tab.name == "Dummy" then
 		for _, e in ipairs(tab.entries) do
-			if e.name == "Tech Throws" then row = e end
+			if e.name == "Random Throw Tech %" then row = e end
 		end
 	end
 end
@@ -133,7 +136,7 @@ want("行がある", row ~= nil, true)
 want("チェックボックスではなくリスト", row ~= nil and row.list ~= nil, true)
 want("同一画面の他と同じ 5 つ",
 	row ~= nil and row.list ~= nil and table.concat(row.list, ","),
-	"None,25%,50%,75%,100%")
+	"0%,25%,50%,75%,100%")
 -- 他の 2 行と同じ既定。旧チェックボックスが on だったのと同じ意味。
 want("MP リセットは 100%", row ~= nil and row.default_value, 5)
 

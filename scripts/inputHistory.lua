@@ -335,10 +335,15 @@ end
 -- Left/right are stored relative to facing, so they have to be swapped back:
 --   facing == 0 -> bit0 is right, bit1 is left
 --   facing ~= 0 -> bit0 is left,  bit1 is right
-local function read_game_input(_prefix)
+-- _raw: a ($125,$122) pair captured on a game tick this displayed frame did
+-- not sample. guardCancel.lua's hook on 0x0221CC queues one per tick on which
+-- the pair CHANGED; registerBefore drains the queue through here before taking
+-- its own reading. Without it the bar can only show what survives to the end
+-- of a frame, and the input that completes a command is a one-tick event.
+local function read_game_input(_prefix, _raw)
   local base = (_prefix == "P2") and 0xFF8800 or 0xFF8400
-  local btn = memory.readbyte(base + 0x122)
-  local dir = memory.readbyte(base + 0x125)
+  local btn = _raw and _raw.btn or memory.readbyte(base + 0x122)
+  local dir = _raw and _raw.dir or memory.readbyte(base + 0x125)
   local facing = memory.readbyte(base + 0x00B)
 
   -- NOTE (v38): there is deliberately NO special case here for the tick-exact
@@ -431,9 +436,29 @@ local function get_button_edges(_prefix, _buttons)
   return rel, prs
 end
 
-function make_input_history_entry(_prefix, _input)
-  local _direction, _buttons = read_game_input(_prefix)
+function make_input_history_entry(_prefix, _input, _raw)
+  local _direction, _buttons = read_game_input(_prefix, _raw)
   local _released, _pressed = get_button_edges(_prefix, _buttons)
+
+  -- THE RELEASE COLUMN IS ONE SWITCH, AND THIS IS THE ONLY PLACE IT IS HELD.
+  --
+  -- Dropping `released` here takes the whole feature out: the equality test
+  -- stops splitting the release into its own column, _btn() stops reaching for
+  -- the hollow image, and both width shortcuts stop making room for it. Every
+  -- one of those already reads it defensively, so nothing else has to know.
+  --
+  -- Before this switch existed, Hide Negative Edge Inputs was the only way to
+  -- be rid of the hollow markers - it removes any column with no new press,
+  -- which a release column always is. That left one row doing two jobs and the
+  -- decluttering could not be had without losing the markers (user, 2026-09-14,
+  -- comparing against the N-Bee build).
+  --
+  -- get_button_edges() is still CALLED either way: it carries the previous
+  -- frame's buttons, so skipping it would make the first release after the
+  -- switch is turned back on read against stale state.
+  if globals.options and globals.options.show_button_releases ~= true then
+    _released = nil
+  end
 
   return {
     frame = frame_number,
@@ -447,6 +472,10 @@ function make_input_history_entry(_prefix, _input)
     -- not part of is_input_history_entry_equal().
     pressed = _pressed,
     gc_event = globals.gc_event,
+    -- Drawing only, like pressed and released above - deliberately not
+    -- part of is_input_history_entry_equal(). Two columns that differ only
+    -- in this cannot happen: it is set on one tick per window.
+    gc_ticks = globals.gc_ticks,
     pb_event = globals.pb_event,
   }
 end
@@ -515,6 +544,10 @@ function make_event_history_entry(event)
         type = "event",
         frame = frame_number,
         gc_event = globals.gc_event,
+        -- NO gc_ticks HERE. Event entries are built every frame and then
+        -- dropped: the isEvent branch of update_input_history that would
+        -- insert them is commented out, so nothing built here is ever
+        -- drawn. Adding the field would be a line no test can reach.
         pb_event = globals.pb_event    
     }
 end
@@ -553,14 +586,14 @@ function observable_input_update(_history, _prefix, _entry)
         table.insert(_history, _entry)
 end
 
-function update_input_history(_history, _prefix, _input, isEvent, event)
+function update_input_history(_history, _prefix, _input, isEvent, event, _raw)
   local entry
   local inp_entry = make_input_history_entry_for_graph(_prefix, _input)
 
   if isEvent then
      _entry = make_event_history_entry(event)
   else
-      _entry = make_input_history_entry(_prefix, _input)
+      _entry = make_input_history_entry(_prefix, _input, _raw)
   end 
   -- print("frame", frame_number, _prefix, globals.input_history[_prefix], #globals.input_history[_prefix])
   if 
@@ -619,6 +652,52 @@ function update_input_history(_history, _prefix, _input, isEvent, event)
 
 end
 
+-- THE TICK THE BLOCK WAS DECIDED ON, AS A COLUMN OF ITS OWN (user, 2026-09-26).
+--
+-- The GC label sits on the tick the window opened, and that is one tick after
+-- the block was decided: the hit is written between two of P1's updates, and
+-- the window is loaded by P1's guard handler on the next one (VSAV_MEMORY_NOTES,
+-- the order of the hit and the GC window). Taking the label's column for the
+-- guard tick was the natural misreading, and the tick itself was often buried
+-- in a longer column - IDLE 6 with the block on its last tick.
+--
+-- So the tick the block landed on is split off and marked: G for a block with
+-- back held, GP and the tick for one that landed while the pose persisted -
+-- what the GC Command Trace's guard row says. Whether a contact was a block is
+-- only known once the window opens, so the split is made then, one tick back.
+-- A hit leaves the bar as it was. Only while the GC band itself is on.
+--
+-- The split-off copy continues its column: nothing was pressed or let go on
+-- that tick, and a label that marks a column's first tick hands on the state
+-- that follows it.
+local GUARD_MARK_NEXT = {
+  p1_gc_begin = "p1_gc_in_progress", p1_gc_ended = "p1_gc_none",
+  p1_gc_success = "p1_gc_none",
+  p1_pb_begin = "p1_pb_in_progress", p1_pb_ended = "p1_pb_none",
+}
+function mark_guard_column(_history, _mark)
+  if _mark == nil or _mark.seq == nil then return end
+  if not (globals.options and globals.options.show_gc_trainer == true) then return end
+  local _last = _history[#_history]
+  if _last == nil or _last.type ~= nil or _last.frame == nil then return end
+  if _last.frame == _mark.seq then
+    _last.gc_guard = _mark
+  elseif _last.frame < _mark.seq then
+    local _copy = {}
+    for _k, _v in pairs(_last) do _copy[_k] = _v end
+    _copy.frame = _mark.seq
+    _copy.pressed = nil
+    if _last.released ~= nil then
+      _copy.released = { false, false, false, false, false, false }
+    end
+    _copy.gc_ticks = nil
+    _copy.gc_event = GUARD_MARK_NEXT[_last.gc_event] or _last.gc_event
+    _copy.pb_event = GUARD_MARK_NEXT[_last.pb_event] or _last.pb_event
+    _copy.gc_guard = _mark
+    table.insert(_history, _copy)
+  end
+end
+
 function draw_input_history_entry(_entry, _x, _y, color, step)
   if _entry and _entry.type then
     if _entry.gc_event == "p1_gc_begin" then
@@ -674,7 +753,14 @@ function draw_input_history_entry(_entry, _x, _y, color, step)
 		end
 	end
 
-	if globals.options.show_gc_trainer == true then 
+	if globals.options.show_gc_trainer == true then
+		-- The guard tick (mark_guard_column). The trace's guard-row green, so the
+		-- two read as the same thing; at most four glyphs, which fits the
+		-- narrowest column and stops short of the GC label next to it.
+		if _entry.gc_guard ~= nil then
+			local _p = _entry.gc_guard.pers
+			gui.text(_x + 1, _y - 9, _p ~= nil and ("GP" .. _p) or "G", "#99EE99")
+		end
 		if _entry.gc_event == "p1_gc_begin" then
 			gui.text(_x + 1 , _y - 9, "GC", "#00FF00")
 			gui.box(_x + 10, _y - 9, _x + step - 1, _y - 4, "#99EE9977", "#99EE9977")
@@ -684,6 +770,18 @@ function draw_input_history_entry(_entry, _x, _y, color, step)
 			gui.text(_x + 1 , _y - 9, "GC", "#FF0000")
 		elseif _entry.gc_event == "p1_gc_success" then
 			gui.text(_x + 1 , _y - 9, "SUCCESS", "#FFD700")
+			-- How far into the 14 tick window the cancel came out, measured on
+			-- ticks by the hook in guardCancel.lua. Absent when that hook is not
+			-- running (the offline tests and the old frame path), and then
+			-- nothing is drawn rather than a frame count wearing a t.
+			--
+			-- SUCCESS is seven glyphs from _x + 1 at about 4.2px each, so this
+			-- starts past it. It runs wider than the column, which is already
+			-- true of SUCCESS itself; the columns after a cancel draw nothing in
+			-- this band unless a push block starts on top of it (user, 2026-09-23).
+			if _entry.gc_ticks ~= nil then
+				gui.text(_x + 32, _y - 9, _entry.gc_ticks .. "t", "#FFD700")
+			end
     end
     if _entry.pb_event == "p1_pb_begin" then
 			gui.text(_x + 1 , _y - 9, "PB", "#00FF00")
@@ -758,7 +856,12 @@ function remove_nedge_events(_history)
 			-- game state event, append and ignore
 			table.insert(cleaned_history, current_entry)
 		elseif (current_entry.gc_event ~= "p1_gc_none") or (
-			current_entry.pb_event ~= "p1_pb_none") then
+			current_entry.pb_event ~= "p1_pb_none")
+			-- The guard tick's own column (mark_guard_column) is the same
+			-- direction as the one it was split from and presses nothing, so
+			-- this filter - on by default - threw it away, mark and all (user,
+			-- 2026-09-26: no G/GP ever showed on hardware).
+			or current_entry.gc_guard ~= nil then
 			table.insert(cleaned_history, current_entry)
 			-- if gc/pb occurs, display even if no new button presses
 			last_direction = current_entry.direction
@@ -773,6 +876,19 @@ function remove_nedge_events(_history)
 				last_buttons[i] = current_entry.buttons[i]
 			end
 			last_direction = current_entry.direction
+			-- A RELEASE COLUMN IS THE OTHER SWITCH'S BUSINESS.
+			--
+			-- It never has a newly pressed button, so the rule above always
+			-- reads it as clutter - which is how this row came to double as
+			-- the on/off for the hollow release markers. Show Button Releases
+			-- decides whether those columns exist at all; what is left here is
+			-- the job this row was written for: the redundant column that a
+			-- release LEAVES BEHIND, same direction and nothing new pressed.
+			if current_entry.released then
+				for i = 1, 6 do
+					if current_entry.released[i] then nedge_event = false break end
+				end
+			end
 			if nedge_event == false then
 				table.insert(cleaned_history, current_entry)
 			end
@@ -918,7 +1034,13 @@ local function handle_gc_event()
 
     -- todo: GC event history should be moved to a tick-based queue
     -- (ie accommodate frameskip for more granular event data)
-    if p1_gc_timer == 0 and globals.gc_event == "p1_gc_in_progress" then
+    -- BEGIN COUNTS TOO. A cancel on the tick after the window opened
+    -- arrives while the state is still begin, and requiring in_progress
+    -- left it stuck there with no SUCCESS drawn. Kept in step with
+    -- gc_next_state() in guardCancel.lua, which is the path that runs
+    -- when the tick hook is there (user, 2026-09-23).
+    if p1_gc_timer == 0 and (globals.gc_event == "p1_gc_in_progress"
+                             or globals.gc_event == "p1_gc_begin") then
       -- The window closing does not say WHY it closed. Two different things
       -- were being drawn with the same red "GC":
       --   * the window simply ran out (nothing was cancelled)
@@ -1047,6 +1169,15 @@ function handle_idle_event( was_gc_event, was_pb_event,_was_hit_spark_event)
 
 end
 local inpHistoryModule = {
+    -- A CHARACTER SELECT CLEARS THE HISTORY, as a restart would (user,
+    -- 2026-09-27). Emptied in place: other code holds these two tables.
+    ["clear"] = function()
+        for _i = 1, 2 do
+            local _t = input_history[_i]
+            for _k in pairs(_t) do _t[_k] = nil end
+        end
+        if globals ~= nil then globals.p1_tick_inputs = {} end
+    end,
     ["registerStart"] = function()
         return {
             reset_inp_history_scroll = reset_inp_history_scroll,
@@ -1054,19 +1185,76 @@ local inpHistoryModule = {
         }
     end,
     ["registerBefore"] = function(_input)
-        frame_number = emu.framecount()
+        -- THE HISTORY RUNS ON THE GAME'S CLOCK, NOT THE SCREEN'S.
+        --
+        -- This was emu.framecount(), and frame_number is what decides whether a
+        -- column may be appended: update_input_history() only starts a new one
+        -- when _last_entry.frame ~= frame_number. On a displayed-frame clock
+        -- that is AT MOST ONE COLUMN PER FRAME, however many inputs happened -
+        -- and at turbo 3 a frame covers 4/3 of a tick, so the press or release
+        -- that completes a command routinely had nowhere to go. Measured over
+        -- 19 guard cancels: the qualifying edge was drawn 3 times and lost 16
+        -- (analysis/gc_success_probe_20260915b.log).
+        --
+        -- p1_tick_seq is incremented once per game tick by the hook in
+        -- guardCancel.lua, and is monotonic - $FF8081 is a byte and wraps, so
+        -- it cannot be used for this directly. The fallback keeps the offline
+        -- tests and any load order without that hook working on the old clock.
+        local _seq = globals and globals.p1_tick_seq
+        frame_number = _seq or emu.framecount()
         -- local _input = joypad.get()
-        local was_gc_event = handle_gc_event()
+        -- THE GUARD CANCEL STATE COMES FROM THE TICK HOOK WHEN THERE IS ONE.
+        --
+        -- Working it out here means one answer for the whole displayed frame,
+        -- stamped onto every column that frame produces. That was invisible
+        -- while a frame made one column; with columns per tick it puts SUCCESS
+        -- on the first tick of the frame instead of the tick the cancel came
+        -- out on. guardCancel.lua decides it per tick and sends the answer down
+        -- with the input, so this only runs when that hook is not there.
+        local was_gc_event = false
+        if _seq == nil then
+            was_gc_event = handle_gc_event()
+        end
         -- local was_pb_event = handle_pb_event()
         -- local was_hit_spark_event = handle_hit_spark_event()
         -- handle_post_hitspark_event()
         -- handle_idle_event(was_gc_event, was_pb_event,_was_hit_spark_event)
 
         if globals.show_menu ~= true then
+            -- THE TICKS THIS FRAME DID NOT SEE, IN ORDER, BEFORE THE READING
+            -- THIS FRAME DOES SEE.
+            --
+            -- Each queued entry carries the tick it was captured on, and
+            -- frame_number is wound back to it so the column lands on that tick
+            -- rather than all of them collapsing into the current one. The
+            -- queue only receives ticks on which the input or the guard cancel
+            -- window CHANGED, so a held direction still produces one column -
+            -- what is added is exactly what used to be lost.
+            local _q = globals.p1_tick_inputs
+            if _q ~= nil and #_q > 0 then
+                for _, _raw in ipairs(_q) do
+                    frame_number = _raw.seq or frame_number
+                    -- The window state as of THAT tick, so the column carries
+                    -- the label belonging to it.
+                    if _raw.gc ~= nil then globals.gc_event = _raw.gc end
+                    -- nil on every tick but the one the cancel came out
+                    -- on, which is how the label clears itself.
+                    globals.gc_ticks = _raw.gct
+                    -- Before this tick's column goes in, so the column it
+                    -- splits is still the last one.
+                    mark_guard_column(input_history[1], _raw.mark)
+                    update_input_history(input_history[1], "P1", _input, false, nil, _raw)
+                end
+                globals.p1_tick_inputs = {}
+                frame_number = _seq or emu.framecount()
+            end
+
+            -- After the drain, so the event row carries the settled state
+            -- rather than the one this frame started with.
             update_input_history(input_history[1], "P1", _input, true, {})
             update_input_history(input_history[1], "P1", _input)
             update_input_history(input_history[2], "P2", _input)
-            history_update()				
+            history_update()
             return
         end
     end,

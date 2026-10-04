@@ -33,6 +33,9 @@ local function air_pair(jump, dash)
 end
 function air_dash_ticks_for(j,d) local p=air_pair(j,d) return p and p.dash end
 function air_dash_attack_ticks_for(j,d) local p=air_pair(j,d) return p and p.atk end
+-- ジャンプ -> 攻撃の表 (guardCancel の jump_attack_ticks_for) の代役。
+local JUMP_ROW = nil
+function jump_attack_ticks_for(j) return JUMP_ROW and JUMP_ROW[j] end
 
 -- The real make_input_sequence, lifted out of controller.lua so this runs
 -- without the emulator. Taking the real one is the point: a motion whose entry
@@ -290,6 +293,19 @@ do
 	want_auto("スーパージャンプの次は借りない", auto_of("sj.f","air.f"), true, nil)
 	AIR_ROW = nil
 
+	-- ジャンプ -> 攻撃。表 (公開資料の「攻撃前」- 1) があれば数字、無ければ
+	-- 今までどおり状態判定 (2026-09-25)。
+	JUMP_ROW = nil
+	want_auto("ジャンプ->攻撃、表が無ければ状態判定", auto_of("jump.f","atk","none","LP"), true, nil)
+	JUMP_ROW = { ["jump.f"] = 4, ["jump.n"] = 4, ["jump.b"] = 4 }
+	want_auto("ジャンプ->攻撃は表の数字",          auto_of("jump.f","atk","none","LP"), false, 4)
+	want_auto("垂直ジャンプも同じ口",              auto_of("jump.n","atk","none","LP"), false, 4)
+	-- 表の列は通常技の話。必殺技や空中ダッシュは今までの扱いのまま。
+	want_auto("ジャンプ->必殺技は借りない",        auto_of("jump.f","custom","none","LP"), true, nil)
+	want_auto("ジャンプ->空中ダッシュは空中の表",  auto_of("jump.f","air.f"), true, nil)
+	want_auto("スーパージャンプ->攻撃は借りない",  auto_of("sj.f","atk","none","LP"), true, nil)
+	JUMP_ROW = nil
+
 	-- 空中ダッシュの入力は地上ダッシュと同一であること。名前だけの違い。
 	local air = R.compile({version=1,steps={
 		{action="neutral",wait=0},{action="air.f",wait=-1}}})[2]
@@ -341,6 +357,24 @@ end
 for i=3,4 do
   if aul[i].lead~=0 then fail("step "..i.." の押しが free+0 に乗らない","free+"..aul[i].lead,"free+0") end
 end
+-- 止まった条件は行にも出る。Wait の数字だけでは「窓が開くのが遅かった」のか
+-- 「一度も開かず締切で出た」のかが区別できない (本人、2026-09-24)。
+print("[wait_log] 止まった条件が行に出る")
+do
+  R.wait_log = {
+    { index = 1, mode = "Auto", op = 5 },
+    { index = 2, mode = "Set", ticks = 11, op = 1 },
+    { index = 3, mode = "Cancel", ticks = 29, op = 7, why = "hit" },
+  }
+  local lines = R.wait_log_lines(120)
+  local all = table.concat(lines, " ")
+  want("理由が付く", all:find("Step.3 Wait:29 Act:7 ?hit", 1, true) ~= nil, true)
+  R.wait_log[3].why = nil
+  all = table.concat(R.wait_log_lines(120), " ")
+  want("通った step には付かない", all:find("?", 1, true), nil)
+  R.wait_log = {}
+end
+
 if fails==0 then print("  ok 3 歩目も 4 歩目も free+0") end
 
 
@@ -652,8 +686,8 @@ end
 
 -- Auto (Landing) - THE TOUCHDOWN, FROM guardCancel's OWN CLOCK.
 --
--- Auto (After) asks air_ready while the dummy is airborne ("may this button
--- come out in the AIR"), which is the wrong question for a grounded follow-up.
+-- Auto (After) asks air_ready while the dummy is airborne ("may it press now
+-- in the AIR"), which is the wrong question for a grounded follow-up.
 -- This one asks the clock the reversal arm already uses. The clock itself is
 -- stubbed here: what is pinned is that the step waits for it and fires on the
 -- arm offset, not the physics, which guardCancel owns and tests elsewhere.

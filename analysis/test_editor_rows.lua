@@ -135,39 +135,43 @@ end
 
 local HEAD="REVERSAL ACTION STEPS: Morrigan"
 
-print("[1] detail の行 - Action / parts / Wait の順、Start はどこにも出ない")
+print("[1] detail の行 - Wait / Action / parts の順、カーソルは Action、Start はどこにも出ない")
 open(0x05,{{action="atk",lever="none",button="LP",wait=-1}})
 tap("LP")
 rows_eq("Attack Neutral + LP",{
+  "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Attack  >",
   "     Direction : Neutral  >",
   "     Button : LP  >",
-  "   Wait : Auto (Fastest)  >",
   "   Back"})
 
 open(0x05,{{action="custom",lever="DPF",button="HP",wait=-1}})
 tap("LP")
 rows_eq("Custom DPF + HP",{
+  "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Custom  >",
   "     Motion : DPF  >",
   "     Button : HP  >",
   "     Hold : No",
-  "   Wait : Auto (Fastest)  >",
   "   Back"})
 
 open(0x05,{{action="dash.f",wait=-1}})
 tap("LP")
 rows_eq("Dash Forward",{
+  "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Dash Forward  >",
   "     Hold : No",
-  "   Wait : Auto (Fastest)  >",
   "   Back"})
 
 open(0x05,{{action="dashc.f",wait=-1},{action="atk",lever="none",button="HP",wait=-1}})
 tap("LP")
 rows_eq("Dash Forward Cancel - Hold 行は出ない",{
-  ">  Action : Dash Forward Cancel  >",
   "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
+  ">  Action : Dash Forward Cancel  >",
   "   Move Step : 1 / 2  >",
   "   Remove This Step  >",
   "   Back"})
@@ -175,22 +179,125 @@ rows_eq("Dash Forward Cancel - Hold 行は出ない",{
 open(0x05,{{action="crouch.d",wait=-1}})
 tap("LP")
 rows_eq("Crouch Neutral",{
+  "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Crouch Neutral  >",
   "     Hold : No",
-  "   Wait : Auto (Fastest)  >",
   "   Back"})
 
 print("[2] 2 歩目の Wait - ダッシュの次は数値に解決する")
 open(0x05,{{action="dash.f",wait=-1},{action="atk",lever="none",button="LK",wait=-1}})
 tap("down") tap("LP")
 rows_eq("Dash の次の Attack",{
+  "   Wait : Auto (11)  >",
+  "     Random Delay : 0  >",
   ">  Action : Attack  >",
   "     Direction : Neutral  >",
      "     Button : LK  >",
-     "   Wait : Auto (11)  >",
      "   Move Step : 2 / 2  >",
   "   Remove This Step  >",
   "   Back"})
+
+print("[2b] Wait の選択画面 - 選ぶ前に、選んだ結果が読める")
+-- 行は Auto (11) と出るのに、選択肢は After としか出ていなかった。ダッシュの
+-- 後の攻撃はダッシュの「最中」に出る技で、終わってから出るのではないので、
+-- After という語が場面と合っていない (本人、2026-09-19)。
+--
+-- 実測値が出る場面だけ Fastest (N) に差し替える。攻撃の後は After のままで
+-- 正しい - そこは本当に「ダミーが終わるまで待つ」だから。
+open(0x05,{{action="dash.f",wait=-1},{action="atk",lever="none",button="LK",wait=-1}})
+tap("down") tap("LP")            -- STEP 2 へ
+goto_row("Wait") tap("LP")       -- Wait 画面
+rows_eq("ダッシュの後は解決値が出る",{
+  ">  Fastest (11)",
+  "   Landing",
+  "   Chain",
+  "   Cancel",
+  "   Late Cancel",
+  "   Fixed Ticks",
+  "   Back"})
+tap("left")
+
+-- 攻撃の後は After のまま。ここを巻き込むと、正しい語まで失われる。
+open(0x05,{{action="atk",lever="none",button="LP",wait=-1},{action="atk",lever="none",button="LK",wait=-1}})
+tap("down") tap("LP")
+goto_row("Wait") tap("LP")
+rows_eq("攻撃の後は After のまま",{
+  ">  After",
+  "   Landing",
+  "   Rapid",
+  "   Chain",
+  "   Cancel",
+  "   Late Cancel",
+  "   Fixed Ticks",
+  "   Back"})
+
+print("[2c] Wait の選択肢は 1 行ずつ自分の説明を持つ")
+-- After と Landing が同じ「Auto is the earliest」の 1 文を共有していて、
+-- 同じ意味に読めた (UI レビュー、2026-09-29)。説明は y=168 の 1 行きり: 凡例が
+-- y=181 にあるので、2 行目は凡例に重なる。
+local function note()
+  local got = nil
+  gui.text=function(x,y,t) if x==33 and y==168 then got=t end end
+  E.guiRegister()
+  gui.text=function() end
+  return got or ""
+end
+local function note_ok(what, head)
+  local n = note()
+  eq(what.." の説明", n:sub(1, #head), head)
+  eq(what.." の説明は 1 行", n:find("\n", 1, true), nil)
+  eq(what.." の説明は 81 字以内", #n <= 81, true)
+end
+note_ok("After", "After: ")
+local _seen = {}
+for _, want in ipairs({ "Landing: ", "Rapid: ", "Chain: ", "Cancel: ",
+                        "Late Cancel: ", "Fixed Ticks: " }) do
+  tap("down")
+  note_ok(want, want)
+  _seen[note()] = true
+end
+_seen[""] = nil
+local _k = 0
+for _ in pairs(_seen) do _k = _k + 1 end
+eq("選択肢ごとに違う説明", _k, 6)
+tap("left")
+note_ok("詳細の Wait 行", "When this step starts")
+tap("left")
+
+-- ダッシュの後の Fastest は実測値の説明。After の文を借りない。
+open(0x05,{{action="dash.f",wait=-1},{action="atk",lever="none",button="LK",wait=-1}})
+tap("down") tap("LP")
+goto_row("Wait") tap("LP")
+note_ok("Fastest (11)", "Fastest: ")
+tap("down")
+note_ok("ダッシュの後の Landing", "Landing: ")
+tap("left") tap("left")
+
+-- 1 歩目は Fixed Ticks だけ。引き金から数えることを言う。
+open(0x05,{{action="atk",lever="none",button="LP",wait=-1}})
+tap("LP")
+goto_row("Wait") tap("LP")
+note_ok("1 歩目の Fixed Ticks", "Step one counts")
+tap("left") tap("left")
+
+print("[2d] 説明はどれも 1 行で 81 字以内 - 2 行目は凡例に重なる")
+-- 説明は y=168、凡例は y=181、その下 y=194 は警告の行。1 行 8 ドットなので
+-- 2 行目は凡例に重なる。Wait (3 行) と Hold (4 行) がそうなっていた。
+-- HELP の表を元のファイルから読んで、全部を見る。
+do
+  local src = io.open("actionSequenceEditor.lua"):read("*a")
+  local a = src:find("\nlocal HELP = {", 1, true)
+  local b = a and src:find("\n}", a, true)
+  eq("HELP の表が見つかる", a ~= nil and b ~= nil, true)
+  local n, bad = 0, {}
+  for key, text in src:sub(a, b):gmatch('\n\t(%w+)%s*=%s*"(.-)",') do
+    n = n + 1
+    if text:find("\\n", 1, true) or #text > 81 then bad[#bad + 1] = key .. " (" .. #text .. ")" end
+  end
+  eq("HELP の説明を 10 本以上読めた", n >= 10, true)
+  eq("2 行以上か 82 字以上の説明", table.concat(bad, ", "), "")
+end
 
 print("[3] 見出しは経路 - 押した行の名前がそのまま伸びる")
 open(0x05,{{action="atk",lever="none",button="LP",wait=-1},{action="neutral",wait=-1}})
@@ -206,11 +313,12 @@ tap("down") tap("LP")
 title_eq("pick 方向", HEAD.."  >  STEP 1  >  Direction")
 tap("left") tap("down") tap("LP")
 title_eq("pick ボタン", HEAD.."  >  STEP 1  >  Button")
-tap("left") tap("down") tap("LP")
+-- Wait は詳細画面の一番上。部品の下からは名前で探して回り込む。
+tap("left") goto_row("Wait :") tap("LP")
 title_eq("wait",     HEAD.."  >  STEP 1  >  Wait")
 -- Wait 画面の Left は「値を減らす」なので、抜けるのは下の Back 行から。
 tap("down") tap("LP")
-tap("down") tap("LP")
+goto_row("Move Step") tap("LP")
 title_eq("order",    HEAD.."  >  STEP 1  >  Move Step")
 print("  (Order は Wait と同じ形。左右で動かし、抜けるのは Back 行から)")
 tap("right")
@@ -269,20 +377,22 @@ print("[6b] Hold 行は「保持できる方向がある」ときだけ出る")
 open(0x05,{{action="atk",lever="down-back",button="LP",wait=-1}})
 tap("LP")
 rows_eq("Attack Down Back + LP",{
+  "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Attack  >",
   "     Direction : Down Back  >",
   "     Button : LP  >",
   "     Hold : No",
-  "   Wait : Auto (Fastest)  >",
   "   Back"})
 
 open(0x05,{{action="atk",lever="none",button="LP",wait=-1}})
 tap("LP")
 rows_eq("Attack Neutral + LP - 保持するものが無い",{
+  "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Attack  >",
   "     Direction : Neutral  >",
   "     Button : LP  >",
-  "   Wait : Auto (Fastest)  >",
   "   Back"})
 
 -- DPF の最後のエントリは {down,forward,HP} なので、方向で終わっている。
@@ -292,31 +402,34 @@ rows_eq("Attack Neutral + LP - 保持するものが無い",{
 open(0x05,{{action="custom",lever="DPF",button="HP",wait=-1}})
 tap("LP")
 rows_eq("Custom DPF - 最後が方向なので付く",{
+  "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Custom  >",
   "     Motion : DPF  >",
   "     Button : HP  >",
   "     Hold : No",
-  "   Wait : Auto (Fastest)  >",
   "   Back"})
 
 open(0x05,{{action="custom",lever="down-back",button="HP",wait=-1}})
 tap("LP")
 rows_eq("Custom Down Back - 素の方向なので出る",{
+  "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Custom  >",
   "     Motion : Down Back  >",
   "     Button : HP  >",
   "     Hold : No",
-  "   Wait : Auto (Fastest)  >",
   "   Back"})
 
 open(0x05,{{action="atk",lever="down-back",button="LP",hold=true,wait=-1}})
 tap("LP")
 rows_eq("Hold : Yes",{
+  "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Attack  >",
   "     Direction : Down Back  >",
   "     Button : LP  >",
   "     Hold : Yes",
-  "   Wait : Auto (Fastest)  >",
   "   Back"})
 
 -- 移動系にも付く。「Stand Forward を Hold して、次のステップの Wait を 15 に
@@ -324,24 +437,27 @@ rows_eq("Hold : Yes",{
 open(0x05,{{action="dash.f",wait=-1}})
 tap("LP")
 rows_eq("Dash Forward - 名前付きアクションにも付く",{
+  "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Dash Forward  >",
   "     Hold : No",
-  "   Wait : Auto (Fastest)  >",
   "   Back"})
 
 open(0x05,{{action="walk.f",hold=true,wait=-1}})
 tap("LP")
 rows_eq("Stand Forward - 15 ティック歩く指定の土台",{
+  "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
   ">  Action : Stand Forward  >",
   "     Hold : Yes",
-  "   Wait : Auto (Fastest)  >",
   "   Back"})
 
 open(0x05,{{action="neutral",wait=-1}})
 tap("LP")
 rows_eq("Stand Neutral - 保持するものが無い",{
-  ">  Action : Stand Neutral  >",
   "   Wait : Auto (Fastest)  >",
+  "     Random Delay : 0  >",
+  ">  Action : Stand Neutral  >",
   "   Back"})
 
 print("[7] 一覧の行 - 1 歩目にも Auto (Fastest) が出て、詳細と同じ語を使う")
@@ -353,7 +469,7 @@ rows_eq("一覧",{
   ">  1  Auto (Fastest)  Dash : Forward  >",
    "   2  Auto (11)  Attack : MP  >",
   "   3  Auto (After)  Attack : Down Back + LP  >",
-  "   4  3 Ticks  Attack : Down Back + LP  >",
+  "   4  +3t  Attack : Down Back + LP  >",
   "   + Add Step  >",
   "   Save",
   "   Back Without Saving",
@@ -504,8 +620,8 @@ rows_eq("(Hold) 付きの一覧",{
   ">  1  Auto (Fastest)  Dash : Forward  >",
    "   2  Auto (11)  Attack : Down Back (Hold) + LP  >",
   "   3  Auto (After)  Attack : Down Back + LP  >",
-  "   4  3 Ticks  Stand : Forward (Hold)  >",
-  "   5  2 Ticks  Attack : Forward + PPP  >",
+  "   4  +3t  Stand : Forward (Hold 2t)  >",
+  "   5  +2t  Attack : Forward + PPP  >",
   "   + Add Step  >",
   "   Save",
   "   Back Without Saving",
@@ -514,14 +630,67 @@ rows_eq("(Hold) 付きの一覧",{
 -- 詳細画面には Hold 行があるので、そちらには (Hold) を出さない。
 tap("down") tap("LP")
 rows_eq("詳細では二重に言わない",{
+  "   Wait : Auto (11)  >",
+  "     Random Delay : 0  >",
   ">  Action : Attack  >",
   "     Direction : Down Back  >",
   "     Button : LP  >",
   "     Hold : Yes",
-  "   Wait : Auto (11)  >",
   "   Move Step : 2 / 5  >",
   "   Remove This Step  >",
   "   Back"})
+
+print("[7c] 一覧の Wait はずれ (+Nt)、Hold には続く長さを添える")
+-- 「30 Ticks  Crouch : Neutral (Hold)」が 30 ティックしゃがむと読まれ、実際は
+-- 次のステップの 1 ティックでしゃがみが終わっていた (本人、2026-09-26)。
+-- Wait は前からのずれとして +Nt と書き、Hold の長さ (次のステップの Wait) を
+-- Hold のステップ側に出す。
+open(0x05,{{action="crouch.d",hold=true,wait=30},
+           {action="neutral",wait=1}})
+rows_eq("間違えた設定は、しゃがみが 1 ティックだと分かる",{
+  ">  1  +30t  Crouch : Neutral (Hold 1t)  >",
+  "   2  +1t  Stand : Neutral  >",
+  "   + Add Step  >",
+  "   Save",
+  "   Back Without Saving",
+  "   Clear All Steps"})
+open(0x05,{{action="crouch.d",hold=true,wait=0},
+           {action="neutral",wait=60}})
+rows_eq("直した設定は 60 ティックしゃがむと読める",{
+  ">  1  Auto (Fastest)  Crouch : Neutral (Hold 60t)  >",
+  "   2  +60t  Stand : Neutral  >",
+  "   + Add Step  >",
+  "   Save",
+  "   Back Without Saving",
+  "   Clear All Steps"})
+-- 次のステップが Auto (条件) なら長さは実行時に決まる。最後のステップには
+-- 終わらせる次のステップが無い。どちらも (Hold) のまま。
+open(0x05,{{action="walk.b",hold=true,wait=0},
+           {action="atk",lever="none",button="LP",wait=-1},
+           {action="crouch.d",hold=true,wait=5}})
+rows_eq("長さが決まらないときは (Hold) のまま",{
+  ">  1  Auto (Fastest)  Stand : Back (Hold)  >",
+  "   2  Auto (After)  Attack : LP  >",
+  "   3  +5t  Crouch : Neutral (Hold)  >",
+  "   + Add Step  >",
+  "   Save",
+  "   Back Without Saving",
+  "   Clear All Steps"})
+-- 詳細画面は Wait が一番上。数字は「Wait :」の後ろなので Ticks のまま。
+open(0x05,{{action="crouch.d",hold=true,wait=30},{action="neutral",wait=1}})
+tap("LP")
+rows_eq("詳細は Wait が先、カーソルは Action",{
+  "   Wait : 30 Ticks  >",
+  "     Random Delay : 0  >",
+  ">  Action : Crouch Neutral  >",
+  "     Hold : Yes",
+  "   Move Step : 1 / 2  >",
+  "   Remove This Step  >",
+  "   Back"})
+-- 新しいステップもカーソルは Action に乗る。作るときに先に決めるのは「何を」。
+open(0x05,{{action="atk",lever="none",button="LP",wait=-1}})
+goto_row("Add Step") tap("LP")
+eq("Add Step で開いた詳細のカーソルは Action", selected():find("Action :", 1, true) ~= nil, true)
 
 print("[8] 一覧の最長行がパネルに収まる")
 -- 16 歩目 + Auto (Recovered) + 最長のアクション名(Custom の最長モーションと
@@ -877,6 +1046,55 @@ do
   seq_special_list = nil
   seq_special_command = nil
 end
+
+print("[RD] Random Delay (v11.7.21.1) - Wait の下の行、一覧の +0-5t、値の画面")
+open(0x05,{{action="atk",lever="none",button="LP",wait=-1},
+            {action="atk",lever="none",button="LK",wait=6,random_delay=5}})
+rows_eq("一覧は Wait の後ろに +0-5t、0 の歩には付かない",{
+  ">  1  Auto (Fastest)  Attack : LP  >",
+  "   2  +6t +0-5t  Attack : LK  >",
+  "   + Add Step  >",
+  "   Save",
+  "   Back Without Saving",
+  "   Clear All Steps"})
+tap("down") tap("LP")                      -- 2 歩目の詳細へ
+rows_eq("詳細は Wait の下に字下げして 0-5",{
+  "   Wait : 6 Ticks  >",
+  "     Random Delay : 0-5  >",
+  ">  Action : Attack  >",
+  "     Direction : Neutral  >",
+  "     Button : LK  >",
+  "   Move Step : 2 / 2  >",
+  "   Remove This Step  >",
+  "   Back"})
+goto_row("Random Delay") tap("LP")         -- 値の画面へ
+rows_eq("値の画面は Fixed Ticks と同じ形",{
+  ">  < 0-5 Ticks >",
+  "   Back"})
+-- Right で増え、上限 60 で止まり、MP で 0 に戻る。
+local P1d = P1
+local function hold_right(k)
+  for _=1,k do
+    P1d.input.pressed={right=true} P1d.input.down={right=true} E.registerBefore()
+    P1d.input.pressed={} P1d.input.down={} E.registerBefore()
+  end
+end
+hold_right(70)
+rows_eq("上限は 60",{">  < 0-60 Ticks >","   Back"})
+tap("MP")
+rows_eq("MP で 0 (使わない)",{">  < 0 Ticks >","   Back"})
+tap("right")
+rows_eq("0 から Right で 0-1",{">  < 0-1 Ticks >","   Back"})
+tap("down") tap("LP")                      -- Back の行で抜ける
+rows_eq("抜けると詳細に 0-1",{
+  "   Wait : 6 Ticks  >",
+  ">    Random Delay : 0-1  >",
+  "   Action : Attack  >",
+  "     Direction : Neutral  >",
+  "     Button : LK  >",
+  "   Move Step : 2 / 2  >",
+  "   Remove This Step  >",
+  "   Back"})
 
 print(fails==0 and "\n全て通った" or ("\n"..fails.." 件 NG"))
 os.exit(fails==0 and 0 or 1)

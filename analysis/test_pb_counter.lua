@@ -191,6 +191,190 @@ for _, who in ipairs({ P1, P2 }) do
 end
 want("count 0 かつ ok true にならない", bad, 0)
 
+print("-- タイムライン: $1ab を置けば 1 tick ごとに印が記録される (user, 2026-09-21)")
+-- Skilled input is one button per tick, spaced across the window: the marks
+-- draw where each press landed, and a tick with 2+ buttons is the mistake
+-- the readout exists to catch. The hook reads $1ab for the position, so the
+-- harness sets it by hand.
+local function marks_of(who)
+	local t = (who == P1) and timers.p1_pb_marks or timers.p2_pb_marks
+	local out = {}
+	for i = 1, 14 do out[i] = t[i] or "-" end
+	return table.concat(out)
+end
+
+tick(P1, 0, false, true)                 -- $1ab unset: the hook records nothing
+want("窓外は記録しない", marks_of(P1):sub(1, 1), "-")
+want("窓外は simul も動かない", timers.p1_pb_simul, 0)
+
+print("-- 1 ボタン 1 tick: 印にボタン数、simul は動かない")
+ram[P1 + 0x1AB] = 14                     -- the window's first tick ($1ab = 14)
+guarding(P1, 0, false, true)             -- one button (LP)
+execs[0x0275E0]()
+want("1 tick 目に 1", marks_of(P1):sub(1, 1), "1")
+want("単押しで simul は 0", timers.p1_pb_simul, 0)
+ram[P1 + 0x1AB] = 13                     -- the second tick
+guarding(P1, 1, false, true)
+execs[0x0275E0]()
+want("2 tick 目も 1", marks_of(P1):sub(2, 2), "1")
+want(" simul はまだ 0", timers.p1_pb_simul, 0)
+
+print("-- 同時押し: 2 ボタンは 1 カウント、Simul が別勘定で増える")
+ram[P1 + 0x1AB] = 12
+guarding(P1, 2, false, true)
+ram[P1 + 0x126] = 0x03                   -- LP+MP on the same tick
+execs[0x0275E0]()
+want("同時押しの tick は 2", marks_of(P1):sub(3, 3), "2")
+want("カウントは 1 しか買えない", timers.p1_pushblock_counter, 3)
+want("simul が 1", timers.p1_pb_simul, 1)
+ram[P1 + 0x1AB] = 11
+guarding(P1, 3, false, true)
+ram[P1 + 0x126] = 0x07                   -- three buttons at once
+execs[0x0275E0]()
+want("3 ボタンでも 1 イベント", marks_of(P1):sub(4, 4), "3")
+want("simul はイベント数で 2", timers.p1_pb_simul, 2)
+ram[P1 + 0x1AB] = 10
+guarding(P1, 4, false, true)
+ram[P1 + 0x126] = 0x21                   -- LP+HK on one tick
+execs[0x0275E0]()
+want("別組合せも 2", marks_of(P1):sub(5, 5), "2")
+want("simul は 3", timers.p1_pb_simul, 3)
+
+print("-- 成立後の押しも同じゲートで数える")
+ram[P1 + 0x1AB] = 9
+grant(P1)
+guarding(P1, 3, true, true)
+ram[P1 + 0x126] = 0x03
+execs[0x0275E0]()
+want("成立後の同時押しも 2", marks_of(P1):sub(6, 6), "2")
+want("成立後も simul は続く", timers.p1_pb_simul, 4)
+want("カウントも続く", timers.p1_pushblock_counter, 4)
+
+print("-- ゲートが違う tick は - (数えられていない押しだけが母集団)")
+ram[P1 + 0x1AB] = 8
+guarding(P1, 4, true, true)
+ram[P1 + 0x04] = 0x0000                  -- not in hitstun/blockstun
+execs[0x0275E0]()
+want("ゲート外は -", marks_of(P1):sub(7, 7), "-")
+want("simul は動かない", timers.p1_pb_simul, 4)
+
+print("-- 窓の再設定 (多段の 2 発目) で marks は新スパンになる")
+ram[P1 + 0x1AB] = 14                     -- 0x023966 re-arms
+tick(P1, 4, true, false)
+want("新スパンは空", marks_of(P1), "--------------")
+want("simul は文字列をまたいで累計", timers.p1_pb_simul, 4)
+
+print("-- 新規ガードで simul も消える (count と同じリセット)")
+ram[P1 + 0x1AB] = 0
+tick(P1, 0, false, false)
+want("simul が 0 に戻る", timers.p1_pb_simul, 0)
+
+print("-- P2 は別勘定")
+ram[P2 + 0x1AB] = 14                     -- the window's first tick
+guarding(P2, 0, false, true)             -- one button (LP)
+execs[0x0275E0]()
+ram[P2 + 0x1AB] = 13                     -- the second tick
+guarding(P2, 1, false, true)             -- $170 = 1
+ram[P2 + 0x126] = 0x03                   -- LP+MP, set AFTER guarding()
+execs[0x0275E0]()
+want("P2 の同時押しも 1", timers.p2_pb_simul, 1)
+want("P1 は動かない", timers.p1_pb_simul, 0)
+want("P2 の marks も記録", marks_of(P2):sub(1, 2), "12")
+ram[P2 + 0x1AB] = 0
+tick(P2, 0, false, false)
+
+-- LATEMASH: THE BUTTONS PRESSED AFTER THE WINDOW CLOSED.
+--
+-- Inside the fourteen ticks a press is a fair attempt whether or not the block
+-- has been granted - the player cannot see the grant, so carrying on is not a
+-- mistake, and PB Count keeps counting it. PAST the fourteen nothing can be
+-- bought (user, 2026-09-23).
+--
+-- Stepped by hand here because the real caller is the emulator's clock. The
+-- 0x0275E0 hook cannot see any of this: it only runs while the window is open.
+print("-- LateMash: 窓の外で押したボタン")
+local om_tick = timersModule.latemash_tick
+want("ティック関数が公開されている", type(om_tick), "function")
+
+-- 窓の外にいる状態から始める。まだ何も無い。
+local function lg(v) ram[0xFF8081] = v end
+local function press(who, e) ram[who + 0x126] = e or 0 end
+ram[P1 + 0x1AB] = 0 ; ram[P2 + 0x1AB] = 0
+press(P1, 0) ; press(P2, 0) ; lg(0) ; om_tick()
+want("窓が無ければ 0", timers.p1_pb_latemash, 0)
+
+-- 窓が開く。$1ab が跳ね上がったティックが起点で、長さはその値そのもの。
+lg(10) ; ram[P1 + 0x1AB] = 14 ; press(P1, 0x01) ; om_tick()
+want("開いたティックの押しは数えない", timers.p1_pb_latemash, 0)
+-- 窓の中 (残り 13..1)。成立していようがいまいが、ここは咎めない。
+for _i = 1, 13 do
+	lg(10 + _i) ; ram[P1 + 0x1AB] = 14 - _i ; press(P1, 0x01) ; om_tick()
+end
+want("窓の中は 14 ティックとも数えない", timers.p1_pb_latemash, 0)
+want("窓の中なら遅れも出ない", timers.p1_pb_latemash_late, 0)
+
+-- 窓の外 1 ティック目。開いてから 14 ティック目 (lg 24)。
+lg(24) ; ram[P1 + 0x1AB] = 0 ; press(P1, 0x01) ; om_tick()
+want("窓を出た最初の押しは 1 発", timers.p1_pb_latemash, 1)
+want("遅れは +1t", timers.p1_pb_latemash_late, 1)
+
+-- 同じティックに 3 ボタン。ティックではなくボタンを数える。
+lg(25) ; press(P1, 0x01 + 0x02 + 0x04) ; om_tick()
+want("同時 3 ボタンは 3 発", timers.p1_pb_latemash, 4)
+want("遅れは最後の押しのもの", timers.p1_pb_latemash_late, 2)
+
+-- 押していないティックは遅れを進めない。
+lg(30) ; press(P1, 0) ; om_tick()
+want("押さなければ増えない", timers.p1_pb_latemash, 4)
+want("押さなければ遅れも動かない", timers.p1_pb_latemash_late, 2)
+
+-- 受付と同じ 14 ティックを超えたら追うのをやめる。押しっぱなしで伸び続けないこと。
+-- 窓は lg 10..23 (開いた lg + 長さ 14)。外の 1 ティック目が lg 24 なので、
+-- +14t は lg 37、+15t は lg 38。
+lg(37) ; press(P1, 0x01) ; om_tick()
+want("14t ちょうどは数える", timers.p1_pb_latemash, 5)
+want("遅れは 14t", timers.p1_pb_latemash_late, 14)
+lg(38) ; press(P1, 0x01) ; om_tick()
+want("15t は数えない", timers.p1_pb_latemash, 5)
+want("遅れも 14t で止まる", timers.p1_pb_latemash_late, 14)
+
+-- 窓が張り直されたら、そこから数え直す。多段ガードは 0x023966 で再武装する。
+lg(100) ; ram[P1 + 0x1AB] = 14 ; press(P1, 0) ; om_tick()
+want("張り直しで 0 に戻る", timers.p1_pb_latemash, 0)
+want("遅れも 0 に戻る", timers.p1_pb_latemash_late, 0)
+lg(114) ; ram[P1 + 0x1AB] = 0 ; press(P1, 0x02) ; om_tick()
+want("新しい窓の外で数え始める", timers.p1_pb_latemash, 1)
+
+-- ティックカウンタは 8 ビットで一周する。負や巨大な値を出さないこと。
+lg(250) ; ram[P1 + 0x1AB] = 14 ; press(P1, 0) ; om_tick()
+lg(9) ; ram[P1 + 0x1AB] = 0 ; press(P1, 0x01) ; om_tick()   -- 250 +14 = 264 -> 8
+want("一周しても数える", timers.p1_pb_latemash, 1)
+want("一周しても遅れは正しい", timers.p1_pb_latemash_late, 2)
+
+-- ダミー側も同じ形で出ること (Guard Action = Push Block の確認用)。
+lg(0) ; ram[P2 + 0x1AB] = 14 ; press(P2, 0) ; om_tick()
+lg(14) ; ram[P2 + 0x1AB] = 0 ; press(P2, 0x10) ; om_tick()
+want("P2 も数える", timers.p2_pb_latemash, 1)
+want("P2 も遅れを持つ", timers.p2_pb_latemash_late, 1)
+press(P1, 0) ; press(P2, 0)
+
+-- キャラ選択で消える。起動し直しの代わり (本人、2026-09-27)。
+print("-- clear: キャラ選択で PB Count も LateMash も消える")
+want("clear がある", type(timersModule.clear), "function")
+want("消す前は P2 に LateMash がある", timers.p2_pb_latemash, 1)
+-- P1 にも数と成立と帯を作っておく。0 のままだと、消えたかどうか分からない。
+tick(P1, 0, false, false) ; tick(P1, 0, false, true) ; tick(P1, 1, false, true) ; grant(P1)
+want("消す前は P1 に 2 回", timers.p1_pushblock_counter, 2)
+want("消す前は成立している", timers.p1_pushblock_ok, true)
+timersModule.clear()
+want("P1 の数は 0", timers.p1_pushblock_counter, 0)
+want("P2 の数は 0", timers.p2_pushblock_counter, 0)
+want("成立の印も落ちる", timers.p1_pushblock_ok, false)
+want("帯も消える", next(timers.p1_pb_marks or {}), nil)
+want("P1 の LateMash は 0", timers.p1_pb_latemash, 0)
+want("P2 の LateMash は 0", timers.p2_pb_latemash, 0)
+want("遅れも 0", timers.p2_pb_latemash_late, 0)
+
 if fails == 0 then
 	print("test_pb_counter ok")
 else

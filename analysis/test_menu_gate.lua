@@ -1,4 +1,4 @@
--- MENU GATE TEST: "Reversal Action Steps" is on the Player tab only while
+-- MENU GATE TEST: "Reversal Action Steps" is on the Dummy tab only while
 -- Guard Action Type is "Reversal - Action Steps" (0xB).
 --
 -- Loads the REAL menu.lua and the REAL editor with only the two load-time
@@ -20,7 +20,11 @@ package.preload["./scripts/actionSequenceEditor"] = function()
 end
 package.preload["./scripts/actionSequenceRunner"] = function()
 	return dofile("actionSequenceRunner.lua")
+	end
+package.preload["./scripts/position"] = function()
+	return dofile("position.lua")
 end
+
 
 training_settings = {}
 globals = {}
@@ -32,9 +36,9 @@ dofile("menu.lua")
 menuModule.guiRegister()
 local player
 for _, tab in ipairs(menu) do
-	if tab.name == "Player" then player = tab end
+	if tab.name == "Dummy" then player = tab end
 end
-assert(player, "Player tab not found")
+assert(player, "Dummy tab not found")
 
 -- WHICH TAB A ROW SITS ON IS NOT WHAT THESE TESTS ARE ABOUT.
 --
@@ -54,13 +58,15 @@ local function find_row(_name)
 	return nil, nil
 end
 
-local ras, delay, loop
+local ras, delay, loop, brd
 local pob, pobat, loopat
 for _i, e in ipairs(player.entries) do
 	local _ = _i
 	if e.name == "Loop Wait" then loopat = _i end
 	if e.name == "Reversal Action Steps" then ras = e end
-	if e.name == "Guard Action Delay (Ticks)" then delay = e end
+	-- Renamed in v11.7.21.2 (was Guard Action Delay (Ticks)).
+	if e.name == "Button Wait" then delay = e end
+	if e.name == "Random Delay" then brd = e end
 	if e.name == "Loop Wait" then loop = e end
 	if e.name == "Loop Steps" then loopsw = e end
 	if e.name == "Pit of Blame" then pob = e end
@@ -110,6 +116,29 @@ want("Loop Steps at 1 -> disabled", loopsw.is_disabled(), true)
 training_settings.guard_action = 0xB
 want("Delay row still disabled at 0xB", delay.is_disabled(), true)
 
+-- RANDOM DELAY ON THE BUTTON (v11.7.21.2): Specified only, Reversal and
+-- Counter. The Button Wait row above it also serves Push Block and PB
+-- Recording; this one does not.
+assert(delay, "Button Wait entry not found")
+assert(brd, "Random Delay entry not found")
+for _, c in ipairs({
+	{ 6, false, false }, { 8, false, false },     -- Specified
+	{ 3, false, true }, { 10, false, true },      -- push block types
+	{ 1, true, true }, { 2, true, true }, { 4, true, true }, { 5, true, true },
+	{ 7, true, true }, { 9, true, true }, { 0xB, true, true }, { 0xC, true, true },
+}) do
+	training_settings.guard_action = c[1]
+	want("Button Wait at " .. c[1], delay.is_disabled(), c[2])
+	want("Random Delay at " .. c[1], brd.is_disabled(), c[3])
+end
+-- Directly under the Button Wait row, so the two read as one setting.
+local _di, _bi
+for _i, e in ipairs(player.entries) do
+	if e == delay then _di = _i end
+	if e == brd then _bi = _i end
+end
+want("Random Delay は Button Wait のすぐ下", _bi, _di and _di + 1)
+
 -- PIT OF BLAME: アナカリスのときだけ出る行。
 --
 -- 咎めの穴はリバーサルではないので、ガードアクションでは絞らない - 相手が
@@ -128,8 +157,9 @@ ram[0xFF8B82] = 0x06
 -- 置き場所はループ行の下。二つはどちらも「リストとは別の、繰り返しの話」で
 -- 並べて読む。
 want("行はループの下", pobat > loopat, true)
--- 選べるのは 3 つだけ。
-want("None / Normal / ES の 3 つ", #pob.list, 3)
+-- None / Normal / ES と、その 3 つから選ぶ Random (本人、2026-09-26)。
+want("None / Normal / ES / Random の 4 つ", #pob.list, 4)
+want("Random は最後 (保存は番号なので足すのは末尾だけ)", pob.list[4], "Random")
 want("既定は None", pob.list[training_settings.pit_of_blame or 1], "None")
 
 -- 発火側の配線。行が非 None なら、ガードアクションが何であっても出す。
@@ -137,8 +167,17 @@ want("既定は None", pob.list[training_settings.pit_of_blame or 1], "None")
 do
   local gc = io.open("guardCancel.lua"):read("*a")
   local blk = gc:match("TWO WAYS IN, ONE TRIGGER%.(.-)\n\t\t\tend")
-  want("行を見ている",
-       blk ~= nil and blk:find("training_settings.pit_of_blame", 1, true) ~= nil, true)
+  -- 行の値は、頻度のロールと同じところで 1 回だけ読み、Random ならそこで引く。
+  -- 発火側はその値を使う。毎フレーム引くと 3 つ全部が混ざる。
+  want("発火側は、アームで決めた値を使う",
+       blk ~= nil and blk:find("tonumber(pit_of_blame_roll)", 1, true) ~= nil, true)
+  local arm = gc:match("pit_of_blame_roll = shouldGC%(%)(.-)pit_of_blame_ground_y")
+  want("アームで行を読む",
+       arm ~= nil and arm:find("training_settings.pit_of_blame", 1, true) ~= nil, true)
+  want("Random (4) はアームで 3 つから引く",
+       arm ~= nil and arm:find("if _pob == 4 then _pob = math.random(3) end", 1, true) ~= nil, true)
+  want("頻度が外れたら引かない",
+       arm ~= nil and arm:find("if pit_of_blame_roll then", 1, true) ~= nil, true)
   -- 条件そのもの。値を計算していても、条件に入っていなければ意味が無い。
   want("行と Character Specific のどちらでも開く",
        blk ~= nil and blk:find("(_via_row or _via_cs)", 1, true) ~= nil, true)
@@ -281,9 +320,9 @@ end
 do
 	local row
 	for _, e in ipairs(player.entries) do
-		if e.name == "P2 Random Guard %" then row = e end
+		if e.name == "Random Guard %" then row = e end
 	end
-	want("P2 Random Guard % の行がある", row ~= nil, true)
+	want("Random Guard % の行がある", row ~= nil, true)
 	local function shown(g)
 		training_settings.guard = g
 		return not row.is_disabled()
@@ -303,4 +342,63 @@ do
 		true)
 end
 
+
+-- 足元の Timer / Mash に自前のスイッチができた (2026-09-23)。
+--
+-- $1AB と $170 の生値で、Show PB Counter が同じ 2 バイトを履歴として
+-- 出している。同じ情報が 2 か所に出たうえ、受付が開くたびに Mash: 0 が
+-- 足元に居座っていた。既定 OFF にしたので、出荷値が true に戻ったら
+-- 気付けるようにする。
+--
+-- メニューが書く先、config の出荷値、描く側が読む先の 3 か所を突き合わせる。
+do
+	local row, on_tab = find_row("Show Tech Hit Mash")
+	want("行がある (" .. tostring(on_tab) .. " タブ)", row ~= nil, true)
+	want("書く先", row ~= nil and row.property_name or "", "display_tech_hit")
+	local shipped = dofile("config.lua").default_training_settings
+	want("既定値は OFF", shipped.display_tech_hit, false)
+	local v2 = io.open("vsavscriptv2.lua"):read("*a")
+	-- 1P と 2P の 2 か所とも門の内側にあること。片方だけ塞ぐと、
+	-- 消したはずの表示が対戦相手側にだけ残る。
+	local n = 0
+	for _ in v2:gmatch("globals%.options%.display_tech_hit") do n = n + 1 end
+	want("描く側は 2 か所とも読んでいる", n, 2)
+	-- 門の無い元の形が残っていないこと。
+	want("素の if が残っていない",
+		v2:find("		if memory.readbyte(0xff85ab) > 0 then", 1, true), nil)
+	want("2P 側も同じ",
+		v2:find("		if memory.readbyte(0xff89ab) > 0 then", 1, true), nil)
+end
+
+-- GUARD ACTION TYPE の値ごとに、専用の説明があること (2026-09-29)。
+--
+-- 12 番 (Reversal - Action Patterns) だけ説明が無く、既定の
+-- "Use this to set up various counter attacks." が出ていた (本人の
+-- スクリーンショット)。値を足したときに説明を忘れても、ここで分かる。
+do
+	local row = find_row("Guard Action Type")
+	want("Guard Action Type の行がある", row ~= nil, true)
+	local saved = training_settings.guard_action
+	local missing = {}
+	for i = 1, #row.list do
+		training_settings.guard_action = i
+		local d = row:description()
+		if d == nil or d == "Use this to set up various counter attacks." then
+			missing[#missing + 1] = i .. " " .. tostring(row.list[i])
+		end
+	end
+	training_settings.guard_action = saved
+	want("どの値にも専用の説明がある", table.concat(missing, ", "), "")
+	training_settings.guard_action = 0xC
+	local d12 = row:description()
+	training_settings.guard_action = saved
+	want("Action Patterns の説明はパターンの話", d12:find("Reversal Action Patterns", 1, true) ~= nil, true)
+
+	-- パターンの行の説明は、同時に出ることのない Action Steps の行を
+	-- 「下の」と呼ばない。
+	local pat = find_row("Reversal Action Patterns")
+	want("Reversal Action Patterns の行がある", pat ~= nil, true)
+	local pd = pat and pat:description() or ""
+	want("パターンの説明に below が無い", pd:find("below", 1, true), nil)
+end
 if fails == 0 then print("全て通った") else print(fails .. " failures") os.exit(1) end

@@ -74,8 +74,8 @@ local function compare(what, menu_name, path, fname)
 end
 
 print("[1] メニューの表記と実装の確率が一致するか")
-compare("Guard Action Frequency", "gc_freq",         "guardCancel.lua", "shouldGC")
-compare("P2 Block Chance",        "p2_block_chance", "autoguard.lua",   "get_block_chance")
+compare("Random Guard Action %",  "gc_freq",         "guardCancel.lua", "shouldGC")
+compare("Random Guard %",         "p2_block_chance", "autoguard.lua",   "get_block_chance")
 
 print("[2] 乱数の種が撒かれているか")
 local master = slurp("vsav_training_master_script.lua")

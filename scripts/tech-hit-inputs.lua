@@ -1,12 +1,19 @@
----@author VMP_MBD (MBDesu)
+-- The numbered button sequences beside PB Stats, now fed from timers.lua's
+-- tick-based push block marks (user, 2026-09-22).
+--
+-- WAS: its own hook at 0x02762a (PB success) reading the game's $170, which
+-- freezes at the grant. PB Count counts presses made, including post-grant,
+-- so the two disagreed whenever the PB was granted before the player stopped
+-- pressing. Reading the same tick marks PB Count uses makes the row counts
+-- agree by construction.
+--
+-- The display shows one numbered entry per press the tick timeline recorded,
+-- with button icons parsed from the raw $126 edge mask that timers.lua also
+-- publishes (p1_pb_raws).
+--
+-- This module no longer hooks anything: timers.lua owns the tick clock and
+-- this only reads what it publishes.
 
-require 'gd'
-
--- consts
-local P1_INPUT_ADDR = 0xff8522
-local P1_TECH_HIT_INPUT_COUNT_ADDR = 0xff8570
-local TECH_HIT_SUCCESS_CHECK_ADDR = 0x2762a
-local INPUT_REPRESENTATIONS = { 'LP', 'MP', 'HP', '', 'LK', 'MK', 'HK' }
 local ICON_FILE = 'scrolling-input/capcom-8.png'
 local BLANK_PNG_BYTES = {
   '0x89', '0x50', '0x4E', '0x47', '0x0D', '0x0A', '0x1A', '0x0A', '0x00',
@@ -22,9 +29,6 @@ local BLANK_PNG_BYTES = {
   '0x49', '0x45', '0x4E', '0x44', '0xAE', '0x42', '0x60', '0x82'
 }
 
--- local state
-local last_num_inputs = 0
-local tech_hit_input_history = {}
 local icons = {}
 
 local png_str_from_bytes = function(bytes)
@@ -44,69 +48,92 @@ local image_setup = function()
   end
 end
 
-local btst = function(bit_pos, value)
-  return bit.band(bit.lshift(1, bit_pos), value) > 0
-end
-
----Converts a raw button input value from memory into
----an icons representation of all pressed buttons
----@param raw_input number
----@return table<string>
-local parse_input = function(raw_input)
-  local pressed_buttons = {}
-
-  for i = 1,7 do
-    if i ~= 4 and btst(i - 1, raw_input) then
-      local icon
-      if i < 4 then icon = icons[i] else icon = icons[i - 1] end
-      pressed_buttons[#pressed_buttons + 1] = icon
-    end
-  end
-  return pressed_buttons
-end
-
-local get_count = function()
-  return memory.readbyte(P1_TECH_HIT_INPUT_COUNT_ADDR)
-end
-
-local update_tech_hit_input_history = function(did_tech_hit)
-  local current_num_inputs = get_count()
-  if last_num_inputs > current_num_inputs then
-    tech_hit_input_history = {}
-  end
-  if last_num_inputs ~= current_num_inputs then
-    last_num_inputs = current_num_inputs
-    local history_entry =
-          {current_num_inputs, parse_input(memory.readbyte(P1_INPUT_ADDR))}
-    if did_tech_hit == true then
-      history_entry[3] = 'TECH HIT'
-    end
-    tech_hit_input_history[#tech_hit_input_history + 1] = history_entry
-  end
-end
-
-memory.registerexec(TECH_HIT_SUCCESS_CHECK_ADDR, function()
-  -- Z flag will contain indication of success; second bit of SR register
-  -- additionally, we only reach 0x2762a on successful tech hit input
-  local did_tech_hit = not btst(2, memory.getregister('m68000.sr'))
-  update_tech_hit_input_history(did_tech_hit)
-end)
-
 image_setup()
 
-local guiRegister = function()
-  for i, entry in pairs(tech_hit_input_history) do
-      print(entry)
-      local y = emu.screenheight() - 160 + 10 * i
-      gui.text(5, y, entry[1] .. ': ')
-      for j, icon in pairs(entry[2]) do
-        local x = 5 + 10 * j
-        gui.gdoverlay(x, y - 1, icon)
+---Converts a raw button edge mask ($126 & $77) into a list of button icon
+---strings (1 = LP, 2 = MP, 3 = HP, 5 = LK, 6 = MK, 7 = HK; index 4 skipped)
+---@param raw_mask number
+---@return table
+local parse_mask = function(raw_mask)
+  local pressed = {}
+  if raw_mask == nil or raw_mask <= 0 then return pressed end
+  for i = 1, 7 do
+    if i ~= 4 and math.floor(raw_mask / 2 ^ (i - 1)) % 2 == 1 then
+      local icon
+      if i < 4 then icon = icons[i] else icon = icons[i - 1] end
+      pressed[#pressed + 1] = icon
+    end
+  end
+  return pressed
+end
+
+-- A tick counts as a press when the mark is a digit (not "-") and the raw
+-- mask is non-zero. The mark alone is not enough: a tick the ROM's gates
+-- refused draws "-" but the mark might be a digit if the gates passed with
+-- no edge (impossible, but the defensive check costs nothing).
+local function is_press(mark, raw)
+  return mark ~= nil and mark ~= "-" and raw ~= nil and raw > 0
+end
+
+-- LEVEL WITH PB STATS (user, 2026-09-28: ステータスのボタン内容をもう少し上に).
+-- The first entry sits where PB Stats' first line is - hud.lua passes it in;
+-- it was at the screen height - 150 (74).
+local guiRegister = function(_top)
+  _top = _top or 38
+  local marks = globals.timers and globals.timers.p1_pb_marks
+  local raws = globals.timers and globals.timers.p1_pb_raws
+  if marks == nil or raws == nil then return end
+
+  -- The entries first, so the box behind them can be sized before anything
+  -- is drawn on it.
+  local entries = {}
+  for pos = 1, 14 do
+    local m = marks[pos]
+    local r = raws[pos]
+    if is_press(m, r) then
+      local e = { icons = parse_mask(r) }
+      -- TECH HIT: the entry that granted the push block. timers.lua
+      -- publishes ok as a span-level flag; the granting entry is the last
+      -- one before the count froze, which in the marks is the last press
+      -- while ok is true.
+      if globals.timers.p1_pushblock_ok then
+        local _grant_pos = nil
+        for p2 = pos, 14 do
+          if marks[p2] ~= nil and marks[p2] ~= "-" then _grant_pos = p2 end
+        end
+        e.tech = (_grant_pos ~= nil and pos == _grant_pos)
       end
-      if entry[3] ~= nil then
-        gui.text((#entry[2] + 1) * 10 + 7, y, 'TECH HIT')
-      end
+      entries[#entries + 1] = e
+    end
+  end
+  if #entries == 0 then return end
+
+  -- ON THE SAME DARK BOX AS PB STATS (user, 2026-09-28: 左側のボタン背景も同じ
+  -- 黒目に). One pixel of margin on the right, not two: an entry with two
+  -- buttons and TECH HIT ends at 70.6, and PB Stats' box starts at 72.
+  local right = 0
+  for _, e in ipairs(entries) do
+    local r = 5 + 10 * #e.icons + 8
+    if e.tech then r = (#e.icons + 1) * 10 + 7 + 8 * 4.2 end
+    if r > right then right = r end
+  end
+  gui.box(3, _top - 1, right + 1, _top + 10 * #entries - 1, "#00000099", "#00000055")
+
+  for n, e in ipairs(entries) do
+    local y = _top + 10 * (n - 1)
+    gui.text(5, y, n .. ': ')
+    for j, icon in ipairs(e.icons) do
+      gui.gdoverlay(5 + 10 * j, y - 1, icon)
+    end
+    if e.tech then
+      -- Green, as Pass and Success in PB Stats and the PB Count line once the
+      -- push block is granted: the same success, the same colour (user,
+      -- 2026-09-28).
+      gui.text((#e.icons + 1) * 10 + 7, y, 'TECH HIT', "#00FF00")
+    end
   end
 end
+
+image_setup()
 
 return guiRegister

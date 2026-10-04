@@ -185,6 +185,16 @@ local MEASURED_STEP_FLOORS = {
 	[0x0D] = { name = "Lei-Lei",   f =  0, b =  4, fc =  0, bc =  0 },
 	[0x0E] = { name = "Lilith",    f =  4, b =  4, fc =  4, bc =  4 },
 	[0x0F] = { name = "Jedah",     f = 10, b = 10, fc = 10, bc = 10 },
+	-- Dark Gallon gets Gallon's values, the same judgement KD_END_1A7 in
+	-- guardCancel.lua already made: vsavscriptv2.lua's own check says he
+	-- "is exactly the same as regular Gallon". Confirmed by the user,
+	-- 2026-09-19.
+	--
+	-- He is also the only one of the three characters that had no row here
+	-- who can actually be picked (Zabel 2 and Oboro cannot), so with this
+	-- the step path never answers Not Measured after a ground dash for
+	-- anyone reachable.
+	[0x12] = { name = "Dark Gallon", f =  7, b =  2, fc = 15, bc = 10 },
 }
 
 -- AUTO AFTER A GROUND DASH IS THE MEASURED VALUE, AS IS.
@@ -439,6 +449,17 @@ local rapid_used = false
 -- Seen busy since this step reached the head of the queue. See timing_missed.
 local gate_busy_seen = false
 
+-- RANDOM DELAY (v11.7.21.1): a step's own random extra on top of its Wait,
+-- drawn once each time the step reaches the head of the queue. Kept here and
+-- not on the step, because the compiled steps are shared by every lap and a
+-- draw written onto one would come back on the next lap unchanged.
+--   { step = <the record at the head>, n = <ticks drawn>, from = <tick it
+--     started counting, once the step's own gate had opened> }
+local rd_head = nil
+-- A pattern picked ahead of the arm by M.prepick, so the arm runs the pattern
+-- whose step one the Random Delay was drawn for (see M.prepick).
+local prepicked = false
+
 -- Bit 0 of the cel flags. Lua 5.1 here has no bit library, and $21 is one byte.
 local function rapid_cel_open()
 	return (memory.readbyte(P2_BASE + 0x21) % 2) == 1
@@ -457,18 +478,52 @@ end
 local function contact_spent()
 	return contact_used
 end
+-- WHY THE LAST GATE SAID NO, FOR THE READOUT.
+--
+-- A connect-timed step that misses its gate goes out on the deadline instead,
+-- and the Wait number alone cannot tell that apart from a gate that opened
+-- late: both are just a bigger number. So the gate names the first condition
+-- it failed on, and Show Step Wait Ticks prints it next to the step
+-- (user, 2026-09-24 - an air cancel that read Wait:29 with no way to see why).
+--
+-- Cleared on success, so a step that really did connect carries nothing.
+local gate_why = nil
+local function why(_t) gate_why = _t return false end
+
 local function chain_ready(step)
-	if contact_spent() then return false end
+	if contact_spent() then return why("spent") end
 	local next_rank = CHAIN_RANK[normal_button(step)]
-	if next_rank == nil then return false end
-	if memory.readbyte(P2_BASE + 0x06) ~= 0x0A then return false end
-	if memory.readbyte(P2_BASE + 0x39) == 0 then return false end
-	if memory.readbyte(P2_BASE + 0x1B2) ~= 0 then return false end
+	if next_rank == nil then return why("btn") end
+	-- $06 IS NOT A CONDITION. IT WAS AN INVENTED ONE AND IT WAS WRONG.
+	--
+	-- 0x028E42 tests $39, $1B2, the latched button word and the cel flags -
+	-- never $06, and never $38 either. This gate stood in for "a normal is
+	-- out" on the belief that a normal writes 0x0A (0x0274CE does put
+	-- 02 00 0A 00 into $04..$07). Measured at the contact tick, $06 is
+	-- whatever the character was already doing:
+	--
+	--     0x06 jump    12 of 13 air contacts
+	--     0x14 dash     7 of 12 ground contacts
+	--     0x00          5 of 12 ground contacts
+	--     0x0A normal   1 of 13 air contacts
+	--
+	-- (VSAV_MEMORY_NOTES, 2026-09-09.) So 0x0A is the minority everywhere, and
+	-- the gate refused air strings and dash attacks alike - reported as an air
+	-- chain that never came out, then as a dash-attack cancel reading ?act14
+	-- (user, 2026-09-24).
+	--
+	-- Dropping it costs nothing. With no attack out there is no contact, and
+	-- the $39 test below already demands one.
+	if memory.readbyte(P2_BASE + 0x39) == 0 then return why("hit") end
+	if memory.readbyte(P2_BASE + 0x1B2) ~= 0 then return why("inhib") end
 	local strength = memory.readbyte(P2_BASE + 0x102)
 	local family = memory.readbyte(P2_BASE + 0x101)
-	if strength ~= 0 and strength ~= 2 and strength ~= 4 then return false end
+	if strength ~= 0 and strength ~= 2 and strength ~= 4 then
+		return why("str")
+	end
 	local current_rank = strength + ((family == 0) and 1 or 2)
-	if next_rank <= current_rank then return false end
+	if next_rank <= current_rank then return why("rank") end
+	gate_why = nil
 	return true
 end
 
@@ -498,6 +553,17 @@ local function rapid_ready(step)
 	if rapid_used then return false end
 	local b = normal_button(step)
 	if b == nil then return false end
+	-- $06 STAYS HERE, UNLIKE IN chain_ready AND cancel_ready.
+	--
+	-- Rapid fire is a normal cancelled into the SAME normal, so "a plain
+	-- normal is out" is a real condition of the thing itself (user,
+	-- 2026-09-24). The two gates also ask at different moments: chain and
+	-- cancel require contact, so they are asked on a contact tick, where $06
+	-- is whatever the character was already doing - jump, dash, 0x00. This one
+	-- takes no contact and is asked inside the move's own cel window, which is
+	-- the span 0x0274CE wrote 0x0A for. Nobody has measured $06 across that
+	-- window, so this is untested rather than confirmed - do not remove it by
+	-- analogy with the other two.
 	if memory.readbyte(P2_BASE + 0x06) ~= 0x0A then return false end
 	-- $38: rapid fire is ground only. An air chain is the other routine.
 	if memory.readbyte(P2_BASE + 0x38) ~= 0 then return false end
@@ -540,17 +606,26 @@ local function ordinary_cancel_window()
 	return math.min(a, b)
 end
 local function cancel_ready(step, late)
-	if contact_spent() then return false end
-	if memory.readbyte(P2_BASE + 0x06) ~= 0x0A then return false end
+	if contact_spent() then return why("spent") end
+	-- Same $06 as chain_ready, and dropped for the same reason: the ROM's
+	-- cancel permission is $167 / $168 with $119, never $06. See the note
+	-- there for the measured values.
 	if not late then
 		-- Do not reject $119 here: sequence-command supers are allowed after a
 		-- chain and the game, not the runner, owns that distinction.
-		return memory.readbyte(P2_BASE + 0x39) ~= 0
+		if memory.readbyte(P2_BASE + 0x39) == 0 then return why("hit") end
+		gate_why = nil
+		return true
 	end
 	-- The $167/$168 ordinary gates reject chain-started normals themselves.
-	if memory.readbyte(P2_BASE + 0x119) ~= 0 then return false end
+	if memory.readbyte(P2_BASE + 0x119) ~= 0 then return why("chain") end
 	local window = ordinary_cancel_window()
-	return window > 0 and window <= (step.lead + 1)
+	if window == 0 then return why("win0") end
+	if window > (step.lead + 1) then
+		return why("win" .. window)
+	end
+	gate_why = nil
+	return true
 end
 
 -- WHAT AN Auto RESOLVES TO, IN ONE PLACE.
@@ -638,6 +713,16 @@ function M.auto_ticks_for(prev, step, prev2)
 	if JUMP_ID[prev.action] and AIR_DASH_ID[step.action] then
 		if air_dash_ticks_for == nil then return nil end
 		return air_dash_ticks_for(prev.action, step.action)
+	end
+
+	-- Jump into an attack: per character and direction, from a published table
+	-- rather than a measurement - see JUMP_BEFORE_ATTACK in guardCancel for
+	-- where the numbers come from and how few of them are confirmed. Only an
+	-- Attack step: the table's column is about normals, and a special or
+	-- anything else after a jump keeps the airborne state test.
+	if JUMP_ID[prev.action] and step.action == "atk" then
+		if jump_attack_ticks_for == nil then return nil end
+		return jump_attack_ticks_for(prev.action)
 	end
 
 	return nil
@@ -902,6 +987,8 @@ function M.compile(seq, mis)
 			sequence = inputs,
 			motion = motion,
 			button = button,
+			-- Air Dash uses the same motion; retain the selected action's kind.
+			ground_dash = GROUND_DASH[step.action] or nil,
 			timing = timing,
 			-- Which row this was on screen. The queue is consumed from the
 			-- front, so by the time a step fires its position in `pending` no
@@ -941,6 +1028,8 @@ function M.compile(seq, mis)
 			-- so the two agree.
 			raw_wait = (i == 1) and math.max(0, wait) or wait,
 			lead = lead_ticks(inputs),
+			-- RANDOM DELAY, 0 to RANDOM_DELAY_MAX Ticks; 0 or missing is off.
+			rdelay = M.random_delay_of(step),
 			-- For the readout: how many ticks this step spends putting its own
 			-- inputs in. A bare button is 1, a command motion is several.
 			op_ticks = list_ticks(inputs),
@@ -996,10 +1085,72 @@ local function dummy_cid()
 	return tostring(memory.readbyte(CID))
 end
 
--- The editor's saved sequence for this trigger AND this character, compiled.
--- nil when there is nothing usable there, which every caller treats as
--- "behave as before".
-function M.schedule(which)
+-- WHERE THE STEPS COME FROM: the one Action Steps list, or one out of the
+-- library. Guard Action Type is the switch, the same way it already is for
+-- Action Steps - a second enable flag would only give the two a way to
+-- disagree.
+local picked = nil
+
+local function patterns_mode()
+	return training_settings ~= nil and training_settings.guard_action == 0xC
+end
+
+-- The ticked ones, in list order. An empty list reads as nothing to run.
+local function ticked_patterns(which)
+	local store = training_settings and training_settings.action_patterns
+	local per = store and store[which]
+	if type(per) ~= "table" then return nil end
+	local row = per[dummy_cid()]
+	local items = (type(row) == "table") and row.items or nil
+	if type(items) ~= "table" then return nil end
+	local out = {}
+	for _, it in ipairs(items) do
+		if it.use == true and type(it.steps) == "table" and #it.steps > 0 then
+			out[#out + 1] = it
+		end
+	end
+	if #out == 0 then return nil end
+	return out
+end
+
+-- PICKED ONCE PER ARMING, NOT PER TICK.
+--
+-- schedule is asked many times while one reversal runs - by the arm, by the
+-- loop, by the menu - and rolling again on each of them would splice two
+-- patterns together one step at a time.
+function M.pick_pattern(which)
+	local list = ticked_patterns(which)
+	if list == nil then picked = nil return nil end
+	-- ONE TICKED RUNS EVERY TIME, SEVERAL PICK BETWEEN THEM. The ticks are the
+	-- play mode, so there is no second row for them to disagree with
+	-- (design_action_pattern_library.md).
+	picked = (#list == 1) and list[1] or list[math.random(#list)]
+	return picked
+end
+
+-- Exposed for the readout and the tests: which one is running right now.
+function M.picked_pattern() return picked end
+
+-- EDITING ONE DROPS THE HOLD ON IT.
+--
+-- The pick is a reference to the item itself, and saving replaces that table
+-- so the compile cache misses. Without this the old reference would keep the
+-- old steps alive until the next arming, and the menu would answer about a
+-- list that no longer exists.
+function M.forget_pick() picked = nil end
+
+local function source_seq(which)
+	if patterns_mode() then
+		-- Still the one that was picked, so every question asked during this
+		-- reversal gets the same answer. The fallback is for the menu, which
+		-- asks before anything has been armed.
+		if picked ~= nil and picked.use == true
+		   and type(picked.steps) == "table" and #picked.steps > 0 then
+			return picked
+		end
+		local list = ticked_patterns(which)
+		return list and list[1] or nil
+	end
 	local store = training_settings and training_settings.action_sequences
 	local per = store and store[which]
 	if type(per) ~= "table" then return nil end
@@ -1007,12 +1158,14 @@ function M.schedule(which)
 	-- it into the draft on open, but migrates it only on Save - until that
 	-- Save it belongs to no one and runs for no one.
 	if per.steps ~= nil then return nil end
+	return per[dummy_cid()]
+end
 
+-- The saved sequence for this trigger AND this character, compiled. nil when
+-- there is nothing usable, which every caller treats as "behave as before".
+function M.schedule(which)
 	local cid = dummy_cid()
-	local seq = per[cid]
-	-- No enable flag of its own. Guard Action Type = Reversal - Sequence is
-	-- what turns this on, and a second switch would only give the two a way to
-	-- disagree.
+	local seq = source_seq(which)
 	if seq == nil then return nil end
 	if seq ~= cache_src or which ~= cache_which or cid ~= cache_cid then
 		local ok, out = pcall(M.compile, seq)
@@ -1086,6 +1239,27 @@ local loop_sched = nil
 -- Which trigger the loop belongs to, so a restart can ask for the list again
 -- rather than replay the one compiled at the arm.
 local loop_which = nil
+-- WHO THE QUEUE BELONGS TO WHEN IT IS NOT AN ACTION SEQUENCE.
+--
+-- A Random Start Wait on Reversal / Counter Attack - Specified cannot be placed
+-- by the arm (see rsw_defer in guardCancel), so the queue here delivers it once
+-- the dummy can act. guardCancel only runs the runner and its tick walker under
+-- Action Steps / Patterns and cancels the queue under anything else; this
+-- names the one other guard action that may use it, for as long as its start
+-- is queued, and until the last of its input has gone out. Asked through
+-- M.owns.
+local oneshot_owner = nil
+
+-- A NEW DRAW FOR EACH LOOP LAP. Looked up when it is needed rather than at load,
+-- so the offline tests - which load this file on its own from scripts/ - do not
+-- need the module, and read 0 (no wait) without it.
+local function rsw_roll()
+	local ok, m = pcall(require, "./scripts/randomStartWait")
+	if ok and type(m) == "table" and type(m.roll) == "function" then
+		return m.roll()
+	end
+	return 0
+end
 
 -- Called by the walker when a step carrying rev runs off its end. `now` is
 -- the tick that just ended - the step's last tap - so the holding starts two
@@ -1167,6 +1341,9 @@ local function log_entry(e)
 end
 
 local function log_wait(step, ticks)
+	-- A delayed step one is still step one: its item went in when it was
+	-- queued, as the arm's does, and its gap is counted from the trigger.
+	if step.start_part then return end
 	-- A LOOP RESTART IS NOT STEP ONE'S WAIT, SO IT IS NOT ON STEP ONE'S ITEM.
 	--
 	-- Round two onwards, loop_refill fires step one with the Loop Wait in
@@ -1196,6 +1373,9 @@ local function log_wait(step, ticks)
 		mode  = mode,
 		ticks = ticks,
 		op    = step.op_ticks,
+		-- Only a connect-timed step can miss a gate, and only then is there
+		-- anything to name. gate_why is nil once a gate has opened.
+		why   = CONNECT_TIMED[step.timing] and gate_why or nil,
 	})
 end
 
@@ -1222,6 +1402,9 @@ local function wait_log_items()
 			or ("Step." .. tostring(e.index or "?"))
 		if e.ticks ~= nil then t = t .. " Wait:" .. e.ticks end
 		if e.op ~= nil then t = t .. " Act:" .. e.op end
+		-- The gate never opened, so the step went out on its deadline. The
+		-- tag says which condition it was still waiting on.
+		if e.why ~= nil then t = t .. " ?" .. e.why end
 		out[#out + 1] = t
 	end
 	return out
@@ -1260,6 +1443,8 @@ function M.wait_log_lines(cols)
 end
 
 function M.cancel()
+	rd_head = nil
+	prepicked = false
 	if pending ~= nil then
 		M.steps_dropped = M.steps_dropped + #pending
 	end
@@ -1272,6 +1457,11 @@ function M.cancel()
 	arm_rev = nil
 	loop_sched = nil
 	loop_which = nil
+	-- oneshot_owner is NOT dropped here. A cancel can land while a Specified
+	-- start is half delivered (a refused chance, the match ending), and the
+	-- walker only runs while the guard action is owned - drop it now and the
+	-- rest of that input list sits in the delivery slot for good, so nothing
+	-- can arm again. M.service lets go once the slot is empty.
 	air_seen = false
 	contact_used = false
 	rapid_used = false
@@ -1296,6 +1486,11 @@ end
 -- Compiles the trigger's sequence, keeps steps 2..n, and returns the first so
 -- the caller can queue it exactly where it queues a motion today.
 function M.arm(which)
+	-- THE ROLL HAPPENS HERE, BEFORE ANYTHING IS ASKED FOR THE STEPS - unless
+	-- M.prepick already made it for this arm.
+	if patterns_mode() and not prepicked then M.pick_pattern(which) end
+	prepicked = false
+	rd_head = nil
 	local sched = M.schedule(which)
 	if sched == nil then return nil end
 	pending = {}
@@ -1308,6 +1503,7 @@ function M.arm(which)
 	arm_rev = sched[1].rev
 	loop_sched = sched
 	loop_which = which
+	oneshot_owner = nil
 	contact_used = false
 	rapid_used = false
 	gate_busy_seen = false
@@ -1323,6 +1519,213 @@ function M.arm(which)
 	M.wait_log = {}
 	log_entry({ index = 1, op = sched[1].op_ticks })
 	return sched[1].sequence
+end
+
+-- RANDOM START WAIT: STEP ONE, WHEN THE ARM CANNOT PLACE IT (user, 2026-10-02).
+--
+-- The arm aims at the free tick and nothing else: the motion goes into the
+-- buffer during the stun and the press lands on free-1 (a special) or free+0.
+-- A start that waits cannot ride that - the motion would go stale long before
+-- a sixty Tick wait was over - so guardCancel hands it here instead, with
+-- everything the arm would have asked already answered:
+--
+--   wait      the drawn number of Ticks
+--   adj       -1 for a special (pressed on free-1), 0 for everything else
+--   delay     the press offset after the motion: Guard Action Delay, or step
+--             one's Wait in a sequence
+--   hold_dir  whether the direction stays down while the button waits
+--   rev       a dash cancel's reverse direction (Specified only)
+--   lever     the Reversal/Counter Button Lever row, as names, or nil
+--   auto_dash the dash motion's name when Guard Action Delay is Auto
+--             (Specified only) - see DASH_ACTION_ID
+--   delay_extra  with auto_dash, the button's Random Delay draw (v11.7.21.2),
+--             which `delay` already holds but the Auto swap would drop
+--
+-- The step waits until the dummy can act on the ground, then goes in on the
+-- tick clock aimed so the press lands `wait` Ticks after the tick the arm would
+-- have pressed on - a numbered Wait's own arithmetic, `wait - lead`, from that
+-- tick. A wait shorter than the input itself cannot be met from there and comes
+-- out as early as the input allows.
+--
+-- WITH A DELAY, THE BUTTON IS A STEP OF ITS OWN. The arm splits the press from
+-- the motion when the button waits (v173): the motion finishes where it always
+-- would and only the button moves. Here that is two steps - the motion, then a
+-- one-entry press `delay` Ticks after its last tap - which is exactly how a
+-- numbered step after a dash already lands. A dash cancel adds the arm's two
+-- Ticks and parks its reverse the way a dash-cancel step does.
+local LEVER_NAME = {
+	["forward"] = true, ["back"] = true, ["up"] = true, ["down"] = true,
+	["h_charge"] = true, ["v_charge"] = true,
+}
+-- Guard Action Delay = Auto on a dash: the arm's own per-character number is an
+-- ARM-path offset, and this path is the step path, which was measured on its
+-- own (MEASURED_STEP_FLOORS - for the cancels the two run from four under to
+-- nine over). So the button step asks auto_ticks_for, exactly as an Attack
+-- step after a Dash step does.
+local DASH_ACTION_ID = {
+	["forward dash"] = "dash.f", ["back dash"] = "dash.b",
+	["forward dash cancel"] = "dashc.f", ["back dash cancel"] = "dashc.b",
+}
+
+local function start_steps(src, o)
+	local list = src and src.sequence
+	if type(list) ~= "table" or #list == 0 then return nil end
+	local dirs, btns = {}, {}
+	for _, k in ipairs(list[#list]) do
+		if LEVER_NAME[k] then dirs[#dirs + 1] = k else btns[#btns + 1] = k end
+	end
+	local adj = o.adj or 0
+	local delay = o.delay or 0
+	local a = {}
+	for k, v in pairs(src) do a[k] = v end
+	a.start_free = true
+	a.start_part = true
+	a.timing = nil
+	a.auto = false
+	a.wait = 0
+	a.is_loop = nil
+	-- Step one's Random Delay was drawn with the Random Start Wait and is in
+	-- o.wait already (guardCancel, GA.rsw_defer); drawing it again here would
+	-- count it twice.
+	a.rdelay = nil
+	local split = (#btns > 0) and (delay > 0 or o.rev ~= nil)
+	if not split then
+		local seq = list
+		-- The lever row replaces the direction the press rides on. The arm
+		-- applies it everywhere except a special pressed on free-1, where the
+		-- motion and the press are one injection.
+		if o.lever ~= nil and #btns > 0 and adj == 0 then
+			seq = {}
+			for i = 1, #list - 1 do seq[i] = list[i] end
+			local e = {}
+			for _, k in ipairs(o.lever) do e[#e + 1] = k end
+			for _, k in ipairs(btns) do e[#e + 1] = k end
+			seq[#list] = e
+		end
+		a.sequence = seq
+		a.lead = lead_ticks(seq)
+		-- With no button the delay moves the last tap, as on the arm.
+		a.start_wait = adj + (o.wait or 0) + delay
+		return { a }
+	end
+	local mseq = {}
+	for i = 1, #list - 1 do mseq[i] = list[i] end
+	mseq[#list] = dirs
+	a.sequence = mseq
+	a.lead = lead_ticks(mseq)
+	a.start_wait = adj + (o.wait or 0)
+	-- The step's own holds and reverse belong after the press, so they move to
+	-- the button step. What is held between the two is the arm's choice.
+	a.hold, a.hold_btn, a.hold_btn_ticks = nil, nil, nil
+	a.rev = o.rev
+	if o.rev == nil and o.hold_dir and #dirs > 0 then a.hold = dirs end
+	local e = {}
+	if o.lever ~= nil then
+		for _, k in ipairs(o.lever) do e[#e + 1] = k end
+	elseif o.rev == nil and o.hold_dir then
+		for _, k in ipairs(dirs) do e[#e + 1] = k end
+	end
+	for _, k in ipairs(btns) do e[#e + 1] = k end
+	local bwait = delay + ((o.rev ~= nil) and 2 or 0)
+	if o.auto_dash ~= nil and DASH_ACTION_ID[o.auto_dash] ~= nil then
+		local n = M.auto_ticks_for({ action = DASH_ACTION_ID[o.auto_dash] },
+		                           { action = "atk" })
+		-- The Random Delay on the button (v11.7.21.2) was added to the arm's
+		-- number in `delay`; it goes back on top of the step's own.
+		if n ~= nil then bwait = n + (o.delay_extra or 0) end
+	end
+	local b = {
+		sequence = { e },
+		motion = src.motion,
+		button = src.button,
+		index = src.index,
+		wait = bwait,
+		auto = false,
+		lead = 0,
+		op_ticks = 1,
+		start_part = true,
+		hold = src.hold,
+		hold_btn = src.hold_btn,
+		hold_btn_ticks = src.hold_btn_ticks,
+		rev = src.rev,
+	}
+	return { a, b }
+end
+
+-- The per-run state M.arm resets, for the two entries below.
+local function start_reset()
+	rd_head = nil
+	anchor = nil
+	arm_hold = nil
+	arm_hold_btn = nil
+	arm_hold_btn_ticks = nil
+	arm_rev = nil
+	contact_used = false
+	rapid_used = false
+	gate_busy_seen = false
+	held_after = nil
+	M.wait_log = {}
+end
+
+-- Action Steps / Action Patterns. The whole list is queued, step one first and
+-- waiting; the loop keeps the list as compiled, so its laps are unchanged.
+function M.arm_deferred(which, o)
+	if patterns_mode() and not prepicked then M.pick_pattern(which) end
+	prepicked = false
+	local sched = M.schedule(which)
+	if sched == nil then return false end
+	local first = start_steps(sched[1], o or {})
+	if first == nil then return false end
+	start_reset()
+	pending = first
+	for i = 2, #sched do pending[#pending + 1] = sched[i] end
+	loop_sched = sched
+	loop_which = which
+	oneshot_owner = nil
+	log_entry({ index = 1, op = sched[1].op_ticks })
+	return true
+end
+
+-- Reversal / Counter Attack - Specified: one input list, no loop. `owner` is
+-- the guard action it belongs to - see oneshot_owner.
+function M.arm_oneshot(owner, list, o)
+	if type(list) ~= "table" or #list == 0 then return false end
+	local first = start_steps({ sequence = list, index = 1,
+	                            op_ticks = list_ticks(list) }, o or {})
+	if first == nil then return false end
+	start_reset()
+	pending = first
+	loop_sched = nil
+	loop_which = nil
+	oneshot_owner = owner
+	return true
+end
+
+-- STEP ONE'S RANDOM DELAY, FOR THE ARM (v11.7.21.1).
+--
+-- Step one goes out on the arm, which only knows the free tick, so its Random
+-- Delay is drawn there together with the Random Start Wait (guardCancel,
+-- GA.rsw_defer): a total above 0 takes the deferred start, 0 keeps the fastest.
+-- The pattern has to be picked first so the draw belongs to the pattern that
+-- runs - prepick makes that pick, and the arm that follows uses it.
+function M.prepick(which)
+	if patterns_mode() then M.pick_pattern(which) end
+	prepicked = true
+end
+
+function M.draw_first_delay(which)
+	local sched = M.schedule(which)
+	local n = (sched ~= nil and sched[1] ~= nil) and (sched[1].rdelay or 0) or 0
+	if n <= 0 then return 0 end
+	return math.random(0, n)
+end
+
+-- Whether the runner and its tick walker work for this guard action: always
+-- for Action Steps / Patterns, and for a Specified one while its start is
+-- queued.
+function M.owns(ga)
+	if ga == 'sequence' then return true end
+	return oneshot_owner ~= nil and ga == oneshot_owner
 end
 
 -- Returns step one's hold once, then forgets it. One-shot because the walker
@@ -1425,10 +1828,25 @@ end
 --     btst D1, ($1a6,A6)       ; already used during this air trip?
 --     bne ...                  ; yes, refuse
 --
--- So there are two conditions and neither is a chain window: the animation
--- frame has to permit it, and that button must not have been spent yet on this
--- trip. $1a6 uses the button byte's own bit numbering - measured on the same
--- recordings, HK leaves 0x40, then LK 0x50, then LP 0x51.
+-- THE RUNNER ASKS "MAY IT PRESS NOW", NOT "WILL IT COME OUT" (user, 2026-09-25).
+--
+-- It used to copy both halves of that - the frame's permission and $1a6, the
+-- buttons already spent this air trip - and refuse whatever either refused.
+-- The second half is gone, for every character. Whether a press becomes an
+-- attack is the game's to decide: Bulleta gets a whiffed jumping MK and then a
+-- second MK out of one jump (user), and Anakaris throws four and five MPs in
+-- one float with $1a6 holding MP's bit the whole time (measured, two floats
+-- by hand). A press the game refuses costs one step; a press the runner
+-- refused cost the rest of the string.
+--
+-- What is left is timing, and either of two signals will do:
+--
+--   * $07 back to 02 - air neutral, the attack before it finished. The air
+--     counterpart of After on the ground. Anakaris's float needs it: bit 1 of
+--     the frame flags is never set anywhere in it, and every repeated MP came
+--     2 to 5 frames after $07 fell back to 02.
+--   * the frame's own permission, bit 1 of ($1c)+1 - earlier than that where
+--     the animation lets another attack in. Measured on Jedah at 25 and 24.
 --
 -- THREE EARLIER ATTEMPTS READ $21 INSTEAD, AND $21 IS ONLY A COPY.
 --
@@ -1440,22 +1858,12 @@ end
 --
 -- Reading ($1c) directly needs no latch. It is the same value, on the same
 -- tick, that the game is about to test.
-local BUTTON_BIT = {
-	LP = 0, MP = 1, HP = 2,
-	LK = 4, MK = 5, HK = 6,
-}
-
-local function air_ready(button)
+local function air_ready()
+	if memory.readbyte(P2_BASE + 0x07) == 0x02 then return true end
 	-- Same validity guard autoguard.lua's cel_ptr uses.
 	local p = memory.readdword(P2_BASE + 0x1C)
 	if p == nil or p < 0x1000 or p >= 0x1000000 then return false end
-	if math.floor(memory.readbyte(p + 1) / 2) % 2 == 0 then return false end
-
-	local b = BUTTON_BIT[button]
-	-- A step with no single button - a motion, a bare direction - has nothing
-	-- in the used mask to check against.
-	if b == nil then return true end
-	return math.floor(memory.readbyte(P2_BASE + 0x1A6) / 2 ^ b) % 2 == 0
+	return math.floor(memory.readbyte(p + 1) / 2) % 2 == 1
 end
 
 local function dummy_free(step)
@@ -1463,15 +1871,15 @@ local function dummy_free(step)
 	if memory.readbyte(P2_BASE + 0x38) == 0 then
 		return memory.readbyte(P2_BASE + 0x06) == 0
 	end
-	return air_ready(step and step.button)
+	return air_ready()
 end
 
 
 -- TOUCHDOWN, FROM THE CLOCK THE REVERSAL ARM ALREADY USES.
 --
 -- Auto (After) asks the wrong question while the dummy is airborne: $38 sends
--- dummy_free down the air_ready branch, which is "may this button come out in
--- the AIR". A grounded follow-up - a crouching normal after a dash attack that
+-- dummy_free down the air_ready branch, which is "may it press now in the
+-- AIR". A grounded follow-up - a crouching normal after a dash attack that
 -- ends in the air - is not asking that, and waiting for the whole landing to
 -- finish is later than the frame the game will take.
 --
@@ -1486,6 +1894,75 @@ end
 -- Seen airborne since this landing step reached the head of the queue. The
 -- touchdown is an EDGE, and an edge needs the other side of it remembered.
 local air_seen = false
+
+-- HOW LONG THE NEUTRAL IN THE MIDDLE OF A DASH MAY LAST.
+--
+-- A dash is N, forward, neutral, forward. The game gives the first forward ten
+-- frames to be held, then TEN FRAMES OF NEUTRAL, then takes the second forward.
+-- Unlike a special move - where the grace between inputs is one of six random
+-- values, 10F at 16/32 down to 15F at 2/32 - the dash grace is FIXED. 10F at
+-- Normal speed, 8F at the game's own Turbo setting (NOT the emulator's turbo,
+-- which is a different thing and was confused for it here once).
+--
+-- The tool runs on ticks and one frame is one tick at Normal, so this is ten
+-- ticks. Source and the probability table are in VSAV_MEMORY_NOTES.md under
+-- "コマンド受付の猶予" - reference material, not something measured here.
+--
+-- The list spends one tick on that neutral already, so a hold may add nine
+-- before the motion expires. Hit stop is eleven ticks ($5C is slammed to 0x0B),
+-- which is longer than the whole grace - so a freeze landing on the neutral
+-- kills the dash outright, and holding the last press into it presses into a
+-- window that has already closed. That is why exceeding this restarts the
+-- motion from the top rather than waiting longer.
+M.DASH_GRACE_TICKS = 10
+
+-- RANDOM DELAY'S CEILING, AND THE ONE PLACE A SAVED VALUE IS READ (v11.7.21.1).
+-- Sixty Ticks, the same as Random Start Wait: small numbers are the human
+-- wobble on a fastest input, large ones vary a gap in a pressure string.
+M.RANDOM_DELAY_MAX = 60
+function M.random_delay_of(step)
+	local v = math.floor(tonumber(step and step.random_delay) or 0)
+	if v < 0 then v = 0 end
+	if v > M.RANDOM_DELAY_MAX then v = M.RANDOM_DELAY_MAX end
+	return v
+end
+
+-- HOW LONG A HALF-ENTERED DASH STAYS ALIVE, FROM THE ROM (2026-10-02).
+--
+-- The forward-dash recogniser is 0x02A4C8, called every tick from 0x02239E -
+-- before 0x022552 looks at $5C, so it runs straight through hit stop:
+--
+--   step 0  forward press edge ($127)        -> step 2, timer 12
+--   step 2  forward held: wait; neutral       -> step 4, timer 12
+--   step 4  forward press edge                -> recognised: $113 = 1 for
+--                                                that one tick only
+--   every tick in step 2/4: timer - 1, and at 0 back to step 0
+--
+-- The 12 is the 0x0C written at 0x02A552. The dash itself is only taken by a
+-- $06 handler (0x027B80 reads $113), and those do not run during hit stop -
+-- so a recognition that falls inside a freeze, or anywhere 0x027B80 refuses,
+-- is spent and gone.
+M.DASH_STEP_TICKS = 12
+
+-- WHERE THAT STATE LIVES, FOR P2. Read rather than modelled: guardCancel's
+-- walker asks the game what step the dash is on before it presses. The forward
+-- recogniser is $1F0 (step) / $1F4 (timer), the back one $1F8 / $1FC - the
+-- lea ($1f0,A6) / ($1f8,A6) at 0x029F12 / 0x029F1C. Confirmed against a P2 RAM
+-- trace on 2026-10-02: step 2 timer 12 on the forward edge, counting down
+-- through hit stop, step 4 on the neutral, back to 0 on the recognition.
+M.DASH_REC_FORWARD = 0xFF89F0
+M.DASH_REC_BACK = 0xFF89F8
+
+-- Which recogniser a delivery's motion runs on, or nil when it is not a dash:
+-- its last entry has to be a lone forward or back tap. Everything else - a
+-- command motion, an attack - has recognisers of its own and is left alone.
+function M.dash_recognizer(list)
+	local last = type(list) == "table" and list[#list] or nil
+	if last == nil or #last ~= 1 then return nil end
+	if last[1] == "forward" then return M.DASH_REC_FORWARD end
+	if last[1] == "back" then return M.DASH_REC_BACK end
+	return nil
+end
 
 local function landing_ready(step)
 	local _air = memory.readbyte(P2_BASE + 0x38) ~= 0
@@ -1503,6 +1980,24 @@ local function landing_ready(step)
 		-- A command motion has entries to get through, so it starts early and
 		-- uses the prediction to know how early.
 		local _lead = step.lead or 0
+		-- NOT WHILE THE PHYSICS IS FROZEN.
+		--
+		-- ticks_to_landing() answers in PHYSICS ticks and the delivery runs on
+		-- the CLOCK, and hitstop separates the two: position stops updating
+		-- while the tick counter keeps going (measured 2026-09-18 - y, vy and ay
+		-- identical across ticks while the hook kept firing). Committing in
+		-- there sends the run-up into a window that is still counting down, so
+		-- the motion expires mid-flight: the command acceptance counter does NOT
+		-- freeze with the physics.
+		--
+		-- $5C is the remaining hitstop, already read by tickDataVsav.lua. Zero
+		-- means the two clocks agree and the prediction can be acted on.
+		--
+		-- Nothing is lost by waiting. If the moment goes past, the branch below
+		-- fires this step on the touchdown instead - late, but out. A dummy that
+		-- stays silent teaches nothing, which is the whole reason the deadline
+		-- on this gate exists at all.
+		if memory.readbyte(P2_BASE + 0x5C) ~= 0 then return false end
 		if _lead > 0 and seq_ticks_to_landing ~= nil then
 			local _ld = seq_ticks_to_landing()
 			if _ld ~= nil and _ld <= _lead then return true end
@@ -1572,7 +2067,26 @@ local function service_body(defender)
 	end
 
 	local step = pending[1]
-	if CONNECT_TIMED[step.timing] then
+	if step.start_free then
+		-- A RANDOM START WAIT'S STEP ONE (see start_steps): counted from the
+		-- first tick the dummy can act, on the ground. $05 alone, not
+		-- dummy_free: Pose may have the dummy crouching or walking by then, and
+		-- the input goes in on top of that the way a reversal's does. Hit or
+		-- blocked again before it goes, it starts counting again from the
+		-- next recovery.
+		if memory.readbyte(P2_BASE + 0x05) ~= 0
+		   or memory.readbyte(P2_BASE + 0x38) ~= 0 then
+			step.free_at = nil
+			return
+		end
+		if step.free_at == nil then step.free_at = now end
+		local _start = (step.start_wait or 0) - (step.lead or 0)
+		if _start < 0 then _start = 0 end
+		-- The emulator re-runs a tick or two now and then, so the clock can
+		-- read just before free_at. That is "not yet", not 255 Ticks later.
+		local _e = (now - step.free_at) % 256
+		if _e >= 128 or _e < _start then return end
+	elseif CONNECT_TIMED[step.timing] then
 		local _ok
 		if step.timing == TIMING_CHAIN then _ok = chain_ready(step)
 		elseif step.timing == TIMING_RAPID then _ok = rapid_ready(step)
@@ -1592,15 +2106,162 @@ local function service_body(defender)
 		-- out on its own instead of waiting for something that cannot happen.
 		if not _ok and not timing_missed(step) then return end
 	elseif step.timing == TIMING_LANDING then
-		if not landing_ready(step) then return end
+		-- A LANDING THAT CANNOT HAPPEN IS NOT A REASON TO STOP EITHER.
+		--
+		-- The connect-timed gate above already carries this deadline. Landing
+		-- did not, and it is the same mistake: if the step before it never left
+		-- the ground - a dash that did not come out, a jump that was swapped
+		-- away - there is no landing to wait for and the list stopped there for
+		-- good.
+		--
+		-- Reported 2026-09-17 on a three step list: Dash Forward Cancel, then
+		-- Attack LP, then Attack Down on Auto (Landing). The dash did not come
+		-- out, the standing LP did, and the run ended.
+		--
+		-- Same deadline as the others: once the dummy has been busy and is free
+		-- again, the moment being waited for is over and the step goes out on
+		-- its own. That is Auto (After) - which is what every Auto should fall
+		-- back to when its condition is missed (user, same report).
+		-- WHICH GATE LET THIS OUT, ON THE RECORD.
+		--
+		-- KEPT ON PURPOSE - this is not a leftover diagnostic. The two gates
+		-- mean different things and produce the same visible result, so telling
+		-- them apart is the only way to check this branch:
+		-- test_landing_ground_recovery reads the mark and asserts 2 for the
+		-- recovery gate and 1 for the predicted one. Remove it and that test
+		-- stops observing anything. The three diagnostics from the same
+		-- investigation WERE removed (2026-09-23); this one is a seam.
+		--
+		-- Costs nothing when the knockdown logger is off: seq_debug is nil.
+		--
+		--   val = gate (1 = landing_ready, 2 = timing_missed)
+		--         * 100000 + lead * 1000 + $5C * 10 + airborne
+		--   pc  = ticks_to_landing(), or 99 when it is nil
+		do
+			local _lr = landing_ready(step)
+			-- THE DEADLINE DOES NOT OVERTAKE THE AIM.
+			--
+			-- timing_missed exists for a landing that never comes - the step
+			-- that asked to wait for a touchdown on a character that did not
+			-- jump (test_landing_deadline [1]). It has no aim of its own: it
+			-- fires the moment the dummy is free, and a falling dummy IS free.
+			--
+			-- MEASURED 2026-09-20 (Morrigan, dash then Forward+MK, looped, MK
+			-- guarded). Thirteen landing steps, ELEVEN released by the deadline:
+			--
+			--     gate            lead  toLand  $5C  air
+			--     timing_missed      3       6    0    1    <- three ticks early
+			--     landing_ready      3       3    0    1    <- on target
+			--
+			-- $5C is zero throughout, so hit stop is not what does this. The
+			-- deadline simply opens three ticks before the aim would, the press
+			-- lands in the air, and no dash comes out.
+			--
+			-- A grounded normal after a failed dash must finish like After.
+			-- Only an airborne prediction may defer that recovery: grounded
+			-- Morrigan keeps y=floor=40, vy=-135168, ay=-24576, so the predictor
+			-- returns 1 forever (kd_c05_s02, frames 3536..3706). timing_missed
+			-- still requires busy -> free, so this does not skip the normal.
+			--
+			-- NOT IN THE AIR AT ALL, PREDICTION OR NONE (2026-09-25).
+			--
+			-- This let the deadline through in the air when the predictor had
+			-- no answer. Anakaris's float is exactly that - it is not the
+			-- physics ticks_to_landing replays - and once air_ready began
+			-- reading "back in air neutral" as free, the step after his last
+			-- float attack went out five frames above the floor, in the air,
+			-- and nothing came out (user: the attack after landing does not
+			-- come out; reversal_logs_archive/2026-09-25-air-trip, P2 f14957).
+			--
+			-- An airborne dummy always comes down, and landing_ready fires on
+			-- the first grounded tick without needing a prediction; the
+			-- prediction only lets a run-up step start early. So the deadline
+			-- is only for a landing that never comes - a dummy on the ground.
+			local _tm = false
+			if not _lr and timing_missed(step) then
+				_tm = (memory.readbyte(P2_BASE + 0x38) == 0)
+			end
+			if _lr or _tm then
+				local _dbg = seq_debug
+				if _dbg ~= nil and _dbg.mark_write ~= nil then
+					local _ld = seq_ticks_to_landing and seq_ticks_to_landing()
+					_dbg.mark_write("land_gate",
+						(_lr and 100000 or 200000)
+						+ ((step.lead or 0) % 100) * 1000
+						+ (memory.readbyte(P2_BASE + 0x5C) % 100) * 10
+						+ ((memory.readbyte(P2_BASE + 0x38) ~= 0) and 1 or 0),
+						(_ld ~= nil) and (_ld % 99) or 99)
+				end
+			else
+				return
+			end
+		end
 	elseif step.auto then
-		if not dummy_free(step) then return end
+		-- Air attack readiness does not permit a ground dash. After starts
+		-- its input only when grounded and free; Landing has its own earlier
+		-- branch so its predicted airborne run-up remains unchanged.
+		if step.ground_dash and memory.readbyte(P2_BASE + 0x38) ~= 0 then return end
+		if not dummy_free(step) then
+			gate_busy_seen = true
+			return
+		end
+		-- IN THE AIR, FREE IS NOT ENOUGH: SOMETHING HAS TO HAVE HAPPENED.
+		--
+		-- After is "once the move the step before made has finished". In the
+		-- air a press can be refused - Anakaris's float stops taking attacks
+		-- before it lands - and then the dummy never leaves air neutral, so it
+		-- stays free, and every After behind it went out on the following
+		-- ticks, refused the same way. The list was used up above the floor and
+		-- nothing was left for after the landing (user, 2026-09-25).
+		--
+		-- So in the air the step waits until the dummy has been busy at least
+		-- once since the step before it fired. A press that took makes it busy
+		-- at once, so a real follow-up is not slowed - the float's repeats and
+		-- Jedah's measured air chain are unchanged. A refused one leaves it
+		-- waiting for the next busy spell, and for a float that ends that is
+		-- the landing ($07 = 04), so the step comes out on the ground.
+		--
+		-- Not on the ground. A refused press there is rare, and waiting for a
+		-- busy spell that never comes would stop the list outright.
+		if memory.readbyte(P2_BASE + 0x38) ~= 0 and not gate_busy_seen then
+			return
+		end
 	else
 		-- Negative means the motion is longer than the wait: there is no way to
 		-- land it on the named tick, so it goes as early as it can.
 		local _start = step.wait - step.lead
 		if _start < 0 then _start = 0 end
 		if ((now - anchor) % 256) < _start then return end
+	end
+
+	-- RANDOM DELAY: THIS STEP'S OWN, AFTER ITS WAIT (v11.7.21.1).
+	--
+	-- A fresh draw of 0..rdelay Ticks each time the step comes up, counted from
+	-- the tick its own gate opened - so it rides on whatever the Wait is: a
+	-- number, After, a measured Auto, Landing, or a Chain/Cancel window. On a
+	-- connection a long draw can carry the press out of the window, and the
+	-- step then goes out on its own: a human missing the link, reproduced.
+	if (step.rdelay or 0) > 0 then
+		if rd_head == nil or rd_head.step ~= step then
+			rd_head = { step = step, n = math.random(0, step.rdelay), from = nil }
+		end
+		if rd_head.n > 0 then
+			if rd_head.from == nil then rd_head.from = now end
+			local _e = (now - rd_head.from) % 256
+			if _e >= 128 or _e < rd_head.n then return end
+		end
+	end
+
+	-- A LOOP LAP'S RANDOM START WAIT, AFTER WHATEVER LOOP WAIT ASKED FOR.
+	--
+	-- Drawn in loop_refill. Counted from the tick the lap's own gate opened, so
+	-- a number, Auto (After) and Auto (Landing) all come out that many Ticks
+	-- later than they would have. Loop Wait tops out at 120 and this at 60, so
+	-- the fixed gate above never runs far enough past its anchor to wrap.
+	if (step.start_extra or 0) > 0 then
+		if step.extra_from == nil then step.extra_from = now end
+		local _e = (now - step.extra_from) % 256
+		if _e >= 128 or _e < step.start_extra then return end
 	end
 
 	-- Fired on this contact, so the next timing-gated step waits for a fresh
@@ -1625,6 +2286,7 @@ local function service_body(defender)
 	if #pending == 0 then pending = nil end
 	anchor = nil
 	gate_busy_seen = false
+	rd_head = nil
 
 	M.steps_fired = M.steps_fired + 1
 	queue_input_sequence(defender, step.sequence)
@@ -1636,6 +2298,14 @@ local function service_body(defender)
 	if q ~= nil then
 		q.seq_tick = true
 		q.tick_held = 0
+		-- AIMED AT A TOUCHDOWN THAT HAS NOT HAPPENED YET.
+		--
+		-- lead is the cost of every entry BUT THE LAST (lead_ticks), so the
+		-- whole schedule exists to put the final press on one named tick. For a
+		-- landing step that tick is a prediction, and the walker needs to know
+		-- which segments are living on one.
+		q.seq_land = (step.timing == TIMING_LANDING
+		               and (step.lead or 0) > 0) or nil
 		-- Rides on the record so the walker picks it up when it runs off the
 		-- end of this segment - that is the tick the holding has to start, and
 		-- the walker is the only thing that knows it has arrived.
@@ -1670,6 +2340,13 @@ end
 -- be walked down until the move stops coming out, which is what a loop tight
 -- enough to be an infinite needs.
 local LOOP_AUTO = -1
+-- A loop boundary can also be "when the dummy lands", which is what a hop into
+-- an air normal wants: the next lap's first step is a dash, and a dash has to
+-- START before the touchdown for its last input to arrive on the first tick the
+-- dummy can act. Auto (After) is too late by that run-up; a number cannot know
+-- how long the hop took. -2 because -1 is already Auto and zero has no meaning
+-- here (see M.loop_wait).
+local LOOP_LANDING = -2
 
 -- Whether the list repeats at all. Read live rather than latched at arm time:
 -- switching it off should stop the loop that is running, which reads better
@@ -1684,6 +2361,7 @@ function M.loop_wait()
 	-- -1 is Auto. Zero was briefly accepted by the menu, but a loop boundary
 	-- has no supported zero-tick meaning. Treat old or manually edited zero
 	-- values as Auto as a second line of defence behind settings migration.
+	if _v == LOOP_LANDING then return LOOP_LANDING end
 	if type(_v) ~= "number" or _v <= 0 then return LOOP_AUTO end
 	return _v
 end
@@ -1691,10 +2369,9 @@ end
 -- The raw steps, for the two questions the menu asks about the loop. Same
 -- reads M.schedule does, without the compile.
 local function loop_steps(which)
-	local store = training_settings and training_settings.action_sequences
-	local per = store and store[which]
-	if type(per) ~= "table" or per.steps ~= nil then return nil end
-	local seq = per[dummy_cid()]
+	-- The same source schedule uses, so the Loop Wait row on the menu is
+	-- answering about the list that will actually run.
+	local seq = source_seq(which)
 	local steps = seq and seq.steps
 	if type(steps) ~= "table" or #steps == 0 then return nil end
 	return steps
@@ -1724,6 +2401,32 @@ local function loop_blocked()
 	return globals ~= nil and globals.show_menu == true
 end
 
+-- THE MATCH IS THE OTHER WALL (user, 2026-09-21). The arm fires on an
+-- opportunity, which only exists in a fight - but the LOOP refills on the
+-- first tick the queue is empty, and nothing downstream knows where the
+-- player is. Back on the character select (0xFF8009 leaves 4, the dummy
+-- object lingers) the refill kept handing laps to the walker and the
+-- injections kept reaching 0xFF8B94: the pattern ran against an empty scene.
+-- Reported as "back on the character select, the Action Pattern loop is
+-- still playing".
+--
+-- Asked of globals.match_running - the one definition the master script
+-- publishes (fight really running, not the entrance, not a transformation).
+-- nil means whoever is driving the tests did not publish it, so the answer
+-- stays yes and nothing changes for them.
+local function match_live()
+	local f = globals ~= nil and globals.match_running or nil
+	if f == nil then return true end
+	return f() == true
+end
+
+-- Whether a lap exists at all - armed and running, or mid-delivery. The
+-- master script's select-screen cleanup asks this so its diagnostic can tell
+-- "the loop is alive here" from "nothing was ever armed".
+function M.loop_alive()
+	return loop_sched ~= nil or pending ~= nil
+end
+
 -- Puts the whole list back, with step one carrying the loop's wait instead of
 -- the arm's. The copy is one level deep and only step one needs it - the other
 -- entries are handed on untouched, and loop_sched must survive intact because
@@ -1731,6 +2434,7 @@ end
 local function loop_refill()
 	if loop_sched == nil or #loop_sched == 0 then return end
 	if not M.loop_on() then return end
+	if not match_live() then return end
 	-- EDITS TAKE EFFECT ON THE NEXT LAP.
 	--
 	-- loop_sched is what M.arm compiled, and replaying it meant the loop kept
@@ -1746,6 +2450,18 @@ local function loop_refill()
 	-- compiled list would hide the failure and execute inputs no longer shown
 	-- by the Editor.
 	if loop_which ~= nil then
+		-- A NEW ROLL FOR EACH LAP, AND THIS IS THE LAST PLACE IT CAN HAPPEN.
+		--
+		-- pending empties on the tick the last step FIRES, not when it
+		-- finishes, so loop_refill runs one tick after that - long before the
+		-- landing the restart may be predicting. Rolling any later would leave
+		-- the new lap's first step unknown while its run-up should already be
+		-- going in, and Loop Wait = Auto (Landing) would have nothing to
+		-- predict for (user, 2026-09-20).
+		--
+		-- Before the schedule is fetched, so the fetch below is already about
+		-- the pattern this lap will run.
+		if patterns_mode() then M.pick_pattern(loop_which) end
 		local _fresh = M.schedule(loop_which)
 		if _fresh == nil or #_fresh == 0 then
 			loop_sched = nil
@@ -1757,11 +2473,27 @@ local function loop_refill()
 	local _w = M.loop_wait()
 	local _first = {}
 	for k, v in pairs(loop_sched[1]) do _first[k] = v end
-	_first.auto = (_w == LOOP_AUTO)
-	_first.wait = (_w == LOOP_AUTO) and 0 or _w
+	-- LANDING IS A TIMING, NOT A NUMBER.
+	--
+	-- service_body branches on step.timing before it looks at auto or wait, so
+	-- handing the restart the landing gate is all it takes: the prediction, the
+	-- run-up and the deadline all come with it. Safe to set here because
+	-- M.compile only ever puts a timing on steps 2 and later - step one's is
+	-- always nil, so nothing is being overwritten.
+	if _w == LOOP_LANDING then
+		_first.timing = TIMING_LANDING
+		_first.auto = false
+		_first.wait = 0
+	else
+		_first.auto = (_w == LOOP_AUTO)
+		_first.wait = (_w == LOOP_AUTO) and 0 or _w
+	end
 	-- Marked so the readout can say Loop rather than repeating step one's own
 	-- mode, which is not what this pass waited for.
 	_first.is_loop = true
+	-- Random Start Wait, drawn afresh for every lap; service_body adds it after
+	-- the gate above opens. The Loop item on the readout includes it.
+	_first.start_extra = rsw_roll()
 	pending = { _first }
 	for i = 2, #loop_sched do pending[#pending + 1] = loop_sched[i] end
 	-- Left for service_body to name on the first tick with the slot free, the
@@ -1849,9 +2581,39 @@ function M.service(defender)
 		held_after = nil
 		return
 	end
+	-- AND THE SELECT SCREEN DROPS THE LOOP WITH IT (user, 2026-09-21).
+	--
+	-- loop_refill now refuses to refill out of a match, which alone would
+	-- leave a lap already in pending to finish walking on the select screen -
+	-- the same half-cleared state the menu path cleans below. Same treatment:
+	-- the whole pass goes, and the next arm starts it again. The queue at that
+	-- point is one lap of the pattern, so counting it as dropped steps keeps
+	-- the readout honest.
+	--
+	-- match_running missing (the offline tests, any other launcher) reads as
+	-- live, same as it does in loop_refill.
+	if not match_live() then
+		if pending ~= nil then
+			M.steps_dropped = M.steps_dropped + #pending
+			pending = nil
+		end
+		defender.pending_input_sequence = nil
+		loop_sched = nil
+		loop_which = nil
+		anchor = nil
+		held_after = nil
+		return
+	end
 	if pending == nil then
 		loop_refill()
-		if pending == nil then return end
+		if pending == nil then
+			-- A Specified start has gone out in full, its last entry included:
+			-- hand the guard action back to the arm.
+			if oneshot_owner ~= nil and defender.pending_input_sequence == nil then
+				oneshot_owner = nil
+			end
+			return
+		end
 	end
 	service_body(defender)
 end

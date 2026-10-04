@@ -21,13 +21,19 @@ import os
 import shutil
 import sys
 
-LOG_DIR = r"C:\fightcade\emulator\fbneo\scripts\reversal_logs"
-ARCHIVE = r"C:\fightcade\emulator\fbneo\scripts\reversal_logs_archive"
+# THE REPOSITORY MOVED. These pointed at C:\fightcade, which CLAUDE.md says
+# is migrated and not to be touched - so a run from the new tree archived 66
+# recordings into the OLD one and they had to be carried back by hand
+# (2026-09-20).
+LOG_DIR = r"C:\fightcaVSAV-Debug\emulator\fbneo\scripts\reversal_logs"
+ARCHIVE = r"C:\fightcaVSAV-Debug\emulator\fbneo\scripts\reversal_logs_archive"
 
 
 def main():
     log_dir = sys.argv[1] if len(sys.argv) > 1 else LOG_DIR
     paths = sorted(glob.glob(os.path.join(log_dir, "kd_*.json")))
+    # airGuardLog.lua's recordings carry script_version the same way.
+    paths += sorted(glob.glob(os.path.join(log_dir, "airg_*.json")))
     # ag_prox.json is All Guard's own log. It is rewritten whole rather than
     # rotated, so it has to be moved out with the batch or the next session
     # silently overwrites it.
