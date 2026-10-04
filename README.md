@@ -35,10 +35,7 @@ See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions require
 |---|---|
 | **Test when your offense works** | Make the dummy respond with a light normal, throw, jump or dash, then test whether your pressure or wake-up setup beats it |
 | **Practice against varied timing** | Vary when the same offense starts or when an attack within it comes out. Practice PB and GC without relying on a fixed rhythm. See [which setting to use](docs/PLAYER_MANUAL.en.md#dummy-button-timing) |
-| **Reproduce strings and combos precisely** | Define Tick-based actions with Action Steps; save, randomize and share them with Action Patterns. You can even define sequences that complete infinite combos for Bulleta (B.B. Hood) or Bishamon |
 | **Measure setup timing** | Use Action Timeline in Tick Data to measure the time spent setting up wake-up pressure, or how far away you can start a walk-up throw and still perform it within 15 displayed frames (20 Ticks at Turbo 3) |
-| **Practice PB (Push Block)** | Delay input while fitting six valid presses inside the window. Inspect timing, simultaneous presses, inputs after the window closes, averages and success rate |
-| **Practice GC (Guard Cancel)** | Review failed inputs and adjust your execution. Use [GC Stats](docs/PLAYER_MANUAL.en.md#gc-stats) to identify your weaker side and track progress |
 | **Examine situations after air guarding** | Find interruptible gaps in air chains, evaluate actual interrupt timing, see when you air-blocked and check landing advantage |
 
 **Tick Data** avoids the turbo-frame variation of the original display-frame measurements. Its counting conventions for startup, active time, recovery and frame advantage are aligned with those used by strategy sites. See [manual Section 11](docs/PLAYER_MANUAL.en.md#10-data) for measurement conditions and how to read Action Timeline.
@@ -47,7 +44,7 @@ See [Action Steps](docs/PLAYER_MANUAL.en.md#06-steps) for the conditions require
 
 ![PB Counter and PB Stats showing PB input count, timing, simultaneous presses and practice results](docs/images/pb_counter_stats.png)
 
-Here, six presses on Ticks 5–13 of the window activated PB. Two Ticks contained simultaneous button presses, and no inputs fell after the window closed. **See whether PB activated and what you can improve on your next attempt.** See [PB practice](docs/PLAYER_MANUAL.en.md#08-pb) for the full readout guide.
+Here, six presses on Ticks 5–13 of the window activated PB. **Once you can fit six presses consistently, start a little later and see whether you can still fit all six.** If you fall short, check for simultaneous presses or inputs after the window closes. See [PB practice](docs/PLAYER_MANUAL.en.md#08-pb) for the full readout guide.
 
 ### Choose easy recording or precise action control
 
@@ -106,15 +103,15 @@ Recording's `Looped Playback` and Action Steps' `Loop Steps` are separate settin
 
 ## First drill: Practice PB and GC against Sasquatch
 
-Make Sasquatch perform short-dash LP, then practice PB (Push Block) and GC (Guard Cancel) against it. Save the sequence so you can use it again next time.
+Make Sasquatch perform short-dash LP, then practice PB (Push Block) and GC (Guard Cancel) against it. The included pattern lets you start practicing before building your own sequence.
 
-Start by trying either PB or GC; looping and saving can wait until you are comfortable. The steps below outline the drill. Follow the [illustrated tutorial](docs/PLAYER_MANUAL.en.md#sasquatch-pb-tutorial) for the settings and controls.
+Start by trying either PB or GC; looping and building your own actions can wait until you are comfortable. The steps below outline the drill. Follow the [illustrated tutorial](docs/PLAYER_MANUAL.en.md#sasquatch-pb-tutorial) for the settings and controls.
 
-1. **Build it.** Choose Sasquatch as the dummy. With `Reversal - Action Steps`, define `Dash > Forward Cancel` (`Auto (Fastest)`) followed by LP (`Auto (8)`). To try it right away, import `scripts/patterns/Sasquatch_Short_LP.json` from the release with `Import from a File` in Action Patterns.
+1. **Import it.** Choose Sasquatch as the dummy. Under `Reversal - Action Patterns`, use `Import from a File` to load `scripts/patterns/Sasquatch_Short_LP.json` from the release. Select only `Short LP` for use.
 2. **Practice PB.** Make the dummy block your attack to trigger short-dash LP, then use PB against it. Use PB Counter and PB Stats to check, for example, whether you delayed your first press and still fit six valid presses within the window.
 3. **Try GC too.** Block the same LP and enter your character’s GC command. Check the success indicator, accepted directions and buttons, and input intervals. Use [GC Stats](docs/PLAYER_MANUAL.en.md#gc-stats) to compare your success rate on the left and right sides.
 4. **Repeat it.** Set `Loop Steps = yes` and `Loop Wait = Auto (Landing)` to repeat short-dash LP as soon as the dummy lands.
-5. **Save it.** Use `Add from current Steps` in Action Patterns to save it as `Short LP`. Skip this step if you imported the included pattern. Save other attacks later to practice against randomly selected sequences.
+5. **Expand your practice.** The imported pattern is ready to use next time. When comfortable, build other attacks in Action Steps and save them in Action Patterns to practice against randomly selected sequences.
 
 ## Manual
 

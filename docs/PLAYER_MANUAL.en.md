@@ -244,9 +244,9 @@ You can also use `Dummy > Position`. In its diagram, `1` is you, `2` is the dumm
 
 Make Sasquatch perform short-dash LP, then practice PB (Push Block) and GC (Guard Cancel) against it. Complete [installation and input mapping](#02-install) first.
 
-- **Try it once:** Import the included pattern or build the action yourself in steps 1–2, then try [PB (step 3)](#tutorial-pb) or [GC (step 4)](#tutorial-gc). **You can start practicing at this point.**
+- **Try it once:** Import the included pattern in steps 1–2, then try [PB (step 3)](#tutorial-pb) or [GC (step 4)](#tutorial-gc). **You can start practicing at this point.**
 - **Repeat when ready:** Enable looping in [step 5](#tutorial-loop).
-- **Keep it for next time:** Name and save the sequence in [step 6](#tutorial-save).
+- **Save your own sequence:** If you build the action manually, save it as a pattern in [step 6](#tutorial-save). An imported pattern is saved for next time.
 
 ### Step 1: Prepare the counter action
 
@@ -256,32 +256,36 @@ Choose your character for P1 and **Sasquatch** for the P2 dummy. Face each other
 |---|---|
 | `Guard` | `All Guard` |
 | `Random Guard %` | `100%` |
-| `Guard Action Type` | `Reversal - Action Steps` |
+| `Guard Action Type` | `Reversal - Action Patterns` |
 | `Random Guard Action %` | `100%` |
 | `Random Start Wait` | `0` (default: no additional random wait) |
 | `Loop Steps` | `no` (start with one response at a time) |
 
-![The Dummy tab set up for the drill](images/tut_dummy_setup.png)
-
-Nothing has been built yet, so `Reversal Action Steps` reads `Empty`. Rows past the eleventh go to the right-hand column, which is why `Loop Wait` is at the top right.
-
 `Random Guard %` controls blocking probability; `Random Guard Action %` controls the response probability. Set both to 100% to keep the drill consistent.
 
-### Step 2: Build short-dash LP
-
-**Use the included pattern (shortcut)**
+### Step 2: Import short-dash LP
 
 Keep Sasquatch as the dummy, as set in Step 1.
 
-1. Set `Guard Action Type` to `Reversal - Action Patterns` and open `Reversal Action Patterns`.
+1. Open `Reversal Action Patterns`.
 2. Choose `Import from a File` and import `scripts/patterns/Sasquatch_Short_LP.json` from the release.
 3. Press MP on `Short LP` in the list to mark it `[x]`. Uncheck any other selected patterns.
 
-Keep `Guard Action Type` on `Reversal - Action Patterns` and go to [the check](#tutorial-check). Skip the manual build below and the save procedure in Step 6. You can also enable the pattern with `Use in Random = Yes` on its individual screen.
+The imported pattern is already saved. You do not need the save procedure in Step 6.
 
-**Build it yourself**
+<a id="tutorial-check"></a>
+Close the menu, make Sasquatch block a ground attack from P1, then immediately block his response.
 
-Keep `Guard Action Type = Reversal - Action Steps` and follow the steps below.
+**Check: Setup is complete when the dummy responds with short-dash LP. Try either PB or GC next.**
+
+<details>
+<summary>Optional: Build the same action in Action Steps</summary>
+
+Switch to `Guard Action Type = Reversal - Action Steps` and follow the steps below. Then continue to the drills; use [Step 6](#tutorial-save) to save your sequence as a pattern.
+
+![The Dummy tab before building the action, with Guard Action Type set to Reversal - Action Steps](images/tut_dummy_setup.png)
+
+This image shows the setup before building the action manually. `Reversal Action Steps` reads `Empty` if no definition exists yet.
 
 Open `Reversal Action Steps` with Right or LP and create **only these two steps**. To preserve an existing definition, save it in [Action Patterns](#07-patterns) first.
 
@@ -295,14 +299,6 @@ Open `Reversal Action Steps` with Right or LP and create **only these two steps*
 3. Check that both steps have `Random Delay = 0`. When your list matches the one below, select **`Save`**.
 
 ![The finished list: Auto (Fastest) Dash : Forward Cancel, then Auto (8) Attack : LP](images/tut_steps_list.png)
-
-<a id="tutorial-check"></a>
-Close the menu, make Sasquatch block a ground attack from P1, then immediately block his response.
-
-**Check: Setup is complete when the dummy responds with short-dash LP. Try either PB or GC next.**
-
-<details>
-<summary>Show selection screens and the saved result</summary>
 
 Find `Forward Cancel` under `Action > Dash`.
 
@@ -406,7 +402,7 @@ To stop looping, open the menu and set `Loop Steps = no`. To disable counter act
 <a id="tutorial-save"></a>
 ### Step 6: Save it as `Short LP`
 
-Save the sequence with fixed timing as your base pattern, `Short LP`. If you imported it through the shortcut, it is already saved; skip to [the optional timing drill](#tutorial-varied-timing).
+Save the base sequence you built manually as `Short LP`. If you are using the included pattern as-is, skip this procedure and go to [the optional timing drill](#tutorial-varied-timing).
 
 1. Set `Random Delay = 0` on both steps and select `Save` in Action Steps. Also check that `Random Start Wait = 0`.
 2. Switch `Dummy > Guard Action Type` to `Reversal - Action Patterns`.
@@ -781,8 +777,6 @@ Try PB and GC against that opponent, read the results and adjust your input.
 3. Optionally set `Show PB Stats = yes`.
 4. Block and use PB yourself.
 
-**This feature visualizes the goal of delaying PB as much as possible while fitting six valid presses inside its window.** You can check when you started and whether you completed all six presses, as well as whether PB activated.
-
 Against the same attack, first make six valid presses consistently. If you fall short, check for simultaneous presses (`MultiPush`) or inputs after the window closes (`LateMash`). Once consistent, start a little later and see whether you can still fit all six presses. Keep the attack and other conditions the same when comparing success rate and input timing in PB Stats.
 
 Then use random offense to distinguish execution problems from reactions.
@@ -807,11 +801,7 @@ The PB window is 14 Ticks. **Six valid presses inside the window give a 100% act
 
 The game checks for activation on each press: presses 1–2 never activate PB, the 3rd, 4th and 5th activate it at 25%, 50% and 75%, and the 6th always does. This was confirmed by reading the game's probability table while it ran.
 
-**Counting presses after activation is intentional.** If the count stopped at activation, an attempt that succeeded early would hide whether you completed six presses. Use green to check activation and the final count to check the full input sequence.
-
-Pressing multiple buttons on the same Tick gives only one game-counted PB press. If `MultiPush` is high, check whether your presses overlap on the same Tick.
-
-To judge delay, look at the interval from `Guard` to the first press and whether all six presses fit before the closing `|`. The goal is **to start as late as possible while still fitting six presses into the window**, rather than stopping as soon as PB activates.
+**Presses after activation are counted so you can check whether you completed all six.** Green confirms activation; the final count shows the full input sequence. Read the delay from `Guard` to your first press.
 
 `LateMash` means **inputs after the window closes, not inputs after PB activates**. Post-activation presses inside the window count toward the training total, not LateMash. If LateMash grows, check for excessive delay or extra presses. Inputs beyond the window can cause an unwanted normal when blockstun ends.
 
@@ -920,7 +910,16 @@ After a failure, check whether you blocked, whether the necessary directions wer
 <a id="gc-stats"></a>
 ### 9.4 Track your success rate with GC Stats
 
-`Trainer > Show GC Stats = yes` shows your GC attempts and success rate, split into the 1P side and the 2P side. It appears without a title in a dark box. When `PB Stats`, `Tick Data`, `Air Guard Gaps` and `Recording GUI` are all OFF, it sits at the top left, left of the GC Command Trace; when any of them is ON, it sits at the bottom right, just above the input bar. The settings decide the position, so the box does not move during practice.
+`Trainer > Show GC Stats = yes` shows your GC attempts and success rate, split into the 1P side and the 2P side.
+
+Compare `Success` on both sides against the same attack to find your weaker side. Work on reducing `GC t` and `Input t` while keeping your success rate up; use the per-step averages and trace to find where you spend time.
+
+<details>
+<summary>Where the display appears</summary>
+
+It appears without a title in a dark box. When `PB Stats`, `Tick Data`, `Air Guard Gaps` and `Recording GUI` are all OFF, it sits at the top left, left of the GC Command Trace; when any of them is ON, it sits at the bottom right, just above the input bar. The settings decide the position, so the box does not move during practice.
+
+</details>
 
 ![GC Stats at the top left, shown while PB Stats and the other top-left displays are off, beside the GC Command Trace](images/gc_stats.png)
 
@@ -943,14 +942,20 @@ The two rows under the table average each step of the command over `Pass` attemp
 - **One attempt is one blocked string.** It becomes an attempt once the game accepts a direction of your GC command during the string. A command you began before blocking counts if the game was still accepting it when you blocked. Blocking alone, or being hit, does not count.
 - `Cmd Expired` and `GC Expired` do not finalize the result while the blocked string continues. If you enter the command again and GC a later attack, that string is one `Pass`.
 - **Time averages cover `Pass` attempts only.** Smaller means a faster GC. Read them together with the success rate.
-  - `Input t` and the per-step averages come from the successful attempts whose whole input was measured; both use the same attempts. A success whose input started before it could be measured, such as right after the script starts or a state loads, still counts as a `Pass` but is left out of these averages.
-  - `GC t` comes from the successful attempts whose GC window opening was measured, so it can cover a different number of attempts than `Input t`.
-  - If you enter the command again after it expires and then succeed, timing starts from the command that produced the GC.
 - Only P1 is measured. Nothing is counted while `P1 Coin` has switched your control to P2, or while a recording is controlling P1. Counting resumes when you control P1 again.
+
+**A blocked string you walked forward into also counts as an attempt.** While you hold forward, the game keeps accepting the first direction of the GC command again. If you then block, the string starts with the GC command one step in, so it ends as `Fail` unless you GC. This can count as an attempt even if you did not intend to GC. To compare your progress, keep the practice conditions consistent, including whether you walk forward before blocking.
+
+<details>
+<summary>Average eligibility, interruptions and resets</summary>
+
+- `Input t` and the per-step averages come from the successful attempts whose whole input was measured; both use the same attempts. A success whose input started before it could be measured, such as right after the script starts or a state loads, still counts as a `Pass` but is left out of these averages.
+- `GC t` comes from the successful attempts whose GC window opening was measured, so it can cover a different number of attempts than `Input t`.
+- If you enter the command again after it expires and then succeed, timing starts from the command that produced the GC.
 - Nothing is counted while `Show GC Stats = no`. Switching the side you control, including during a Recording Wizard take, does not clear the counts. Loading a state, resetting positions and the end of a round discard the string in progress without counting it as `Fail`. Nothing is saved to the settings file.
 - Counts stop at 99999. Toggle it OFF then ON to reset the statistics. Returning to character select also clears them. Both work as in PB Stats.
 
-**A blocked string you walked forward into also counts as an attempt.** While you hold forward, the game keeps accepting the first direction of the GC command again. If you then block, the string starts with the GC command one step in, so it ends as `Fail` unless you GC. This can count as an attempt even if you did not intend to GC. To compare your progress, keep the practice conditions consistent, including whether you walk forward before blocking.
+</details>
 
 <a id="11-drills"></a>
 ## 10. Practice recipes
