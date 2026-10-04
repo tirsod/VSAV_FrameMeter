@@ -965,7 +965,7 @@ The two rows under the table average each step of the command over `Pass` attemp
 ### B. Can your wake-up pressure beat the opponent’s fastest response?
 
 1. Select `Guard Action Type = Reversal - Specified`, with `Random Guard Action % = 100%` and `Random Start Wait = 0`.
-2. Configure the desired normal or special. See [4.3](#dummy-normal-response) for a normal example.
+2. Configure the desired normal or special. Set `Button Wait = 0` and the `Random Delay` directly below it to `0`. See [4.3](#dummy-normal-response) for a normal example.
 3. Start with `Wakeup = None` to keep conditions fixed.
 4. Knock the dummy down and test your setup.
 5. Once consistent, vary wake-up movement and response probability. Spreading the response with `Random Start Wait` or `Random Delay` checks that the setup does not rely on one fixed timing.
@@ -1212,7 +1212,7 @@ When resetting settings for diagnosis, move the JSON aside instead of deleting i
 | Menu will not open | Whether the match has started and `Lua Hotkey 1` is assigned; do not rely on Start to open the menu |
 | Dummy will not block | Check `Random Guard %` as well as `Guard`; an orange row means it is 0%. Set it to 100% |
 | Dummy will not respond | `Random Guard Action %` (an orange row means 0%), whether the required button is None, and whether a trigger occurred |
-| Response or step timing changes every time, or is never the fastest | Whether `Random Start Wait` (one setting shared by Dummy and Recording), the Specified `Random Delay` and each step's `Random Delay` are 0 |
+| Response or step timing changes every time, or is never the fastest | Whether `Random Start Wait` (one setting shared by Dummy and Recording), the Specified `Random Delay` and each step's `Random Delay` are 0. For the earliest normal or special under Specified, also set `Button Wait = 0`; for Action Steps, check the Wait condition |
 | Steps will not run | `Guard Action Type`, `Random Guard Action %`, whether you saved, and whether this is the current dummy's list |
 | Patterns will not run | At least one `[x]`, the correct dummy character and `Random Guard Action %` above 0% |
 | Crouch duration is wrong | This step's Wait is the delay before it; Hold and the next Wait determine duration |

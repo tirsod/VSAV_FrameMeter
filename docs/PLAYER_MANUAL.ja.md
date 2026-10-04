@@ -963,7 +963,7 @@ Avg   PB 4.22  at 5.89-11.50t
 ### B. 起き攻めが最速暴れに勝つか
 
 1. `Guard Action Type = Reversal - Specified`、`Random Guard Action % = 100%`、`Random Start Wait = 0`。
-2. 相手に使わせたい通常技・必殺技を設定します。通常技の例は[4.3](#dummy-normal-response)を参照。
+2. 相手に使わせたい通常技・必殺技を設定し、`Button Wait = 0`、その下の`Random Delay = 0`にします。通常技の例は[4.3](#dummy-normal-response)を参照。
 3. 最初は `Wakeup = None` で条件を固定します。
 4. ダウンを取り、起き攻めを試します。
 5. 安定したら移動起き上がりや反撃頻度を変えます。`Random Start Wait` や `Random Delay` で暴れのタイミングを散らすと、決まったタイミングに頼らない起き攻めかを確かめられます。
@@ -1210,7 +1210,7 @@ Action Steps側の `Auto (10)` が、この表示では `Dash > 12t` となる�
 | メニューが開かない | 試合開始後か、`Lua Hotkey 1` を割り当てたか。Startボタンはメニュー操作として当てにしない |
 | ダミーがガードしない | `Guard` に加えて `Random Guard %`。行がオレンジ色なら0%なので100%へ |
 | ダミーが反撃しない | `Random Guard Action %`（行がオレンジ色なら0%）、対応ボタンがNoneでないか、反撃のきっかけが発生したか |
-| 反撃やステップのタイミングが毎回ずれる・最速にならない | `Random Start Wait`（DummyとRecordingで共通の設定）、Specifiedの `Random Delay`、各ステップの `Random Delay` が0か |
+| 反撃やステップのタイミングが毎回ずれる・最速にならない | `Random Start Wait`（DummyとRecordingで共通の設定）、Specifiedの `Random Delay`、各ステップの `Random Delay` が0か。Specifiedで通常技・必殺技を最速にする場合は `Button Wait = 0` も確認。Action StepsではWaitの条件も確認 |
 | Stepsが動かない | `Guard Action Type`、`Random Guard Action %`、Save済みか、現在のダミーの一覧か |
 | Patternsが動かない | 少なくとも一つ `[x]` があるか、現在のダミー用か、`Random Guard Action %` が0%でないか |
 | しゃがむ時間が意図と違う | 自分のWaitは開始までの待ち。保持はHoldと次のステップのWaitで指定 |

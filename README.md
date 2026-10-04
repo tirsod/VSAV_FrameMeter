@@ -114,7 +114,7 @@ Start by trying either PB or GC; looping and saving can wait until you are comfo
 2. **Practice PB.** Make the dummy block your attack to trigger short-dash LP, then use PB against it. Use PB Counter and PB Stats to check, for example, whether you delayed your first press and still fit six valid presses within the window.
 3. **Try GC too.** Block the same LP and enter your character’s GC command. Check the success indicator, accepted directions and buttons, and input intervals. Use [GC Stats](docs/PLAYER_MANUAL.en.md#gc-stats) to compare your success rate on the left and right sides.
 4. **Repeat it.** Set `Loop Steps = yes` and `Loop Wait = Auto (Landing)` to repeat short-dash LP as soon as the dummy lands.
-5. **Save it.** Use `Add from current Steps` in Action Patterns to save it as `Short LP`. Save other attacks later to practice against randomly selected sequences.
+5. **Save it.** Use `Add from current Steps` in Action Patterns to save it as `Short LP`. Skip this step if you imported the included pattern. Save other attacks later to practice against randomly selected sequences.
 
 ## Manual
 

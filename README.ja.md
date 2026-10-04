@@ -113,7 +113,7 @@ Tickはゲームの内部フレームです。本フォークは、この内部�
 2. **AGする。** こちらの技をガードさせてショートダッシュ小Pを出させ、これにAGします。PB Counter／PB Statsで、例えば遅らせAGで受付内に6回入力できたか確認します。
 3. **GCも試す。** 同じ小Pに自キャラのGCを入力し、成功表示と、受け付けられた方向・ボタン・入力間隔を確認します。[GC Stats](docs/PLAYER_MANUAL.ja.md#gc-stats)で左右それぞれの成功率も確認できます。
 4. **連続で練習する。** `Loop Steps = yes`、`Loop Wait = Auto (Landing)`にして、着地からショートダッシュ小Pを繰り返させます。
-5. **保存する。** Action Patternsの`Add from current Steps`で`Short LP`として保存します。別の攻めも登録すれば、複数候補のランダム練習へ発展させられます。
+5. **保存する。** Action Patternsの`Add from current Steps`で`Short LP`として保存します。同梱パターンを取り込んだ場合、この保存操作は不要です。別の攻めも登録すれば、複数候補のランダム練習へ発展させられます。
 
 ## マニュアル
 
