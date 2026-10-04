@@ -676,6 +676,7 @@ local function draw_meter()
 			end
         end
 
+		-- Drawing frame breakdown to screen (in front of the tiles)
 		for offset = 0, max_squares do
 			local i = (block_start + offset) % log_length
 			xx = i%log_drawn * 4
@@ -695,7 +696,7 @@ local function draw_meter()
 				local bdXoffset = -1
 				if breakdown > 9 then bdXoffset = -5 end
 				if breakdown > 99 then bdXoffset = -9 end
-				gui.text(drawX + xx + bdXoffset, drawY + (10*player) + relY, tostring(breakdown))
+				gui.text(drawX + xx + bdXoffset, drawY + 2 + (10*player) + relY, tostring(breakdown))
 			end
 		end
 
