@@ -606,7 +606,7 @@ local function draw_meter()
 		meter_anchor.bomb = 0
 	end
 
-	gui.text(-512-meter_anchor.scroll, 48, "VSAV_FrameMeter by @tirsod.com\nSpecial thanks to Nbee, MBD, KyleW, vampiresavior001\nrar, hagure, zako, dom & enker\nfor all the hard work that made this\nlittle fun project possible!\n\nGo lab those purrsuits! :3 -6410\n(I really had to learn Lua for this, huh?)\nShoutouts to the vsav discord!")
+	gui.text(-1024-meter_anchor.scroll, 48, "VSAV_FrameMeter by @tirsod.com\nSpecial thanks to Nbee, MBD, KyleW, vampiresavior001\nrar, hagure, zako, dom & enker\nfor all the hard work that made this\nlittle fun project possible!\n\nGo lab those purrsuits! :3 -6410\n(I really had to learn Lua for this, huh?)\nShoutouts to the vsav discord!")
 
 	-- -- The frame meter draws 90 frames to screen (log_drawn), but the log itself is 270 frames long (log_length = log_drawn * 3)
 	-- -- The drawing is then divided into 3 blocks of 90 frames. The current block is drawn first, fully colored,
